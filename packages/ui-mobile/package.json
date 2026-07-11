@@ -1,0 +1,41 @@
+{
+  "name": "@voyya/ui-mobile",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Design system móvil de VoyYa (React Native): tokens cálidos (ámbar/espresso/crema) + componentes base reutilizables para las apps Pasajero y Conductor.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "test": "echo \"(ui-mobile) sin tests unitarios propios aún\" && exit 0",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0",
+    "react-native": ">=0.74.0",
+    "react-native-svg": ">=15.0.0",
+    "expo-constants": ">=16.0.0",
+    "@rnmapbox/maps": ">=10.2.0 <10.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "~18.2.79",
+    "@types/node": "^20.16.10",
+    "@types/geojson": "^7946.0.7",
+    "react": "18.2.0",
+    "react-native": "0.74.5",
+    "react-native-svg": "15.3.0",
+    "expo-constants": "~16.0.2",
+    "@rnmapbox/maps": "10.2.10",
+    "typescript": "^5.5.4"
+  }
+}
