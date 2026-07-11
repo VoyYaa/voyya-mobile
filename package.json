@@ -1,0 +1,28 @@
+{
+  "name": "frontend-yavoy",
+  "version": "0.0.1",
+  "private": true,
+  "description": "VoyYa — apps móviles (Expo/EAS) del pasajero y del conductor + design system y contratos compartidos. Repo standalone: copiado del monorepo VoyYa (apps/passenger, apps/driver, packages/ui-mobile, packages/shared) para desplegar por EAS de forma independiente.",
+  "packageManager": "pnpm@10.24.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,cjs,json,md,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,cjs,json,md,yaml,yml}\""
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3",
+    "turbo": "^2.1.3",
+    "typescript": "^5.5.4"
+  }
+}

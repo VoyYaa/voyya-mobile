@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Builds
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# Expo / EAS
+.expo/
+.expo-shared/
+web-build/
+*.apk
+*.aab
+*.ipa
+
+# Prebuild nativo (solo si se corre `expo prebuild` localmente; EAS managed no lo necesita)
+/apps/*/android/
+/apps/*/ios/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Tests / coverage
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
