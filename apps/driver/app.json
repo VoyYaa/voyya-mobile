@@ -13,7 +13,7 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "@rnmapbox/maps"
+      "@rnmapbox/maps/app.plugin.js"
     ],
     "android": {
       "package": "co.voyya.driver",
