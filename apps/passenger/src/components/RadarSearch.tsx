@@ -11,7 +11,9 @@ export function RadarSearch(): React.JSX.Element {
 
   useEffect(() => {
     if (reducedMotion) return;
-    const loop = Animated.loop(Animated.timing(progress, { toValue: 1, duration: 1800, useNativeDriver: true }));
+    const loop = Animated.loop(
+      Animated.timing(progress, { toValue: 1, duration: 1800, useNativeDriver: true }),
+    );
     loop.start();
     return () => {
       loop.stop();
@@ -23,7 +25,9 @@ export function RadarSearch(): React.JSX.Element {
     ? { opacity: 0.5 }
     : {
         opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] }),
-        transform: [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1.4] }) }],
+        transform: [
+          { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1.4] }) },
+        ],
       };
 
   return (

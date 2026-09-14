@@ -12,7 +12,13 @@ export interface ToastProps {
   durationMs?: number;
 }
 
-export function Toast({ message, tone = 'neutral', visible, onHide, durationMs = 2200 }: ToastProps): React.JSX.Element | null {
+export function Toast({
+  message,
+  tone = 'neutral',
+  visible,
+  onHide,
+  durationMs = 2200,
+}: ToastProps): React.JSX.Element | null {
   const theme = useTheme();
 
   useEffect(() => {
@@ -45,7 +51,14 @@ export function Toast({ message, tone = 'neutral', visible, onHide, durationMs =
         ...theme.shadow.md,
       }}
     >
-      <Text style={{ ...theme.typography.body, fontWeight: '600', color: palette.fg, textAlign: 'center' }}>
+      <Text
+        style={{
+          ...theme.typography.body,
+          fontWeight: '600',
+          color: palette.fg,
+          textAlign: 'center',
+        }}
+      >
         {message}
       </Text>
     </View>

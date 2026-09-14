@@ -32,7 +32,10 @@ export const ASSIGNMENT_STATUS_TRANSITIONS = {
   completed: [],
 } as const satisfies Record<AssignmentStatus, readonly AssignmentStatus[]>;
 
-export function canTransitionAssignmentStatus(from: AssignmentStatus, to: AssignmentStatus): boolean {
+export function canTransitionAssignmentStatus(
+  from: AssignmentStatus,
+  to: AssignmentStatus,
+): boolean {
   return (ASSIGNMENT_STATUS_TRANSITIONS[from] as readonly AssignmentStatus[]).includes(to);
 }
 

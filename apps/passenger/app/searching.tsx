@@ -2,7 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, EmptyState, ErrorState, Map, PriceTag, Toast, useTheme } from '@voyyaa/ui-mobile';
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  Map,
+  PriceTag,
+  Toast,
+  useTheme,
+} from '@voyyaa/ui-mobile';
 import { ScreenHeader } from '../src/components/ScreenHeader';
 import { RadarSearch } from '../src/components/RadarSearch';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
@@ -52,7 +61,11 @@ export default function SearchingScreen(): React.JSX.Element {
   if (!tripRequestId) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ErrorState title="No encontramos tu solicitud" onRetry={() => router.replace('/')} retryLabel="Volver al inicio" />
+        <ErrorState
+          title="No encontramos tu solicitud"
+          onRetry={() => router.replace('/')}
+          retryLabel="Volver al inicio"
+        />
       </SafeAreaView>
     );
   }
@@ -87,7 +100,10 @@ export default function SearchingScreen(): React.JSX.Element {
             },
             {
               onSuccess: (newTripRequest) => {
-                router.replace({ pathname: '/searching', params: { id: String(newTripRequest.trip_request_id) } });
+                router.replace({
+                  pathname: '/searching',
+                  params: { id: String(newTripRequest.trip_request_id) },
+                });
               },
             },
           );
@@ -129,11 +145,15 @@ export default function SearchingScreen(): React.JSX.Element {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <ScreenHeader title=" " hideBack />
-      <View style={{ flex: 1, alignItems: 'center', padding: theme.spacing.xl, gap: theme.spacing.md }}>
+      <View
+        style={{ flex: 1, alignItems: 'center', padding: theme.spacing.xl, gap: theme.spacing.md }}
+      >
         <Text style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center' }}>
           Buscando tu viaje…
         </Text>
-        <Text style={{ ...theme.typography.body, color: theme.colors.textMuted, textAlign: 'center' }}>
+        <Text
+          style={{ ...theme.typography.body, color: theme.colors.textMuted, textAlign: 'center' }}
+        >
           Estamos contactando a los conductores cercanos.
         </Text>
         {prolongedSearch && (
@@ -149,24 +169,46 @@ export default function SearchingScreen(): React.JSX.Element {
 
         {origin && destination && data && (
           <Card style={{ width: '100%' }}>
-            <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>Resumen</Text>
+            <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+              Resumen
+            </Text>
             <Map
-              center={{ lat: (origin.lat + destination.lat) / 2, lng: (origin.lng + destination.lng) / 2 }}
+              center={{
+                lat: (origin.lat + destination.lat) / 2,
+                lng: (origin.lng + destination.lng) / 2,
+              }}
               markers={[
                 { id: 'origin', kind: 'origin', coord: origin, label: `Origen: ${origin.address}` },
-                { id: 'destination', kind: 'destination', coord: destination, label: `Destino: ${destination.address}` },
+                {
+                  id: 'destination',
+                  kind: 'destination',
+                  coord: destination,
+                  label: `Destino: ${destination.address}`,
+                },
               ]}
               route={{ points: [origin, destination] }}
               interactive={false}
               height={140}
               style={{ marginTop: theme.spacing.xs }}
             />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: theme.spacing.xs }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginTop: theme.spacing.xs,
+              }}
+            >
               <View style={{ flex: 1 }}>
-                <Text style={{ ...theme.typography.body, color: theme.colors.text }} numberOfLines={1}>
+                <Text
+                  style={{ ...theme.typography.body, color: theme.colors.text }}
+                  numberOfLines={1}
+                >
                   {origin.address}
                 </Text>
-                <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }} numberOfLines={1}>
+                <Text
+                  style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+                  numberOfLines={1}
+                >
                   → {destination.address}
                 </Text>
               </View>
@@ -182,13 +224,20 @@ export default function SearchingScreen(): React.JSX.Element {
             loading={cancelTripRequest.isPending}
             loadingLabel="Cancelando…"
             disabled={networkStatus === 'offline'}
-            accessibilityHint={networkStatus === 'offline' ? 'Sin conexión, no se puede cancelar ahora' : undefined}
+            accessibilityHint={
+              networkStatus === 'offline' ? 'Sin conexión, no se puede cancelar ahora' : undefined
+            }
             onPress={cancelWithoutConfirm}
           />
         </View>
       </View>
 
-      <Toast message="Solicitud cancelada." tone="neutral" visible={toastVisible} onHide={() => setToastVisible(false)} />
+      <Toast
+        message="Solicitud cancelada."
+        tone="neutral"
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+      />
     </SafeAreaView>
   );
 }

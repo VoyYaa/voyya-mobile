@@ -22,7 +22,12 @@ export type TripStatus = z.infer<typeof TripStatus>;
 
 export const TRIP_STATUS_TRANSITIONS = {
   pending_assignment: ['assigned', 'no_driver', 'cancelled_by_passenger', 'expired'],
-  assigned: ['driver_en_route', 'pending_assignment', 'cancelled_by_passenger', 'cancelled_by_driver'],
+  assigned: [
+    'driver_en_route',
+    'pending_assignment',
+    'cancelled_by_passenger',
+    'cancelled_by_driver',
+  ],
   driver_en_route: ['in_progress', 'cancelled_by_passenger', 'cancelled_by_driver', 'no_show'],
   in_progress: ['completed'],
   completed: [],

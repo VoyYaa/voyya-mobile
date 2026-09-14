@@ -8,14 +8,21 @@ export interface ErrorStateProps {
   retryLabel?: string;
 }
 
-export function ErrorState({ title, body, onRetry, retryLabel = 'Reintentar' }: ErrorStateProps): React.JSX.Element {
+export function ErrorState({
+  title,
+  body,
+  onRetry,
+  retryLabel = 'Reintentar',
+}: ErrorStateProps): React.JSX.Element {
   return (
     <StatePanel
       icon="⚠️"
       title={title}
       body={body}
       accessibilityRole="alert"
-      primaryAction={onRetry ? { label: retryLabel, onPress: onRetry, variant: 'primary' } : undefined}
+      primaryAction={
+        onRetry ? { label: retryLabel, onPress: onRetry, variant: 'primary' } : undefined
+      }
     />
   );
 }

@@ -22,14 +22,29 @@ export function CancelConfirmSheet({
   return (
     <BottomSheet visible={visible} onClose={onKeepWaiting} title="¿Cancelar viaje?">
       {withinWindow ? (
-        <Text style={{ ...theme.typography.body, color: theme.colors.text, marginBottom: theme.spacing.sm }}>
-          <Text style={{ color: theme.colors.success, fontWeight: '700' }}>Gratis</Text> · aún estás dentro de los 2
-          minutos.
+        <Text
+          style={{
+            ...theme.typography.body,
+            color: theme.colors.text,
+            marginBottom: theme.spacing.sm,
+          }}
+        >
+          <Text style={{ color: theme.colors.success, fontWeight: '700' }}>Gratis</Text> · aún estás
+          dentro de los 2 minutos.
         </Text>
       ) : (
-        <Text style={{ ...theme.typography.body, color: theme.colors.text, marginBottom: theme.spacing.sm }}>
+        <Text
+          style={{
+            ...theme.typography.body,
+            color: theme.colors.text,
+            marginBottom: theme.spacing.sm,
+          }}
+        >
           Pasaron más de 2 minutos desde la asignación. Quedará{' '}
-          <Text style={{ color: theme.colors.danger, fontWeight: '700' }}>registrada como cancelación tardía</Text>.
+          <Text style={{ color: theme.colors.danger, fontWeight: '700' }}>
+            registrada como cancelación tardía
+          </Text>
+          .
         </Text>
       )}
       <View style={{ marginTop: theme.spacing.md, gap: theme.spacing.sm }}>
@@ -40,7 +55,12 @@ export function CancelConfirmSheet({
           loadingLabel="Cancelando…"
           onPress={onConfirmCancel}
         />
-        <Button label="Seguir esperando" variant="ghost" disabled={loading} onPress={onKeepWaiting} />
+        <Button
+          label="Seguir esperando"
+          variant="ghost"
+          disabled={loading}
+          onPress={onKeepWaiting}
+        />
       </View>
     </BottomSheet>
   );

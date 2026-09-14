@@ -12,7 +12,11 @@ import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { domainErrorCode, isNetworkError } from '../src/api/errors';
-import { CURRENT_LOCATION_MOCK, DESTINATION_SUGGESTIONS, type SuggestedPlace } from '../src/constants/demo-places';
+import {
+  CURRENT_LOCATION_MOCK,
+  DESTINATION_SUGGESTIONS,
+  type SuggestedPlace,
+} from '../src/constants/demo-places';
 import { POIS_YARUMAL, type PoiYarumal } from '../src/constants/pois-yarumal';
 
 const SearchSchema = z.object({ query: z.string() });
@@ -47,7 +51,12 @@ export default function DestinationScreen(): React.JSX.Element {
     setCoverageErrorId(null);
     const destination = { address: place.title, lat: place.lat, lng: place.lng };
     quoteFare.mutate(
-      { origin: CURRENT_LOCATION_MOCK, destination, municipality_id: municipalityId, service_type: 'taxi' },
+      {
+        origin: CURRENT_LOCATION_MOCK,
+        destination,
+        municipality_id: municipalityId,
+        service_type: 'taxi',
+      },
       {
         onSuccess: (quote) => {
           setOriginDestination(CURRENT_LOCATION_MOCK, destination);
@@ -77,7 +86,14 @@ export default function DestinationScreen(): React.JSX.Element {
 
   const selectPoi = (poi: PoiYarumal): void => {
     if (!poi.coord) return;
-    selectPlace({ id: poi.id, icon: poi.icon, title: poi.title, subtitle: 'Yarumal', lat: poi.coord.lat, lng: poi.coord.lng });
+    selectPlace({
+      id: poi.id,
+      icon: poi.icon,
+      title: poi.title,
+      subtitle: 'Yarumal',
+      lat: poi.coord.lat,
+      lng: poi.coord.lng,
+    });
   };
 
   useEffect(() => {
@@ -87,7 +103,8 @@ export default function DestinationScreen(): React.JSX.Element {
   }, [params.preset]);
 
   const errorCode = domainErrorCode(quoteFare.error);
-  const hasGenericError = quoteFare.isError && !isNetworkError(quoteFare.error) && errorCode !== 'OUT_OF_COVERAGE';
+  const hasGenericError =
+    quoteFare.isError && !isNetworkError(quoteFare.error) && errorCode !== 'OUT_OF_COVERAGE';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
@@ -162,7 +179,13 @@ export default function DestinationScreen(): React.JSX.Element {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View>
-            <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, marginBottom: theme.spacing.xs }}>
+            <Text
+              style={{
+                ...theme.typography.small,
+                color: theme.colors.textMuted,
+                marginBottom: theme.spacing.xs,
+              }}
+            >
               LUGARES DE YARUMAL
             </Text>
             {POIS_YARUMAL.map((poi) => (
@@ -171,7 +194,9 @@ export default function DestinationScreen(): React.JSX.Element {
                 disabled={!poi.coord || networkStatus === 'offline' || quoteFare.isPending}
                 onPress={() => selectPoi(poi)}
                 accessibilityRole="button"
-                accessibilityLabel={poi.coord ? poi.title : `${poi.title}, ubicación pendiente de confirmar`}
+                accessibilityLabel={
+                  poi.coord ? poi.title : `${poi.title}, ubicación pendiente de confirmar`
+                }
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -187,7 +212,9 @@ export default function DestinationScreen(): React.JSX.Element {
               >
                 <Text style={{ fontSize: 20 }}>{poi.icon}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ ...theme.typography.body, color: theme.colors.text }}>{poi.title}</Text>
+                  <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
+                    {poi.title}
+                  </Text>
                 </View>
                 {!poi.coord && <StatusBadge label="Pendiente" tone="warn" />}
               </Pressable>
@@ -219,19 +246,30 @@ export default function DestinationScreen(): React.JSX.Element {
                 padding: theme.spacing.sm,
                 borderRadius: theme.radius.field,
                 borderWidth: 1,
-                borderColor: coverageErrorId === item.id ? theme.colors.danger : theme.colors.border,
+                borderColor:
+                  coverageErrorId === item.id ? theme.colors.danger : theme.colors.border,
                 opacity: networkStatus === 'offline' ? 0.5 : 1,
               }}
             >
               <Text style={{ fontSize: 20 }}>{item.icon}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ ...theme.typography.body, color: theme.colors.text }}>{item.title}</Text>
-                <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>{item.subtitle}</Text>
+                <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
+                  {item.title}
+                </Text>
+                <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+                  {item.subtitle}
+                </Text>
               </View>
             </Pressable>
             {coverageErrorId === item.id && (
               <View accessibilityRole="alert" style={{ marginTop: 4 }}>
-                <Text style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.danger }}>
+                <Text
+                  style={{
+                    ...theme.typography.small,
+                    fontWeight: '700',
+                    color: theme.colors.danger,
+                  }}
+                >
                   Fuera de cobertura
                 </Text>
                 <Text style={{ ...theme.typography.small, color: theme.colors.danger }}>

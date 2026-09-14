@@ -76,7 +76,10 @@ export default function ConfirmScreen(): React.JSX.Element {
       },
       {
         onSuccess: (tripRequest) => {
-          router.replace({ pathname: '/searching', params: { id: String(tripRequest.trip_request_id) } });
+          router.replace({
+            pathname: '/searching',
+            params: { id: String(tripRequest.trip_request_id) },
+          });
         },
         onError: (error) => {
           if (domainErrorCode(error) === 'QUOTE_EXPIRED') {
@@ -91,9 +94,13 @@ export default function ConfirmScreen(): React.JSX.Element {
   };
 
   const errorCode = domainErrorCode(createTripRequest.error);
-  const showGenericError = createTripRequest.isError && errorCode !== 'QUOTE_EXPIRED' && errorCode !== 'ACTIVE_TRIP_REQUEST_EXISTS';
+  const showGenericError =
+    createTripRequest.isError &&
+    errorCode !== 'QUOTE_EXPIRED' &&
+    errorCode !== 'ACTIVE_TRIP_REQUEST_EXISTS';
   const currentFare = quoteFare.data ?? quote;
-  const requestDisabled = networkStatus === 'offline' || createTripRequest.isPending || quoteFare.isPending;
+  const requestDisabled =
+    networkStatus === 'offline' || createTripRequest.isPending || quoteFare.isPending;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
@@ -101,14 +108,27 @@ export default function ConfirmScreen(): React.JSX.Element {
       <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
         <View style={{ gap: theme.spacing.sm }}>
           <PointRow marker="●" label="Origen" value={origin.address} />
-          <PointRow marker="▼" label="Destino" value={destination.address} markerColor={theme.colors.brandPressed} />
+          <PointRow
+            marker="▼"
+            label="Destino"
+            value={destination.address}
+            markerColor={theme.colors.brandPressed}
+          />
         </View>
 
         <Map
-          center={{ lat: (origin.lat + destination.lat) / 2, lng: (origin.lng + destination.lng) / 2 }}
+          center={{
+            lat: (origin.lat + destination.lat) / 2,
+            lng: (origin.lng + destination.lng) / 2,
+          }}
           markers={[
             { id: 'origin', kind: 'origin', coord: origin, label: `Origen: ${origin.address}` },
-            { id: 'destination', kind: 'destination', coord: destination, label: `Destino: ${destination.address}` },
+            {
+              id: 'destination',
+              kind: 'destination',
+              coord: destination,
+              label: `Destino: ${destination.address}`,
+            },
           ]}
           route={{ points: [origin, destination] }}
           interactive={false}
@@ -116,42 +136,79 @@ export default function ConfirmScreen(): React.JSX.Element {
         />
 
         <View>
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, marginBottom: theme.spacing.xs }}>
+          <Text
+            style={{
+              ...theme.typography.small,
+              color: theme.colors.textMuted,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
             TIPO DE SERVICIO
           </Text>
-          <ServiceTypeSelector options={SERVICE_OPTIONS} selected={serviceType} onSelect={changeServiceType} />
+          <ServiceTypeSelector
+            options={SERVICE_OPTIONS}
+            selected={serviceType}
+            onSelect={changeServiceType}
+          />
         </View>
 
         <Card tone="alt">
           {quoteFare.isPending ? (
             <Skeleton height={32} width="60%" />
           ) : (
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+              }}
+            >
               <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>Tarifa</Text>
               <PriceTag amountCOP={currentFare.fare.total} size="lg" />
             </View>
           )}
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, marginTop: theme.spacing.xs }}>
-            Tarifa fija · visible antes de confirmar. Cancelación gratis hasta 2 min después de asignar.
+          <Text
+            style={{
+              ...theme.typography.small,
+              color: theme.colors.textMuted,
+              marginTop: theme.spacing.xs,
+            }}
+          >
+            Tarifa fija · visible antes de confirmar. Cancelación gratis hasta 2 min después de
+            asignar.
           </Text>
         </Card>
 
         <View>
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, marginBottom: theme.spacing.xs }}>
+          <Text
+            style={{
+              ...theme.typography.small,
+              color: theme.colors.textMuted,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
             MÉTODO DE PAGO
           </Text>
-          <PaymentMethodList options={PAYMENT_OPTIONS} selected={paymentMethod} onSelect={setPaymentMethod} />
+          <PaymentMethodList
+            options={PAYMENT_OPTIONS}
+            selected={paymentMethod}
+            onSelect={setPaymentMethod}
+          />
         </View>
 
         {errorCode === 'QUOTE_EXPIRED' && (
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>La tarifa cambió, recotizando…</Text>
+          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+            La tarifa cambió, recotizando…
+          </Text>
         )}
         {errorCode === 'ACTIVE_TRIP_REQUEST_EXISTS' && (
           <Text style={{ ...theme.typography.small, color: theme.colors.danger }}>
             Ya tienes un viaje activo. Revisa la pestaña Viajes.
           </Text>
         )}
-        {showGenericError && <ErrorState title="No pudimos crear tu solicitud" onRetry={requestTrip} />}
+        {showGenericError && (
+          <ErrorState title="No pudimos crear tu solicitud" onRetry={requestTrip} />
+        )}
         {networkStatus === 'offline' && (
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
             Sin conexión · no se puede solicitar el viaje ahora.
@@ -164,7 +221,9 @@ export default function ConfirmScreen(): React.JSX.Element {
           loadingLabel="Solicitando…"
           disabled={requestDisabled}
           onPress={requestTrip}
-          accessibilityHint={networkStatus === 'offline' ? 'Sin conexión, no se puede solicitar ahora' : undefined}
+          accessibilityHint={
+            networkStatus === 'offline' ? 'Sin conexión, no se puede solicitar ahora' : undefined
+          }
         />
       </ScrollView>
     </SafeAreaView>

@@ -36,7 +36,8 @@ export default function LoginScreen(): React.JSX.Element {
   const blockedRemaining = useCountdown(blockedDeadline);
   const isBlocked = outcome === 'blocked' && blockedDeadline !== null && blockedRemaining > 0;
   const offline = networkStatus === 'offline';
-  const isFormatValid = NationalId.safeParse(nationalId).success && Pin.safeParse(pin).success && pin.length === 4;
+  const isFormatValid =
+    NationalId.safeParse(nationalId).success && Pin.safeParse(pin).success && pin.length === 4;
 
   const clearErrorOnEdit = (): void => {
     if (outcome === 'credentials' || outcome === 'offline') setOutcome('idle');
@@ -70,11 +71,14 @@ export default function LoginScreen(): React.JSX.Element {
           if (code === 'ACCOUNT_TEMPORARILY_BLOCKED') {
             const retrySec = retryInSecOf(error);
             setBlockedTimeKnown(retrySec !== undefined);
-            setBlockedDeadline(new Date(Date.now() + (retrySec ?? BLOCKED_FALLBACK_SEC) * 1000).toISOString());
+            setBlockedDeadline(
+              new Date(Date.now() + (retrySec ?? BLOCKED_FALLBACK_SEC) * 1000).toISOString(),
+            );
             setOutcome('blocked');
           } else if (code === 'ACCOUNT_SUSPENDED') {
             setSuspendedMessage(
-              error.message || 'Tu empresa suspendió tu acceso. Contacta a tu empresa para más información.',
+              error.message ||
+                'Tu empresa suspendió tu acceso. Contacta a tu empresa para más información.',
             );
             setOutcome('suspended');
           } else {
@@ -92,12 +96,21 @@ export default function LoginScreen(): React.JSX.Element {
         <Header />
         <View
           accessibilityRole="alert"
-          style={{ flex: 1, padding: theme.spacing.xl, justifyContent: 'center', gap: theme.spacing.sm as number }}
+          style={{
+            flex: 1,
+            padding: theme.spacing.xl,
+            justifyContent: 'center',
+            gap: theme.spacing.sm as number,
+          }}
         >
-          <Text style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center' }}>
+          <Text
+            style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center' }}
+          >
             No puedes ingresar ahora
           </Text>
-          <Text style={{ ...theme.typography.body, color: theme.colors.textMuted, textAlign: 'center' }}>
+          <Text
+            style={{ ...theme.typography.body, color: theme.colors.textMuted, textAlign: 'center' }}
+          >
             {suspendedMessage}
           </Text>
         </View>
@@ -110,8 +123,16 @@ export default function LoginScreen(): React.JSX.Element {
       <Header />
       <View style={{ padding: theme.spacing.lg, gap: theme.spacing.lg as number }}>
         <View>
-          <Text style={{ ...theme.typography.title, color: theme.colors.text }}>Ingreso conductor</Text>
-          <Text style={{ ...theme.typography.body, color: theme.colors.textMuted, marginTop: theme.spacing.xs }}>
+          <Text style={{ ...theme.typography.title, color: theme.colors.text }}>
+            Ingreso conductor
+          </Text>
+          <Text
+            style={{
+              ...theme.typography.body,
+              color: theme.colors.textMuted,
+              marginTop: theme.spacing.xs,
+            }}
+          >
             Tu empresa creó esta cuenta. Ingresa con la cédula y el PIN que te enviaron por SMS.
           </Text>
         </View>
@@ -150,7 +171,9 @@ export default function LoginScreen(): React.JSX.Element {
               gap: theme.spacing.xs as number,
             }}
           >
-            <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>Demasiados intentos</Text>
+            <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
+              Demasiados intentos
+            </Text>
             <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
               {blockedTimeKnown
                 ? `Por seguridad, espera ${formatMMSS(blockedRemaining)} para volver a intentar. `
@@ -197,7 +220,9 @@ function Header(): React.JSX.Element {
         padding: theme.spacing.lg,
       }}
     >
-      <Text style={{ ...theme.typography.title, color: theme.colors.brandPressed }}>VoyYa Conductor</Text>
+      <Text style={{ ...theme.typography.title, color: theme.colors.brandPressed }}>
+        VoyYa Conductor
+      </Text>
       <Chip label="conductor" tone="neutral" />
     </View>
   );

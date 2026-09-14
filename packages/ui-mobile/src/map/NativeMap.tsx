@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Mapbox, { Camera, LineLayer, MapView, PointAnnotation, ShapeSource, type MapState } from '@rnmapbox/maps';
+import Mapbox, {
+  Camera,
+  LineLayer,
+  MapView,
+  PointAnnotation,
+  ShapeSource,
+  type MapState,
+} from '@rnmapbox/maps';
 import type { Feature } from 'geojson';
 import { useTheme } from '../theme';
 import { toLatLng, toPosition, toRouteFeature } from './geo';
@@ -103,7 +110,12 @@ export function NativeMap({
           <ShapeSource id="voyya-route-source" shape={toRouteFeature(route.points)}>
             <LineLayer
               id="voyya-route-line"
-              style={{ lineColor: theme.colors.brandPressed, lineWidth: 4, lineCap: 'round', lineJoin: 'round' }}
+              style={{
+                lineColor: theme.colors.brandPressed,
+                lineWidth: 4,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
             />
           </ShapeSource>
         )}
@@ -123,7 +135,9 @@ export function NativeMap({
                 ...theme.shadow.sm,
               }}
             >
-              <Text style={{ fontSize: 14, color: colorForKind(marker.kind) }}>{GLYPH_BY_KIND[marker.kind]}</Text>
+              <Text style={{ fontSize: 14, color: colorForKind(marker.kind) }}>
+                {GLYPH_BY_KIND[marker.kind]}
+              </Text>
             </View>
           </PointAnnotation>
         ))}
@@ -131,8 +145,20 @@ export function NativeMap({
 
       {pinDrop && (
         <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-          <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -16, marginTop: -32 }}>
-            <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ fontSize: 32 }}>
+          <View
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              marginLeft: -16,
+              marginTop: -32,
+            }}
+          >
+            <Text
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={{ fontSize: 32 }}
+            >
               📍
             </Text>
           </View>

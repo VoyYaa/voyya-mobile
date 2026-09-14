@@ -16,7 +16,11 @@ export interface PaymentMethodListProps {
   onSelect: (method: PaymentMethod) => void;
 }
 
-export function PaymentMethodList({ options, selected, onSelect }: PaymentMethodListProps): React.JSX.Element {
+export function PaymentMethodList({
+  options,
+  selected,
+  onSelect,
+}: PaymentMethodListProps): React.JSX.Element {
   const theme = useTheme();
 
   return (
@@ -44,11 +48,15 @@ export function PaymentMethodList({ options, selected, onSelect }: PaymentMethod
             }}
           >
             <View style={{ flex: 1 }}>
-              <Text style={{ ...theme.typography.body, fontWeight: '600', color: theme.colors.text }}>
+              <Text
+                style={{ ...theme.typography.body, fontWeight: '600', color: theme.colors.text }}
+              >
                 {option.label}
                 {!option.enabled ? ' · próximamente' : ''}
               </Text>
-              <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>{option.sublabel}</Text>
+              <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+                {option.sublabel}
+              </Text>
             </View>
             <View
               style={{

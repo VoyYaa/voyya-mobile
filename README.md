@@ -79,10 +79,10 @@ Cada app trae su `.env.example`. Expo solo expone al bundle del cliente las vari
 prefijo `EXPO_PUBLIC_*` (inyectadas en **build-time**, no en runtime — cualquier cambio exige
 reiniciar el bundler / rehacer el build).
 
-| Variable                     | App              | Descripción                                                                                          |
-| ----------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------- |
-| `EXPO_PUBLIC_API_URL`         | passenger, driver | URL base del backend NestJS (`http://localhost:3000` en local).                                       |
-| `EXPO_PUBLIC_MAPBOX_TOKEN`    | passenger, driver | Token **público** de Mapbox (prefijo `pk.`) para `@rnmapbox/maps` 10.2.x.                              |
+| Variable                   | App               | Descripción                                                               |
+| -------------------------- | ----------------- | ------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_API_URL`      | passenger, driver | URL base del backend NestJS (`http://localhost:3000` en local).           |
+| `EXPO_PUBLIC_MAPBOX_TOKEN` | passenger, driver | Token **público** de Mapbox (prefijo `pk.`) para `@rnmapbox/maps` 10.2.x. |
 
 **Nota importante sobre Mapbox:** con `@rnmapbox/maps` 10.2.x **no hace falta** el "download
 token" (`sk.…`, scope `DOWNLOADS:READ`) para las variables de entorno de la app — ese es un
@@ -147,11 +147,11 @@ pnpm run lint        # turbo: eslint en los 4 paquetes
 
 > `turbo.json` declara `"typecheck": { "dependsOn": ["^build"] }`: por eso los scripts raíz usan
 > `turbo run …` (vía `pnpm run typecheck`/`pnpm run lint`/`pnpm run build`) en vez de
-> `pnpm -r typecheck` directo — `pnpm -r` no encadena scripts *distintos* entre paquetes (no
+> `pnpm -r typecheck` directo — `pnpm -r` no encadena scripts _distintos_ entre paquetes (no
 > sabe que `typecheck` de `passenger` depende del `build` de `shared`/`ui-mobile`), así que sin
 > Turbo fallaría en un clon nuevo con "Cannot find module '@voyya/shared'" hasta compilar sus
 > `dist/` primero. Si prefieres comandos `pnpm -r` sueltos: `pnpm -r build && pnpm -r typecheck
-> && pnpm -r lint` (mismo resultado, orden manual).
+&& pnpm -r lint` (mismo resultado, orden manual).
 
 **Lo que este entorno NO puede verificar:** el render nativo (mapa, cámara, sensores) de
 `passenger`/`driver` — requiere un dev-client o un dispositivo/emulador real (`expo start` +

@@ -29,7 +29,9 @@ export function StatusBadge({ label, tone }: StatusBadgeProps): React.JSX.Elemen
         paddingVertical: 4,
       }}
     >
-      <Text style={{ ...theme.typography.small, fontWeight: '700', color: palette.fg }}>{label}</Text>
+      <Text style={{ ...theme.typography.small, fontWeight: '700', color: palette.fg }}>
+        {label}
+      </Text>
     </View>
   );
 }

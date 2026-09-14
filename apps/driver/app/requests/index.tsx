@@ -60,9 +60,7 @@ export default function RequestsScreen(): React.JSX.Element {
       <ScreenHeader
         title="Solicitudes activas"
         right={
-          onShift && hasData ? (
-            <Chip label={String(sortedData.length)} tone="brand" />
-          ) : undefined
+          onShift && hasData ? <Chip label={String(sortedData.length)} tone="brand" /> : undefined
         }
       />
 
@@ -86,9 +84,7 @@ export default function RequestsScreen(): React.JSX.Element {
                   style={{ ...theme.typography.small, color: theme.colors.textMuted }}
                 >
                   Sin conexión · reintentando…
-                  {secondsSinceUpdate !== null
-                    ? ` Actualizado hace ${secondsSinceUpdate} s.`
-                    : ''}
+                  {secondsSinceUpdate !== null ? ` Actualizado hace ${secondsSinceUpdate} s.` : ''}
                 </Text>
               )}
               {offers.isLoading && <RequestListSkeleton />}

@@ -19,15 +19,7 @@ module.exports = {
     node: true,
     es2022: true,
   },
-  ignorePatterns: [
-    'node_modules',
-    'dist',
-    'coverage',
-    '.turbo',
-    '.expo',
-    '**/*.js',
-    '**/*.cjs',
-  ],
+  ignorePatterns: ['node_modules', 'dist', 'coverage', '.turbo', '.expo', '**/*.js', '**/*.cjs'],
   rules: {
     // Regla dura del proyecto.
     '@typescript-eslint/no-explicit-any': 'error',

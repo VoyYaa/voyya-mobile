@@ -76,7 +76,11 @@ export function OtpInput({
   }, [status, shakeAnim]);
 
   const digitColor =
-    status === 'error' ? theme.colors.danger : status === 'success' ? theme.colors.success : theme.colors.text;
+    status === 'error'
+      ? theme.colors.danger
+      : status === 'success'
+        ? theme.colors.success
+        : theme.colors.text;
 
   const boxes = Array.from({ length }, (_, index) => {
     const digit = value[index];
@@ -104,7 +108,9 @@ export function OtpInput({
           backgroundColor: theme.colors.surface,
         }}
       >
-        <Text style={{ ...theme.typography.numeric, fontSize: 24, color: digitColor }}>{digit ?? ''}</Text>
+        <Text style={{ ...theme.typography.numeric, fontSize: 24, color: digitColor }}>
+          {digit ?? ''}
+        </Text>
       </View>
     );
   });
@@ -118,7 +124,12 @@ export function OtpInput({
           flexDirection: 'row',
           gap: theme.spacing.sm as number,
           transform: [
-            { translateX: shakeAnim.interpolate({ inputRange: [-1, 0, 1], outputRange: [-6, 0, 6] }) },
+            {
+              translateX: shakeAnim.interpolate({
+                inputRange: [-1, 0, 1],
+                outputRange: [-6, 0, 6],
+              }),
+            },
           ],
         }}
       >

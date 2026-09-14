@@ -10,7 +10,13 @@ export interface BottomSheetProps {
   testID?: string;
 }
 
-export function BottomSheet({ visible, onClose, title, children, testID }: BottomSheetProps): React.JSX.Element {
+export function BottomSheet({
+  visible,
+  onClose,
+  title,
+  children,
+  testID,
+}: BottomSheetProps): React.JSX.Element {
   const theme = useTheme();
   const announcedTitle = useRef<string | undefined>(undefined);
 
@@ -25,13 +31,26 @@ export function BottomSheet({ visible, onClose, title, children, testID }: Botto
   }, [visible, title]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} testID={testID}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      testID={testID}
+    >
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Pressable
           accessibilityLabel="Cerrar"
           accessibilityRole="button"
           onPress={onClose}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+          }}
         />
         <View
           accessibilityViewIsModal
@@ -59,7 +78,11 @@ export function BottomSheet({ visible, onClose, title, children, testID }: Botto
           {title && (
             <Text
               accessibilityRole="header"
-              style={{ ...theme.typography.title, color: theme.colors.text, marginBottom: theme.spacing.sm }}
+              style={{
+                ...theme.typography.title,
+                color: theme.colors.text,
+                marginBottom: theme.spacing.sm,
+              }}
             >
               {title}
             </Text>

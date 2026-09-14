@@ -10,7 +10,12 @@ export interface ScreenHeaderProps {
   right?: React.ReactNode;
 }
 
-export function ScreenHeader({ title, onBack, hideBack = false, right }: ScreenHeaderProps): React.JSX.Element {
+export function ScreenHeader({
+  title,
+  onBack,
+  hideBack = false,
+  right,
+}: ScreenHeaderProps): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
   const handleBack = onBack ?? (() => router.back());
@@ -32,7 +37,12 @@ export function ScreenHeader({ title, onBack, hideBack = false, right }: ScreenH
             accessibilityLabel="Volver"
             onPress={handleBack}
             hitSlop={8}
-            style={{ width: theme.touch.min, height: theme.touch.min, alignItems: 'center', justifyContent: 'center' }}
+            style={{
+              width: theme.touch.min,
+              height: theme.touch.min,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
             <Text style={{ ...theme.typography.title, color: theme.colors.text }}>←</Text>
           </Pressable>
@@ -41,7 +51,12 @@ export function ScreenHeader({ title, onBack, hideBack = false, right }: ScreenH
       <Text
         accessibilityRole="header"
         numberOfLines={1}
-        style={{ ...theme.typography.subtitle, color: theme.colors.text, flex: 1, textAlign: 'center' }}
+        style={{
+          ...theme.typography.subtitle,
+          color: theme.colors.text,
+          flex: 1,
+          textAlign: 'center',
+        }}
       >
         {title}
       </Text>

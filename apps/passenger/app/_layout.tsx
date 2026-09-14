@@ -31,7 +31,9 @@ function RootStack(): React.JSX.Element {
     <>
       <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
       <ConnectivityBanner />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.bg } }} />
+      <Stack
+        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.bg } }}
+      />
     </>
   );
 }

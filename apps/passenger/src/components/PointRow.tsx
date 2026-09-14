@@ -14,7 +14,9 @@ export function PointRow({ marker, label, value, markerColor }: PointRowProps): 
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacing.sm }}>
-      <Text style={{ color: markerColor ?? theme.colors.text, fontSize: 16, lineHeight: 20 }}>{marker}</Text>
+      <Text style={{ color: markerColor ?? theme.colors.text, fontSize: 16, lineHeight: 20 }}>
+        {marker}
+      </Text>
       <View style={{ flex: 1 }}>
         <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>{label}</Text>
         <Text style={{ ...theme.typography.body, color: theme.colors.text }} numberOfLines={1}>

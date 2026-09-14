@@ -34,23 +34,44 @@ export function StatePanel({
       style={{ alignItems: 'center', padding: theme.spacing.xl, gap: theme.spacing.sm as number }}
     >
       {icon && (
-        <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ fontSize: 40 }}>
+        <Text
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={{ fontSize: 40 }}
+        >
           {icon}
         </Text>
       )}
-      <Text accessibilityRole="header" style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center' }}>
+      <Text
+        accessibilityRole="header"
+        style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center' }}
+      >
         {title}
       </Text>
       {body && (
-        <Text style={{ ...theme.typography.body, color: theme.colors.textMuted, textAlign: 'center' }}>{body}</Text>
+        <Text
+          style={{ ...theme.typography.body, color: theme.colors.textMuted, textAlign: 'center' }}
+        >
+          {body}
+        </Text>
       )}
       {(primaryAction || secondaryAction) && (
-        <View style={{ width: '100%', gap: theme.spacing.sm as number, marginTop: theme.spacing.md }}>
+        <View
+          style={{ width: '100%', gap: theme.spacing.sm as number, marginTop: theme.spacing.md }}
+        >
           {primaryAction && (
-            <Button label={primaryAction.label} onPress={primaryAction.onPress} variant={primaryAction.variant ?? 'primary'} />
+            <Button
+              label={primaryAction.label}
+              onPress={primaryAction.onPress}
+              variant={primaryAction.variant ?? 'primary'}
+            />
           )}
           {secondaryAction && (
-            <Button label={secondaryAction.label} onPress={secondaryAction.onPress} variant={secondaryAction.variant ?? 'ghost'} />
+            <Button
+              label={secondaryAction.label}
+              onPress={secondaryAction.onPress}
+              variant={secondaryAction.variant ?? 'ghost'}
+            />
           )}
         </View>
       )}

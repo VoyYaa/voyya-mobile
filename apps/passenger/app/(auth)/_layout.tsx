@@ -4,5 +4,9 @@ import { useTheme } from '@voyyaa/ui-mobile';
 
 export default function AuthLayout(): React.JSX.Element {
   const theme = useTheme();
-  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.bg } }} />;
+  return (
+    <Stack
+      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.bg } }}
+    />
+  );
 }

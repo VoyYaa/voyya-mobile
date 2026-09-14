@@ -9,7 +9,12 @@ export interface MapFallbackProps {
   testID?: string;
 }
 
-export function MapFallback({ label, height = 200, style, testID }: MapFallbackProps): React.JSX.Element {
+export function MapFallback({
+  label,
+  height = 200,
+  style,
+  testID,
+}: MapFallbackProps): React.JSX.Element {
   const theme = useTheme();
 
   return (

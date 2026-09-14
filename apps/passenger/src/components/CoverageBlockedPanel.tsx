@@ -6,7 +6,9 @@ export interface CoverageBlockedPanelProps {
   onAdjustLocation: () => void;
 }
 
-export function CoverageBlockedPanel({ onAdjustLocation }: CoverageBlockedPanelProps): React.JSX.Element {
+export function CoverageBlockedPanel({
+  onAdjustLocation,
+}: CoverageBlockedPanelProps): React.JSX.Element {
   const theme = useTheme();
 
   return (
@@ -21,10 +23,17 @@ export function CoverageBlockedPanel({ onAdjustLocation }: CoverageBlockedPanelP
         gap: theme.spacing.md,
       }}
     >
-      <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ fontSize: 40 }}>
+      <Text
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={{ fontSize: 40 }}
+      >
         📍
       </Text>
-      <Text accessibilityRole="header" style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center' }}>
+      <Text
+        accessibilityRole="header"
+        style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center' }}
+      >
         Tu ubicación actual está fuera de la zona de cobertura de Yarumal.
       </Text>
       <View style={{ width: '100%', marginTop: theme.spacing.md }}>

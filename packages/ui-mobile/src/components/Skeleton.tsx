@@ -10,7 +10,12 @@ export interface SkeletonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export function Skeleton({ width = '100%', height = 16, radius, style }: SkeletonProps): React.JSX.Element {
+export function Skeleton({
+  width = '100%',
+  height = 16,
+  radius,
+  style,
+}: SkeletonProps): React.JSX.Element {
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
   const pulse = useRef(new Animated.Value(0.35)).current;

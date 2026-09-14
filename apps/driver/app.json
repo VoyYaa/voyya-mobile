@@ -10,11 +10,7 @@
     "splash": {
       "backgroundColor": "#FBF6ED"
     },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store",
-      "@rnmapbox/maps/app.plugin.js"
-    ],
+    "plugins": ["expo-router", "expo-secure-store", "@rnmapbox/maps/app.plugin.js"],
     "android": {
       "package": "co.voyya.driver",
       "adaptiveIcon": {

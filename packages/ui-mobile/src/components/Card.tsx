@@ -11,7 +11,14 @@ export interface CardProps {
   testID?: string;
 }
 
-export function Card({ children, tone = 'surface', onPress, style, accessibilityLabel, testID }: CardProps): React.JSX.Element {
+export function Card({
+  children,
+  tone = 'surface',
+  onPress,
+  style,
+  accessibilityLabel,
+  testID,
+}: CardProps): React.JSX.Element {
   const theme = useTheme();
   const backgroundColor = tone === 'alt' ? theme.colors.surfaceAlt : theme.colors.surface;
 

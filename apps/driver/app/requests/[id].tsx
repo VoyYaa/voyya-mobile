@@ -67,9 +67,9 @@ export default function RequestDetailScreen(): React.JSX.Element {
   const queryClient = useQueryClient();
 
   const notification: AssignmentNotification | null = assignmentId
-    ? ((
-        queryClient.getQueryData<AssignmentNotification[]>(NEARBY_OFFERS_QUERY_KEY) ?? []
-      ).find((n) => n.assignment_id === assignmentId) ?? null)
+    ? ((queryClient.getQueryData<AssignmentNotification[]>(NEARBY_OFFERS_QUERY_KEY) ?? []).find(
+        (n) => n.assignment_id === assignmentId,
+      ) ?? null)
     : null;
 
   const [uiStatus, setUiStatus] = useState<UiStatus>('counting');
@@ -172,7 +172,9 @@ export default function RequestDetailScreen(): React.JSX.Element {
     Record<UiStatus, { message: string; tone: ToastTone; durationMs: number }>
   > = {
     accepted: {
-      message: acceptedResult ? `¡Aceptada! Vas hacia ${acceptedResult.passenger.name}.` : '¡Aceptada!',
+      message: acceptedResult
+        ? `¡Aceptada! Vas hacia ${acceptedResult.passenger.name}.`
+        : '¡Aceptada!',
       tone: 'success',
       durationMs: 800,
     },
@@ -256,11 +258,7 @@ export default function RequestDetailScreen(): React.JSX.Element {
                 ? 'Sin conexión · no pudimos enviar tu respuesta.'
                 : 'No pudimos procesar tu respuesta.'}
             </Text>
-            <Button
-              label="Reintentar"
-              onPress={retry}
-              style={{ marginTop: theme.spacing.sm }}
-            />
+            <Button label="Reintentar" onPress={retry} style={{ marginTop: theme.spacing.sm }} />
           </View>
         )}
 

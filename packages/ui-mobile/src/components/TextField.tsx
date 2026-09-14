@@ -56,14 +56,26 @@ export function TextField({
   const [revealed, setRevealed] = useState(false);
 
   const isNumeric = keyboardType === 'numeric';
-  const valueStyle = isNumeric ? { ...theme.typography.numeric, fontSize: 18 } : theme.typography.body;
+  const valueStyle = isNumeric
+    ? { ...theme.typography.numeric, fontSize: 18 }
+    : theme.typography.body;
 
-  const borderColor = error ? theme.colors.danger : focused ? theme.colors.brandPressed : theme.colors.border;
+  const borderColor = error
+    ? theme.colors.danger
+    : focused
+      ? theme.colors.brandPressed
+      : theme.colors.border;
   const borderWidth = focused || error ? 2 : 1;
 
   return (
     <View style={style}>
-      <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, marginBottom: theme.spacing.xs }}>
+      <Text
+        style={{
+          ...theme.typography.small,
+          color: theme.colors.textMuted,
+          marginBottom: theme.spacing.xs,
+        }}
+      >
         {label}
       </Text>
       <View
@@ -79,7 +91,9 @@ export function TextField({
           opacity: disabled ? 0.5 : 1,
         }}
       >
-        {leadingAdornment && <View style={{ marginRight: theme.spacing.sm }}>{leadingAdornment}</View>}
+        {leadingAdornment && (
+          <View style={{ marginRight: theme.spacing.sm }}>{leadingAdornment}</View>
+        )}
         <TextInput
           value={value}
           onChangeText={onChangeText}
@@ -119,7 +133,13 @@ export function TextField({
               justifyContent: 'center',
             }}
           >
-            <Text style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.brandPressed }}>
+            <Text
+              style={{
+                ...theme.typography.small,
+                fontWeight: '700',
+                color: theme.colors.brandPressed,
+              }}
+            >
               {revealed ? 'Ocultar' : 'Mostrar'}
             </Text>
           </Pressable>
@@ -128,7 +148,11 @@ export function TextField({
       {error && (
         <Text
           accessibilityRole="alert"
-          style={{ ...theme.typography.small, color: theme.colors.danger, marginTop: theme.spacing.xs }}
+          style={{
+            ...theme.typography.small,
+            color: theme.colors.danger,
+            marginTop: theme.spacing.xs,
+          }}
         >
           {error}
         </Text>

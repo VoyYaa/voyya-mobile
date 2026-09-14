@@ -28,5 +28,8 @@ export function cancelTripRequest(
   dto: CancelTripRequestDTO = {},
 ): Promise<TripRequestCancelled> {
   const body = CancelTripRequestDTO.parse(dto);
-  return apiRequest({ method: 'POST', path: `/trips/${tripRequestId}/cancel`, body }, TripRequestCancelled);
+  return apiRequest(
+    { method: 'POST', path: `/trips/${tripRequestId}/cancel`, body },
+    TripRequestCancelled,
+  );
 }

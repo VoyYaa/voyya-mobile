@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Typecheck, lint, build, format
+    runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Format check
+        run: pnpm run format:check
+
+      # No hay un paso "test": los scripts "test" de los 4 paquetes (apps/passenger,
+      # apps/driver, packages/ui-mobile, packages/shared) son stubs que solo
+      # imprimen un mensaje y salen con exit 0 — no ejecutan ningún test real.
+      # Añadir aquí un paso "pnpm run test" simularía una garantía de calidad
+      # inexistente. Este CI verifica lo que hoy sí se puede comprobar sin
+      # credenciales: typecheck, lint, build y format:check.
+      #
+      # "build" compila con tsc packages/shared y packages/ui-mobile (los únicos
+      # con script "build"); apps/passenger y apps/driver no declaran ese script
+      # y turbo los omite — el bundle nativo/Expo se genera vía EAS Build fuera
+      # de este CI, ya que requiere credenciales que no viven en este repo.

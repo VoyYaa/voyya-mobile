@@ -96,7 +96,11 @@ export const shadow = {
   } satisfies ViewStyle,
 } as const;
 
-const displayFamily = Platform.select({ ios: 'System', android: 'sans-serif-rounded', default: 'System' });
+const displayFamily = Platform.select({
+  ios: 'System',
+  android: 'sans-serif-rounded',
+  default: 'System',
+});
 const bodyFamily = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
 
 export const typography = {

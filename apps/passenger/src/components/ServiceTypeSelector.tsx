@@ -16,7 +16,11 @@ export interface ServiceTypeSelectorProps {
   onSelect: (type: ServiceType) => void;
 }
 
-export function ServiceTypeSelector({ options, selected, onSelect }: ServiceTypeSelectorProps): React.JSX.Element {
+export function ServiceTypeSelector({
+  options,
+  selected,
+  onSelect,
+}: ServiceTypeSelectorProps): React.JSX.Element {
   const theme = useTheme();
 
   return (
@@ -45,11 +49,22 @@ export function ServiceTypeSelector({ options, selected, onSelect }: ServiceType
             }}
           >
             <Text style={{ fontSize: 20 }}>{option.icon}</Text>
-            <Text style={{ ...theme.typography.small, fontWeight: '600', color: theme.colors.text, marginTop: 2 }}>
+            <Text
+              style={{
+                ...theme.typography.small,
+                fontWeight: '600',
+                color: theme.colors.text,
+                marginTop: 2,
+              }}
+            >
               {option.label}
             </Text>
             {!option.enabled && (
-              <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, fontSize: 10 }}>Pronto</Text>
+              <Text
+                style={{ ...theme.typography.small, color: theme.colors.textMuted, fontSize: 10 }}
+              >
+                Pronto
+              </Text>
             )}
           </Pressable>
         );

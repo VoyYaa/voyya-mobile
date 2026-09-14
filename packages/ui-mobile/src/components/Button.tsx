@@ -83,7 +83,11 @@ export function Button({
       ]}
     >
       {loading && (
-        <ActivityIndicator size="small" color={palette.fg} style={{ marginRight: theme.spacing.sm }} />
+        <ActivityIndicator
+          size="small"
+          color={palette.fg}
+          style={{ marginRight: theme.spacing.sm }}
+        />
       )}
       <Text style={{ ...theme.typography.button, color: palette.fg }} numberOfLines={1}>
         {loading && loadingLabel ? loadingLabel : label}

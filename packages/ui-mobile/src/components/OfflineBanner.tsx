@@ -16,7 +16,11 @@ const COPY: Record<OfflineBannerState, string> = {
   restored: 'Conexión restablecida',
 };
 
-export function OfflineBanner({ state, lastUpdatedLabel, onRetryNow }: OfflineBannerProps): React.JSX.Element {
+export function OfflineBanner({
+  state,
+  lastUpdatedLabel,
+  onRetryNow,
+}: OfflineBannerProps): React.JSX.Element {
   const theme = useTheme();
   const previousState = useRef<OfflineBannerState | null>(null);
 
@@ -58,8 +62,19 @@ export function OfflineBanner({ state, lastUpdatedLabel, onRetryNow }: OfflineBa
         )}
       </View>
       {!isRestored && onRetryNow && (
-        <Pressable accessibilityRole="button" accessibilityLabel="Reintentar ahora" hitSlop={8} onPress={onRetryNow}>
-          <Text style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.brandPressed }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Reintentar ahora"
+          hitSlop={8}
+          onPress={onRetryNow}
+        >
+          <Text
+            style={{
+              ...theme.typography.small,
+              fontWeight: '700',
+              color: theme.colors.brandPressed,
+            }}
+          >
             Reintentar ahora
           </Text>
         </Pressable>

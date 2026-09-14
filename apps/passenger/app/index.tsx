@@ -35,7 +35,9 @@ export default function HomeScreen(): React.JSX.Element {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+        >
           <Text style={{ ...theme.typography.title, color: theme.colors.brandPressed }}>VoyYa</Text>
           <Pressable
             accessibilityRole="button"
@@ -76,14 +78,30 @@ export default function HomeScreen(): React.JSX.Element {
             accessibilityLabel="¿A dónde vas? Toca para escribir tu destino"
             style={{ minHeight: theme.touch.min, justifyContent: 'center' }}
           >
-            <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>¿A dónde vas?</Text>
-            <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, marginTop: 4 }}>
+            <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
+              ¿A dónde vas?
+            </Text>
+            <Text
+              style={{ ...theme.typography.small, color: theme.colors.textMuted, marginTop: 4 }}
+            >
               Toca para escribir tu destino
             </Text>
           </Pressable>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, marginTop: theme.spacing.md }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: theme.spacing.sm,
+              marginTop: theme.spacing.md,
+            }}
+          >
             {SAVED_PLACES.map((place) => (
-              <Chip key={place.id} leading={place.icon} label={place.title} onPress={() => goToDestination(place.id)} />
+              <Chip
+                key={place.id}
+                leading={place.icon}
+                label={place.title}
+                onPress={() => goToDestination(place.id)}
+              />
             ))}
           </View>
         </Card>

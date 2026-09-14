@@ -30,10 +30,15 @@ export function DriverCard({ driver }: DriverCardProps): React.JSX.Element {
             justifyContent: 'center',
           }}
         >
-          <Text style={{ ...theme.typography.title, color: theme.colors.text }}>{driver.name.charAt(0)}</Text>
+          <Text style={{ ...theme.typography.title, color: theme.colors.text }}>
+            {driver.name.charAt(0)}
+          </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }} numberOfLines={1}>
+          <Text
+            style={{ ...theme.typography.subtitle, color: theme.colors.text }}
+            numberOfLines={1}
+          >
             {driver.name}
           </Text>
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
@@ -48,7 +53,9 @@ export function DriverCard({ driver }: DriverCardProps): React.JSX.Element {
             paddingVertical: 4,
           }}
         >
-          <Text style={{ ...theme.typography.numeric, fontSize: 14, color: theme.colors.onBrand }}>{driver.plate}</Text>
+          <Text style={{ ...theme.typography.numeric, fontSize: 14, color: theme.colors.onBrand }}>
+            {driver.plate}
+          </Text>
         </View>
       </View>
       <View style={{ marginTop: theme.spacing.md }}>

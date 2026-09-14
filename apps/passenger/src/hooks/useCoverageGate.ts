@@ -18,7 +18,12 @@ export function useCoverageGate(origin: Location, municipalityId: number): Cover
     let current = true;
     setStatus('checking');
 
-    quoteFare({ origin, destination: origin, municipality_id: municipalityId, service_type: 'taxi' })
+    quoteFare({
+      origin,
+      destination: origin,
+      municipality_id: municipalityId,
+      service_type: 'taxi',
+    })
       .then(() => {
         if (current) setStatus('within');
       })

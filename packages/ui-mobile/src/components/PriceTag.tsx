@@ -13,14 +13,24 @@ export interface PriceTagProps {
 
 const SIZE_FONT: Record<NonNullable<PriceTagProps['size']>, number> = { sm: 15, md: 20, lg: 32 };
 
-export function PriceTag({ amountCOP, size = 'md', color, style, accessibilityLabel }: PriceTagProps): React.JSX.Element {
+export function PriceTag({
+  amountCOP,
+  size = 'md',
+  color,
+  style,
+  accessibilityLabel,
+}: PriceTagProps): React.JSX.Element {
   const theme = useTheme();
   const text = formatCOP(amountCOP);
 
   return (
     <Text
       accessibilityLabel={accessibilityLabel ?? `${text} pesos`}
-      style={[theme.typography.numeric, { fontSize: SIZE_FONT[size], color: color ?? theme.colors.text }, style]}
+      style={[
+        theme.typography.numeric,
+        { fontSize: SIZE_FONT[size], color: color ?? theme.colors.text },
+        style,
+      ]}
     >
       {text}
     </Text>

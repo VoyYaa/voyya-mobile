@@ -9,7 +9,10 @@ interface MapErrorBoundaryState {
   hasError: boolean;
 }
 
-export class MapErrorBoundary extends React.Component<MapErrorBoundaryProps, MapErrorBoundaryState> {
+export class MapErrorBoundary extends React.Component<
+  MapErrorBoundaryProps,
+  MapErrorBoundaryState
+> {
   override state: MapErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError(): MapErrorBoundaryState {

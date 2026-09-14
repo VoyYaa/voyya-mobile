@@ -48,7 +48,9 @@ export default function DriverAssignedScreen(): React.JSX.Element {
   }, [data, markAssignedLocal]);
 
   const deadlineIso = assignedAtLocal
-    ? new Date(new Date(assignedAtLocal).getTime() + FREE_CANCELLATION_WINDOW_MIN * 60_000).toISOString()
+    ? new Date(
+        new Date(assignedAtLocal).getTime() + FREE_CANCELLATION_WINDOW_MIN * 60_000,
+      ).toISOString()
     : null;
   const remainingSec = useCountdown(deadlineIso);
   const withinWindow = deadlineIso !== null && remainingSec > 0;
@@ -56,7 +58,11 @@ export default function DriverAssignedScreen(): React.JSX.Element {
   if (!tripRequestId) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ErrorState title="No encontramos tu viaje" onRetry={() => router.replace('/')} retryLabel="Volver al inicio" />
+        <ErrorState
+          title="No encontramos tu viaje"
+          onRetry={() => router.replace('/')}
+          retryLabel="Volver al inicio"
+        />
       </SafeAreaView>
     );
   }
@@ -75,7 +81,9 @@ export default function DriverAssignedScreen(): React.JSX.Element {
       onSuccess: (result) => {
         setSheetVisible(false);
         setToast({
-          message: result.free_of_charge ? 'Cancelaste sin costo.' : 'Viaje cancelado · quedó registrado.',
+          message: result.free_of_charge
+            ? 'Cancelaste sin costo.'
+            : 'Viaje cancelado · quedó registrado.',
           tone: result.free_of_charge ? 'success' : 'neutral',
         });
         resetDraft();
@@ -99,14 +107,21 @@ export default function DriverAssignedScreen(): React.JSX.Element {
           />
         ) : data?.status === 'in_progress' ? (
           <Text
-            style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center', marginTop: theme.spacing.xl }}
+            style={{
+              ...theme.typography.title,
+              color: theme.colors.text,
+              textAlign: 'center',
+              marginTop: theme.spacing.xl,
+            }}
           >
             Tu viaje está en curso
           </Text>
         ) : (
           <>
             <View>
-              <Text style={{ ...theme.typography.title, color: theme.colors.text }}>Tu conductor va en camino</Text>
+              <Text style={{ ...theme.typography.title, color: theme.colors.text }}>
+                Tu conductor va en camino
+              </Text>
               {withinWindow && (
                 <View style={{ marginTop: theme.spacing.sm, alignSelf: 'flex-start' }}>
                   <Chip tone="success" label={`Cancelación gratis · ${formatMMSS(remainingSec)}`} />
@@ -116,10 +131,23 @@ export default function DriverAssignedScreen(): React.JSX.Element {
 
             {origin && destination && (
               <Map
-                center={{ lat: (origin.lat + destination.lat) / 2, lng: (origin.lng + destination.lng) / 2 }}
+                center={{
+                  lat: (origin.lat + destination.lat) / 2,
+                  lng: (origin.lng + destination.lng) / 2,
+                }}
                 markers={[
-                  { id: 'origin', kind: 'origin', coord: origin, label: `Origen: ${origin.address}` },
-                  { id: 'destination', kind: 'destination', coord: destination, label: `Destino: ${destination.address}` },
+                  {
+                    id: 'origin',
+                    kind: 'origin',
+                    coord: origin,
+                    label: `Origen: ${origin.address}`,
+                  },
+                  {
+                    id: 'destination',
+                    kind: 'destination',
+                    coord: destination,
+                    label: `Destino: ${destination.address}`,
+                  },
                 ]}
                 route={{ points: [origin, destination] }}
                 interactive={false}
@@ -138,7 +166,11 @@ export default function DriverAssignedScreen(): React.JSX.Element {
                 label="Cancelar viaje"
                 variant="ghost"
                 disabled={networkStatus === 'offline'}
-                accessibilityHint={networkStatus === 'offline' ? 'Sin conexión, no se puede cancelar ahora' : undefined}
+                accessibilityHint={
+                  networkStatus === 'offline'
+                    ? 'Sin conexión, no se puede cancelar ahora'
+                    : undefined
+                }
                 onPress={() => setSheetVisible(true)}
               />
             </View>

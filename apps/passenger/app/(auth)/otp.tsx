@@ -73,7 +73,11 @@ function ResendArea({
     return (
       <View
         accessibilityRole="alert"
-        style={{ backgroundColor: theme.colors.surfaceAlt, borderRadius: theme.radius.card, padding: theme.spacing.lg }}
+        style={{
+          backgroundColor: theme.colors.surfaceAlt,
+          borderRadius: theme.radius.card,
+          padding: theme.spacing.lg,
+        }}
       >
         <Text style={{ ...theme.typography.small, color: theme.colors.text }}>
           {rateLimitTimeKnown
@@ -87,7 +91,9 @@ function ResendArea({
   if (canResend) {
     return (
       <Pressable accessibilityRole="link" hitSlop={12} onPress={onResend}>
-        <Text style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.brandPressed }}>
+        <Text
+          style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.brandPressed }}
+        >
           {resending ? 'Reenviando…' : 'Reenviar código'}
         </Text>
       </Pressable>
@@ -197,7 +203,9 @@ export default function OtpScreen(): React.JSX.Element {
           if (domainErrorCode(error) === 'OTP_RATE_LIMIT') {
             const sec = retryInSecOf(error);
             setRateLimitTimeKnown(sec !== undefined);
-            setRateLimitDeadline(new Date(Date.now() + (sec ?? RATE_LIMIT_FALLBACK_SEC) * 1000).toISOString());
+            setRateLimitDeadline(
+              new Date(Date.now() + (sec ?? RATE_LIMIT_FALLBACK_SEC) * 1000).toISOString(),
+            );
           }
         },
       },
@@ -209,10 +217,18 @@ export default function OtpScreen(): React.JSX.Element {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <ScreenHeader title="Verificación" />
-      <View style={{ padding: theme.spacing.lg, gap: theme.spacing.lg as number, alignItems: 'flex-start' }}>
+      <View
+        style={{
+          padding: theme.spacing.lg,
+          gap: theme.spacing.lg as number,
+          alignItems: 'flex-start',
+        }}
+      >
         <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
           Enviamos un código de 4 dígitos a{' '}
-          <Text style={{ fontWeight: '700', color: theme.colors.text }}>{maskPhone(params.phone ?? '')}</Text>
+          <Text style={{ fontWeight: '700', color: theme.colors.text }}>
+            {maskPhone(params.phone ?? '')}
+          </Text>
         </Text>
 
         <OtpInput
@@ -226,21 +242,32 @@ export default function OtpScreen(): React.JSX.Element {
         />
 
         {outcome === 'verifying' && (
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>Verificando código…</Text>
+          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+            Verificando código…
+          </Text>
         )}
         {outcome === 'incorrect' && (
-          <Text accessibilityRole="alert" style={{ ...theme.typography.small, color: theme.colors.danger }}>
+          <Text
+            accessibilityRole="alert"
+            style={{ ...theme.typography.small, color: theme.colors.danger }}
+          >
             Código incorrecto. Inténtalo de nuevo.
           </Text>
         )}
         {outcome === 'expired' && (
-          <Text accessibilityRole="alert" style={{ ...theme.typography.small, color: theme.colors.danger }}>
+          <Text
+            accessibilityRole="alert"
+            style={{ ...theme.typography.small, color: theme.colors.danger }}
+          >
             Este código venció. Solicita uno nuevo.
           </Text>
         )}
         {outcome === 'offline' && (
           <View style={{ gap: theme.spacing.sm as number }}>
-            <Text accessibilityRole="alert" style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+            <Text
+              accessibilityRole="alert"
+              style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+            >
               Sin conexión · no pudimos verificar tu código.
             </Text>
             <Button label="Reintentar" variant="ghost" onPress={handleRetry} />
@@ -258,7 +285,12 @@ export default function OtpScreen(): React.JSX.Element {
         />
       </View>
 
-      <Toast message="Código reenviado." tone="success" visible={toastVisible} onHide={() => setToastVisible(false)} />
+      <Toast
+        message="Código reenviado."
+        tone="success"
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+      />
     </SafeAreaView>
   );
 }

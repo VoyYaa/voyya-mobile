@@ -52,9 +52,13 @@ export default function PhoneScreen(): React.JSX.Element {
           if (domainErrorCode(error) === 'OTP_RATE_LIMIT') {
             const sec = retryInSecOf(error);
             setRateLimitTimeKnown(sec !== undefined);
-            setRateLimitDeadline(new Date(Date.now() + (sec ?? RATE_LIMIT_FALLBACK_SEC) * 1000).toISOString());
+            setRateLimitDeadline(
+              new Date(Date.now() + (sec ?? RATE_LIMIT_FALLBACK_SEC) * 1000).toISOString(),
+            );
           } else {
-            setErrorInline('Ese número no parece válido. Verifica que sean 10 dígitos de un celular.');
+            setErrorInline(
+              'Ese número no parece válido. Verifica que sean 10 dígitos de un celular.',
+            );
           }
         },
       },
@@ -77,7 +81,9 @@ export default function PhoneScreen(): React.JSX.Element {
           keyboardType="numeric"
           maxLength={10}
           disabled={requestOtp.isPending || isRateLimited}
-          leadingAdornment={<Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>+57</Text>}
+          leadingAdornment={
+            <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>+57</Text>
+          }
           error={errorInline}
           autoComplete="tel"
           textContentType="telephoneNumber"
@@ -94,7 +100,9 @@ export default function PhoneScreen(): React.JSX.Element {
               gap: theme.spacing.xs as number,
             }}
           >
-            <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>Ya pediste varios códigos</Text>
+            <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
+              Ya pediste varios códigos
+            </Text>
             <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
               {rateLimitTimeKnown
                 ? `Por seguridad, espera ${formatMMSS(rateLimitRemaining)} antes de solicitar uno nuevo.`
@@ -108,7 +116,9 @@ export default function PhoneScreen(): React.JSX.Element {
             disabled={!isFormatValid || offline}
             loading={requestOtp.isPending}
             loadingLabel="Enviando…"
-            accessibilityHint={offline ? 'Sin conexión, no se puede enviar el código ahora' : undefined}
+            accessibilityHint={
+              offline ? 'Sin conexión, no se puede enviar el código ahora' : undefined
+            }
             testID="enviar-codigo-button"
           />
         )}
