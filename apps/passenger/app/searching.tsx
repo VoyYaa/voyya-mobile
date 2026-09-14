@@ -9,17 +9,17 @@ import {
   ErrorState,
   Map,
   PriceTag,
+  ScreenHeader,
   Toast,
   useTheme,
 } from '@voyyaa/ui-mobile';
-import { ScreenHeader } from '../src/components/ScreenHeader';
+import { useNetworkStatus } from '@voyyaa/app-runtime';
 import { RadarSearch } from '../src/components/RadarSearch';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
 import { useTripSocket } from '../src/hooks/useTripSocket';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useCreateTripRequest } from '../src/hooks/useCreateTripRequest';
-import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { PROLONGED_SEARCH_THRESHOLD_SEC } from '../src/constants/parameters';
 
@@ -115,7 +115,7 @@ export default function SearchingScreen(): React.JSX.Element {
   if (isError) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title=" " hideBack />
+        <ScreenHeader title=" " />
         <ErrorState title="No pudimos ver el estado de tu viaje" onRetry={() => refetch()} />
       </SafeAreaView>
     );
@@ -124,7 +124,7 @@ export default function SearchingScreen(): React.JSX.Element {
   if (data?.ui === 'no_driver') {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title=" " hideBack />
+        <ScreenHeader title=" " />
         <EmptyState
           icon="🕐"
           title="No hay taxis disponibles ahora"
@@ -144,7 +144,7 @@ export default function SearchingScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title=" " hideBack />
+      <ScreenHeader title=" " />
       <View
         style={{ flex: 1, alignItems: 'center', padding: theme.spacing.xl, gap: theme.spacing.md }}
       >

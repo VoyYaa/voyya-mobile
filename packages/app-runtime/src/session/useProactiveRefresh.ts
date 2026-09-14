@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { tryRefreshSession, useSessionStore } from '../state/useSessionStore';
+import { tryRefreshSession, useSessionStore } from './useSessionStore';
 
 const PROACTIVE_MARGIN_MS = 60_000;
 

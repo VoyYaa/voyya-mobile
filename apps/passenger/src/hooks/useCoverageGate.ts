@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Location } from '@voyyaa/shared';
 import { quoteFare } from '../api/trips.api';
-import { domainErrorCode, isNetworkError } from '../api/errors';
+import { domainErrorCode, isNetworkError } from '@voyyaa/app-runtime';
 
 export type CoverageGateStatus = 'checking' | 'within' | 'outside' | 'error';
 

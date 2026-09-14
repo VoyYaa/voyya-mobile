@@ -1,6 +1,6 @@
 import React from 'react';
 import { OfflineBanner } from '@voyyaa/ui-mobile';
-import { useConnectivityBanner } from '../hooks/useConnectivityBanner';
+import { useConnectivityBanner } from './useConnectivityBanner';
 
 export function ConnectivityBanner(): React.JSX.Element | null {
   const banner = useConnectivityBanner();

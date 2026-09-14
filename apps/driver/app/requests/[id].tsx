@@ -9,21 +9,21 @@ import {
   type CountdownRingStatus,
   ErrorState,
   Map,
+  PointRow,
+  ScreenHeader,
   Toast,
   type ToastTone,
+  useCountdown,
   useReducedMotion,
   useTheme,
 } from '@voyyaa/ui-mobile';
+import { isNetworkError } from '@voyyaa/app-runtime';
 import type { AssignmentNotification } from '@voyyaa/shared';
-import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { PassengerSummaryRow } from '../../src/components/PassengerSummaryRow';
-import { PointRow } from '../../src/components/PointRow';
 import { ActionButtonPair } from '../../src/components/ActionButtonPair';
 import { useAcceptAssignment } from '../../src/hooks/useAcceptAssignment';
 import { useRejectAssignment } from '../../src/hooks/useRejectAssignment';
-import { useCountdown } from '../../src/hooks/useCountdown';
 import { NEARBY_OFFERS_QUERY_KEY } from '../../src/hooks/useNearbyOffers';
-import { isNetworkError } from '../../src/api/errors';
 import { COUNTDOWN_WARN_THRESHOLD_SEC } from '../../src/constants/parameters';
 
 type UiStatus =
@@ -156,7 +156,7 @@ export default function RequestDetailScreen(): React.JSX.Element {
   if (!assignmentId || !notification) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Solicitud" />
+        <ScreenHeader title="Solicitud" onBack={() => router.back()} />
         <ErrorState
           title="No encontramos esta solicitud"
           body="Puede que ya haya expirado o que la lista se haya actualizado."
@@ -200,7 +200,10 @@ export default function RequestDetailScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title="Nueva solicitud" hideBack={uiStatus === 'counting'} />
+      <ScreenHeader
+        title="Nueva solicitud"
+        onBack={uiStatus === 'counting' ? undefined : () => router.back()}
+      />
       <ScrollView
         contentContainerStyle={{
           padding: theme.spacing.lg,

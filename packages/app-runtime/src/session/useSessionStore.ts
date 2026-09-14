@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import type { SessionResponse, SessionTokens, SessionUser } from '@voyyaa/shared';
 import { configureAuthHandlers } from '../api/http-client';
-import { refreshSession } from '../api/auth.api';
+import { refreshSession } from '../api/session.api';
 import {
   clearPersistedSession,
   readPersistedSession,
   saveSession,
   updatePersistedTokens,
-} from '../lib/secure-storage';
+} from './secure-storage';
 
 export type SessionStatus = 'hydrating' | 'authenticated' | 'guest';
 

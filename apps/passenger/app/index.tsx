@@ -3,9 +3,9 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Chip, ErrorState, Map, useTheme } from '@voyyaa/ui-mobile';
+import { useLogout } from '@voyyaa/app-runtime';
 import { CoverageBlockedPanel } from '../src/components/CoverageBlockedPanel';
 import { useCoverageGate } from '../src/hooks/useCoverageGate';
-import { useLogout } from '../src/hooks/useLogout';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { CURRENT_LOCATION_MOCK, SAVED_PLACES } from '../src/constants/demo-places';
 

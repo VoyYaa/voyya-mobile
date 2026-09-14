@@ -2,13 +2,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, type Socket } from 'socket.io-client';
 import { ASSIGNMENT_EVENTS, TRIPS_EVENTS } from '@voyyaa/shared';
-
-const DEFAULT_BASE_URL = 'http://localhost:3000';
-
-function resolveSocketUrl(): string {
-  const fromEnv = process.env.EXPO_PUBLIC_API_URL;
-  return fromEnv && fromEnv.length > 0 ? fromEnv : DEFAULT_BASE_URL;
-}
+import { getApiBaseUrl } from '@voyyaa/app-runtime';
 
 const RELEVANT_EVENTS: readonly string[] = [
   TRIPS_EVENTS.TRIP_REQUEST_NO_DRIVER,
@@ -23,7 +17,7 @@ export function useTripSocket(tripRequestId: number | null, enabled = true): voi
   useEffect(() => {
     if (!enabled || tripRequestId === null) return;
 
-    const socket: Socket = io(resolveSocketUrl(), {
+    const socket: Socket = io(getApiBaseUrl(), {
       transports: ['websocket'],
       reconnection: true,
     });

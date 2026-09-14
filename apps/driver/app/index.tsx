@@ -3,12 +3,12 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, ErrorState, useTheme } from '@voyyaa/ui-mobile';
+import { useLogout } from '@voyyaa/app-runtime';
 import { ShiftToggle } from '../src/components/ShiftToggle';
 import { AssignmentRulesCard } from '../src/components/AssignmentRulesCard';
 import { OffShiftPanel } from '../src/components/OffShiftPanel';
 import { RequestRow } from '../src/components/RequestRow';
 import { RequestListSkeleton } from '../src/components/RequestListSkeleton';
-import { useLogout } from '../src/hooks/useLogout';
 import { useShiftStore } from '../src/state/useShiftStore';
 import { useNearbyOffers } from '../src/hooks/useNearbyOffers';
 import {

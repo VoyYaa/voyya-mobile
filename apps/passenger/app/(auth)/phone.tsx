@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, TextField, useTheme } from '@voyyaa/ui-mobile';
-import { ScreenHeader } from '../../src/components/ScreenHeader';
+import { Button, ScreenHeader, TextField, useCountdown, useTheme } from '@voyyaa/ui-mobile';
+import { domainErrorCode, retryInSecOf, useNetworkStatus } from '@voyyaa/app-runtime';
 import { useRequestOtp } from '../../src/hooks/useRequestOtp';
-import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
-import { useCountdown } from '../../src/hooks/useCountdown';
-import { domainErrorCode, retryInSecOf } from '../../src/api/errors';
 
 function formatMMSS(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
@@ -67,7 +64,7 @@ export default function PhoneScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title="Ingresar" hideBack />
+      <ScreenHeader title="Ingresar" />
       <View style={{ padding: theme.spacing.lg, gap: theme.spacing.lg as number }}>
         <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
           Te enviaremos un código por SMS para confirmar tu número.

@@ -2,13 +2,23 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, OtpInput, Toast, useTheme, type OtpInputStatus } from '@voyyaa/ui-mobile';
-import { ScreenHeader } from '../../src/components/ScreenHeader';
+import {
+  Button,
+  OtpInput,
+  ScreenHeader,
+  Toast,
+  useCountdown,
+  useTheme,
+  type OtpInputStatus,
+} from '@voyyaa/ui-mobile';
+import {
+  domainErrorCode,
+  isNetworkError,
+  retryInSecOf,
+  useSessionStore,
+} from '@voyyaa/app-runtime';
 import { useVerifyOtp } from '../../src/hooks/useVerifyOtp';
 import { useRequestOtp } from '../../src/hooks/useRequestOtp';
-import { useCountdown } from '../../src/hooks/useCountdown';
-import { useSessionStore } from '../../src/state/useSessionStore';
-import { domainErrorCode, isNetworkError, retryInSecOf } from '../../src/api/errors';
 
 type VerifyOutcome = 'idle' | 'verifying' | 'incorrect' | 'expired' | 'offline' | 'success';
 
@@ -216,7 +226,7 @@ export default function OtpScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title="Verificación" />
+      <ScreenHeader title="Verificación" onBack={() => router.back()} />
       <View
         style={{
           padding: theme.spacing.lg,

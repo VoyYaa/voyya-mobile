@@ -5,13 +5,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button, ErrorState, Map, StatusBadge, useTheme, type MapLatLng } from '@voyyaa/ui-mobile';
-import { ScreenHeader } from '../src/components/ScreenHeader';
-import { PointRow } from '../src/components/PointRow';
+import {
+  Button,
+  ErrorState,
+  Map,
+  PointRow,
+  ScreenHeader,
+  StatusBadge,
+  useTheme,
+  type MapLatLng,
+} from '@voyyaa/ui-mobile';
+import { domainErrorCode, isNetworkError, useNetworkStatus } from '@voyyaa/app-runtime';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
-import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
-import { domainErrorCode, isNetworkError } from '../src/api/errors';
 import {
   CURRENT_LOCATION_MOCK,
   DESTINATION_SUGGESTIONS,
@@ -108,7 +114,7 @@ export default function DestinationScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title="Tu viaje" />
+      <ScreenHeader title="Tu viaje" onBack={() => router.back()} />
       <View style={{ paddingHorizontal: theme.spacing.lg, gap: theme.spacing.sm }}>
         <PointRow marker="●" label="Origen" value={CURRENT_LOCATION_MOCK.address} />
         <PointRow

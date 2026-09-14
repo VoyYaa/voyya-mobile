@@ -2,16 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, FlatList, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Chip, EmptyState, ErrorState, useTheme } from '@voyyaa/ui-mobile';
+import { Chip, EmptyState, ErrorState, ScreenHeader, useTheme } from '@voyyaa/ui-mobile';
+import { useNetworkStatus } from '@voyyaa/app-runtime';
 import type { AssignmentNotification } from '@voyyaa/shared';
-import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { OffShiftPanel } from '../../src/components/OffShiftPanel';
 import { RequestRow } from '../../src/components/RequestRow';
 import { RequestListSkeleton } from '../../src/components/RequestListSkeleton';
 import { AssignmentRulesCard } from '../../src/components/AssignmentRulesCard';
 import { useShiftStore } from '../../src/state/useShiftStore';
 import { useNearbyOffers } from '../../src/hooks/useNearbyOffers';
-import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import {
   SEARCH_RADIUS_FALLBACK_KM,
   ACCEPTANCE_TIMEOUT_FALLBACK_SEC,
@@ -59,6 +58,7 @@ export default function RequestsScreen(): React.JSX.Element {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <ScreenHeader
         title="Solicitudes activas"
+        onBack={() => router.back()}
         right={
           onShift && hasData ? <Chip label={String(sortedData.length)} tone="brand" /> : undefined
         }

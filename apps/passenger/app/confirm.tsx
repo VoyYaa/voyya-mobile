@@ -2,17 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, ErrorState, Map, PriceTag, Skeleton, useTheme } from '@voyyaa/ui-mobile';
+import {
+  Button,
+  Card,
+  ErrorState,
+  Map,
+  PointRow,
+  PriceTag,
+  ScreenHeader,
+  Skeleton,
+  useTheme,
+} from '@voyyaa/ui-mobile';
 import type { PaymentMethod, ServiceType } from '@voyyaa/shared';
-import { ScreenHeader } from '../src/components/ScreenHeader';
-import { PointRow } from '../src/components/PointRow';
+import { domainErrorCode, useNetworkStatus } from '@voyyaa/app-runtime';
 import { ServiceTypeSelector, type ServiceTypeOption } from '../src/components/ServiceTypeSelector';
 import { PaymentMethodList, type PaymentMethodOption } from '../src/components/PaymentMethodList';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useCreateTripRequest } from '../src/hooks/useCreateTripRequest';
-import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
-import { domainErrorCode } from '../src/api/errors';
 
 const SERVICE_OPTIONS: readonly ServiceTypeOption[] = [
   { type: 'taxi', label: 'Estándar', icon: '🚗', enabled: true },
@@ -104,7 +111,7 @@ export default function ConfirmScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title="Confirmar viaje" />
+      <ScreenHeader title="Confirmar viaje" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
         <View style={{ gap: theme.spacing.sm }}>
           <PointRow marker="●" label="Origen" value={origin.address} />

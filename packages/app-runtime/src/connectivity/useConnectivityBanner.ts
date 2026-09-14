@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 import type { OfflineBannerState } from '@voyyaa/ui-mobile';
 import { useNetworkStatus } from './useNetworkStatus';
-import { CONNECTIVITY_RETRY_INTERVAL_SEC } from '../constants/parameters';
 
 const RESTORED_AUTOHIDE_MS = 2500;
+
+export const CONNECTIVITY_RETRY_INTERVAL_SEC = 15;
 
 export interface ConnectivityBanner {
   visible: boolean;
@@ -41,5 +42,3 @@ export function useConnectivityBanner(): ConnectivityBanner {
     },
   };
 }
-
-export { CONNECTIVITY_RETRY_INTERVAL_SEC };

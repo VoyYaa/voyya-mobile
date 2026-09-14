@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { useTheme } from '@voyyaa/ui-mobile';
+import { useTheme } from '../theme';
 
 export interface PointRowProps {
   marker: '●' | '▼';

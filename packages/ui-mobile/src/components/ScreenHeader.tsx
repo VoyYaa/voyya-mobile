@@ -1,24 +1,15 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useTheme } from '@voyyaa/ui-mobile';
-import { useRouter } from 'expo-router';
+import { useTheme } from '../theme';
 
 export interface ScreenHeaderProps {
   title: string;
   onBack?: () => void;
-  hideBack?: boolean;
   right?: React.ReactNode;
 }
 
-export function ScreenHeader({
-  title,
-  onBack,
-  hideBack = false,
-  right,
-}: ScreenHeaderProps): React.JSX.Element {
+export function ScreenHeader({ title, onBack, right }: ScreenHeaderProps): React.JSX.Element {
   const theme = useTheme();
-  const router = useRouter();
-  const handleBack = onBack ?? (() => router.back());
 
   return (
     <View
@@ -31,11 +22,11 @@ export function ScreenHeader({
       }}
     >
       <View style={{ width: theme.touch.min }}>
-        {!hideBack && (
+        {onBack !== undefined && (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Volver"
-            onPress={handleBack}
+            onPress={onBack}
             hitSlop={8}
             style={{
               width: theme.touch.min,

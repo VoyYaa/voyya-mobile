@@ -5,11 +5,18 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from '@voyyaa/ui-mobile';
-import { createQueryClient } from '../src/lib/query-client';
-import { ConnectivityBanner } from '../src/components/ConnectivityBanner';
-import { useSessionStore } from '../src/state/useSessionStore';
+import { TripError } from '@voyyaa/shared';
+import {
+  configureApiClient,
+  createQueryClient,
+  ConnectivityBanner,
+  useSessionStore,
+  useProactiveRefresh,
+} from '@voyyaa/app-runtime';
 import { useRouteGuard } from '../src/hooks/useRouteGuard';
-import { useProactiveRefresh } from '../src/hooks/useProactiveRefresh';
+import { API_BASE_URL } from '../src/constants/env';
+
+configureApiClient({ baseUrl: API_BASE_URL, defaultErrorSchema: TripError });
 
 function RootStack(): React.JSX.Element {
   const theme = useTheme();

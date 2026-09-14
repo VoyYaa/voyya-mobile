@@ -6,8 +6,7 @@ import {
   AssignmentNotification,
   RejectAssignmentDTO,
 } from '@voyyaa/shared';
-import { apiRequest, buildAuthHeader, resolveBaseUrl } from './http-client';
-import { ApiError } from './errors';
+import { apiRequest, buildAuthHeader, getApiBaseUrl, ApiError } from '@voyyaa/app-runtime';
 import { ACTION_RESPONSE_TIMEOUT_MS } from '../constants/parameters';
 
 export async function acceptAssignment(
@@ -20,7 +19,7 @@ export async function acceptAssignment(
 
   let res: Response;
   try {
-    res = await fetch(`${resolveBaseUrl()}/assignments/${assignmentId}/accept`, {
+    res = await fetch(`${getApiBaseUrl()}/assignments/${assignmentId}/accept`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...buildAuthHeader() },
       body: JSON.stringify(body),

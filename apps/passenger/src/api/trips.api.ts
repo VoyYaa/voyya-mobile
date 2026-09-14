@@ -7,7 +7,7 @@ import {
   TripRequestCreated,
   TripRequestStatus,
 } from '@voyyaa/shared';
-import { apiRequest } from './http-client';
+import { apiRequest } from '@voyyaa/app-runtime';
 
 export function quoteFare(dto: QuoteFareDTO): Promise<QuoteResponse> {
   const body = QuoteFareDTO.parse(dto);

@@ -3,15 +3,23 @@ import { Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { isTerminalTripStatus } from '@voyyaa/shared';
-import { Button, Chip, ErrorState, Map, Skeleton, Toast, useTheme } from '@voyyaa/ui-mobile';
-import { ScreenHeader } from '../src/components/ScreenHeader';
+import {
+  Button,
+  Chip,
+  ErrorState,
+  Map,
+  ScreenHeader,
+  Skeleton,
+  Toast,
+  useCountdown,
+  useTheme,
+} from '@voyyaa/ui-mobile';
+import { useNetworkStatus } from '@voyyaa/app-runtime';
 import { DriverCard } from '../src/components/DriverCard';
 import { CancelConfirmSheet } from '../src/components/CancelConfirmSheet';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
 import { useTripSocket } from '../src/hooks/useTripSocket';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
-import { useCountdown } from '../src/hooks/useCountdown';
-import { useNetworkStatus } from '../src/hooks/useNetworkStatus';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { FREE_CANCELLATION_WINDOW_MIN } from '../src/constants/parameters';
 
@@ -70,7 +78,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
   if (isError) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Tu viaje" hideBack />
+        <ScreenHeader title="Tu viaje" />
         <ErrorState title="No pudimos ver el estado de tu viaje" onRetry={() => refetch()} />
       </SafeAreaView>
     );
@@ -96,7 +104,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title="Tu viaje" hideBack />
+      <ScreenHeader title="Tu viaje" />
       <View style={{ flex: 1, padding: theme.spacing.lg, gap: theme.spacing.md }}>
         {isTerminal ? (
           <ErrorState

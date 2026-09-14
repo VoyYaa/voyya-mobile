@@ -41,6 +41,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.51.0
         version: 5.101.2(react@18.2.0)
+      '@voyyaa/app-runtime':
+        specifier: workspace:*
+        version: link:../../packages/app-runtime
       '@voyyaa/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -114,6 +117,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.51.0
         version: 5.101.2(react@18.2.0)
+      '@voyyaa/app-runtime':
+        specifier: workspace:*
+        version: link:../../packages/app-runtime
       '@voyyaa/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -175,6 +181,46 @@ importers:
       typescript:
         specifier: ^5.5.4
         version: 5.9.3
+
+  packages/app-runtime:
+    dependencies:
+      '@voyyaa/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@voyyaa/ui-mobile':
+        specifier: workspace:*
+        version: link:../ui-mobile
+    devDependencies:
+      '@react-native-community/netinfo':
+        specifier: 11.3.1
+        version: 11.3.1(react-native@0.74.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))
+      '@tanstack/react-query':
+        specifier: ^5.51.0
+        version: 5.101.2(react@18.2.0)
+      '@types/node':
+        specifier: ^20.16.10
+        version: 20.19.43
+      '@types/react':
+        specifier: ~18.2.79
+        version: 18.2.79
+      expo-secure-store:
+        specifier: ~13.0.2
+        version: 13.0.2(expo@51.0.39(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react-native@0.74.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0))
+      react:
+        specifier: 18.2.0
+        version: 18.2.0
+      react-native:
+        specifier: 0.74.5
+        version: 0.74.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0)
+      typescript:
+        specifier: ^5.5.4
+        version: 5.9.3
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+      zustand:
+        specifier: ^4.5.4
+        version: 4.5.7(@types/react@18.2.79)(react@18.2.0)
 
   packages/shared:
     dependencies:
