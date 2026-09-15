@@ -29,6 +29,15 @@ jobs:
           node-version: '20'
           cache: pnpm
 
+      - name: Assert pnpm linker
+        run: |
+          linker="$(pnpm config get node-linker)"
+          echo "node-linker=$linker"
+          test "$linker" = "hoisted" || {
+            echo "::error::.npmrc no se está aplicando (node-linker=$linker, esperado hoisted). Ver ADR-008."
+            exit 1
+          }
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -55,3 +64,10 @@ jobs:
       # con script "build"); apps/passenger y apps/driver no declaran ese script
       # y turbo los omite — el bundle nativo/Expo se genera vía EAS Build fuera
       # de este CI, ya que requiere credenciales que no viven en este repo.
+      #
+      # Tampoco hay verificación de que el bundle de Metro construya: este CI
+      # pasa en verde con una app que no arranca (fue exactamente lo que ocurrió
+      # con el defecto de ADR-008). El paso "Assert pnpm linker" de arriba cubre
+      # una causa concreta de ese fallo, pero no sustituye un smoke test de
+      # bundle real. Ver ADR-008 §8: job "bundle-smoke" recomendado, no
+      # implementado aquí (dueños: pruebas + frontend).
