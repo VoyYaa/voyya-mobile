@@ -2,6 +2,7 @@
   "expo": {
     "name": "VoyYa Pasajero",
     "slug": "voyya-passenger",
+    "owner": "REEMPLAZAR_CUENTA_O_ORG_EXPO",
     "scheme": "voyya-passenger",
     "version": "0.0.1",
     "orientation": "portrait",

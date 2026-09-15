@@ -11,7 +11,8 @@
     "ios": "expo start --ios",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
-    "test": "echo \"(passenger) sin tests unitarios propios aún\" && exit 0"
+    "test": "echo \"(passenger) sin tests unitarios propios aún\" && exit 0",
+    "eas-build-post-install": "cd ../.. && pnpm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
