@@ -102,7 +102,7 @@ function ResendArea({
     return (
       <Pressable accessibilityRole="link" hitSlop={12} onPress={onResend}>
         <Text
-          style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.brandPressed }}
+          style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.brandInk }}
         >
           {resending ? 'Reenviando…' : 'Reenviar código'}
         </Text>
@@ -259,7 +259,7 @@ export default function OtpScreen(): React.JSX.Element {
         {outcome === 'incorrect' && (
           <Text
             accessibilityRole="alert"
-            style={{ ...theme.typography.small, color: theme.colors.danger }}
+            style={{ ...theme.typography.small, color: theme.colors.dangerInk }}
           >
             Código incorrecto. Inténtalo de nuevo.
           </Text>
@@ -267,7 +267,7 @@ export default function OtpScreen(): React.JSX.Element {
         {outcome === 'expired' && (
           <Text
             accessibilityRole="alert"
-            style={{ ...theme.typography.small, color: theme.colors.danger }}
+            style={{ ...theme.typography.small, color: theme.colors.dangerInk }}
           >
             Este código venció. Solicita uno nuevo.
           </Text>

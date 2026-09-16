@@ -56,7 +56,7 @@ export function NativeMap({
   }, [center.lat, center.lng]);
 
   function colorForKind(kind: MapMarkerKind): string {
-    if (kind === 'destination') return theme.colors.brandPressed;
+    if (kind === 'destination') return theme.colors.brandInk;
     if (kind === 'car') return theme.colors.success;
     return theme.colors.text;
   }

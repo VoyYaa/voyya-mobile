@@ -63,7 +63,7 @@ export function TextField({
   const borderColor = error
     ? theme.colors.danger
     : focused
-      ? theme.colors.brandPressed
+      ? theme.colors.focusRing
       : theme.colors.border;
   const borderWidth = focused || error ? 2 : 1;
 
@@ -137,7 +137,7 @@ export function TextField({
               style={{
                 ...theme.typography.small,
                 fontWeight: '700',
-                color: theme.colors.brandPressed,
+                color: theme.colors.brandInk,
               }}
             >
               {revealed ? 'Ocultar' : 'Mostrar'}
@@ -150,7 +150,7 @@ export function TextField({
           accessibilityRole="alert"
           style={{
             ...theme.typography.small,
-            color: theme.colors.danger,
+            color: theme.colors.dangerInk,
             marginTop: theme.spacing.xs,
           }}
         >

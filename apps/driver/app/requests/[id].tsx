@@ -248,14 +248,14 @@ export default function RequestDetailScreen(): React.JSX.Element {
             marker="▼"
             label="Destino"
             value={notification.dropoff_neighborhood}
-            markerColor={theme.colors.brandPressed}
+            markerColor={theme.colors.brandInk}
           />
         </View>
 
         {(uiStatus === 'offline_response' || uiStatus === 'generic_error') && (
           <View accessibilityRole="alert" style={{ width: '100%' }}>
             <Text
-              style={{ ...theme.typography.body, fontWeight: '700', color: theme.colors.danger }}
+              style={{ ...theme.typography.body, fontWeight: '700', color: theme.colors.dangerInk }}
             >
               {uiStatus === 'offline_response'
                 ? 'Sin conexión · no pudimos enviar tu respuesta.'

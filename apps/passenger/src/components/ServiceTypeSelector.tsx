@@ -43,7 +43,7 @@ export function ServiceTypeSelector({
               paddingVertical: theme.spacing.sm,
               borderRadius: theme.radius.card,
               borderWidth: isSelected ? 2 : 1,
-              borderColor: isSelected ? theme.colors.brand : theme.colors.border,
+              borderColor: isSelected ? theme.colors.brandInk : theme.colors.border,
               backgroundColor: isSelected ? theme.colors.surfaceAlt : theme.colors.surface,
               opacity: option.enabled ? 1 : 0.55,
             }}

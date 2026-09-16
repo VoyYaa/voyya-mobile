@@ -82,7 +82,7 @@ export function CountdownRing({
 
   const showProgressArc = status !== 'expired';
   const ringColor = isWarn || status === 'expired' ? theme.colors.danger : theme.colors.brand;
-  const numberColor = status === 'expired' ? theme.colors.danger : theme.colors.text;
+  const numberColor = status === 'expired' ? theme.colors.dangerInk : theme.colors.text;
 
   return (
     <View
@@ -142,7 +142,7 @@ export function CountdownRing({
       {status === 'success' ? (
         <Text
           accessibilityElementsHidden
-          style={{ fontSize: 48, fontWeight: '700', color: theme.colors.success }}
+          style={{ fontSize: 48, fontWeight: '700', color: theme.colors.successInk }}
         >
           ✓
         </Text>

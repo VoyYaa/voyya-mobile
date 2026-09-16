@@ -15,7 +15,7 @@ export function StatusBadge({ label, tone }: StatusBadgeProps): React.JSX.Elemen
   const toneColors: Record<StatusBadgeTone, { bg: string; fg: string }> = {
     go: { bg: theme.colors.success, fg: theme.colors.onSuccess },
     warn: { bg: theme.colors.brand, fg: theme.colors.onBrand },
-    danger: { bg: theme.colors.dangerTint, fg: theme.colors.danger },
+    danger: { bg: theme.colors.dangerTint, fg: theme.colors.dangerInk },
   };
   const palette = toneColors[tone];
 

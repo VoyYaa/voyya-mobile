@@ -128,7 +128,7 @@ export default function HomeScreen(): React.JSX.Element {
                 style={{
                   ...theme.typography.small,
                   fontWeight: '700',
-                  color: theme.colors.brandPressed,
+                  color: theme.colors.brandInk,
                 }}
               >
                 Ver todas ({offers.data?.length ?? 0})

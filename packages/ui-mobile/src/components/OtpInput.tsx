@@ -77,9 +77,9 @@ export function OtpInput({
 
   const digitColor =
     status === 'error'
-      ? theme.colors.danger
+      ? theme.colors.dangerInk
       : status === 'success'
-        ? theme.colors.success
+        ? theme.colors.successInk
         : theme.colors.text;
 
   const boxes = Array.from({ length }, (_, index) => {
@@ -91,7 +91,7 @@ export function OtpInput({
         : status === 'success'
           ? theme.colors.success
           : isCursor || digit
-            ? theme.colors.brandPressed
+            ? theme.colors.focusRing
             : theme.colors.border;
 
     return (

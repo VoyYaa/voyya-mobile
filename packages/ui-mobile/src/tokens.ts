@@ -18,12 +18,18 @@ export interface ColorTokens {
   border: string;
   brand: string;
   brandPressed: string;
+  brandInk: string;
   onBrand: string;
   success: string;
+  successInk: string;
   onSuccess: string;
   danger: string;
   dangerTint: string;
+  dangerInk: string;
+  dangerSolid: string;
   onDanger: string;
+  focusRing: string;
+  focusHalo: string;
 }
 
 const lightColors: ColorTokens = {
@@ -35,12 +41,18 @@ const lightColors: ColorTokens = {
   border: '#EADFC9',
   brand: BRAND_COLORS.amber,
   brandPressed: BRAND_COLORS.amberDeep,
+  brandInk: '#6B4505',
   onBrand: BRAND_COLORS.espresso,
   success: BRAND_COLORS.go,
-  onSuccess: '#FFFFFF',
+  successInk: '#0D774D',
+  onSuccess: BRAND_COLORS.espresso,
   danger: BRAND_COLORS.danger,
   dangerTint: '#F6DED4',
+  dangerInk: '#B23A2C',
+  dangerSolid: '#B23A2C',
   onDanger: '#FFFFFF',
+  focusRing: BRAND_COLORS.espresso,
+  focusHalo: 'rgba(244, 162, 26, 0.35)',
 };
 
 const darkColors: ColorTokens = {
@@ -52,12 +64,18 @@ const darkColors: ColorTokens = {
   border: 'rgba(234, 223, 201, 0.16)',
   brand: BRAND_COLORS.amber,
   brandPressed: BRAND_COLORS.amberDeep,
+  brandInk: BRAND_COLORS.amberDeep,
   onBrand: BRAND_COLORS.espresso,
   success: BRAND_COLORS.go,
-  onSuccess: '#FFFFFF',
+  successInk: '#22C285',
+  onSuccess: BRAND_COLORS.espresso,
   danger: BRAND_COLORS.danger,
-  dangerTint: 'rgba(214, 80, 63, 0.18)',
+  dangerTint: '#3A211B',
+  dangerInk: '#E8705C',
+  dangerSolid: '#B23A2C',
   onDanger: '#FFFFFF',
+  focusRing: BRAND_COLORS.crema,
+  focusHalo: 'rgba(244, 162, 26, 0.35)',
 };
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;

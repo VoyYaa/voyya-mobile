@@ -29,7 +29,7 @@ export function Chip({
     neutral: { bg: theme.colors.surfaceAlt, fg: theme.colors.text },
     brand: { bg: theme.colors.brand, fg: theme.colors.onBrand },
     success: { bg: theme.colors.success, fg: theme.colors.onSuccess },
-    danger: { bg: theme.colors.dangerTint, fg: theme.colors.danger },
+    danger: { bg: theme.colors.dangerTint, fg: theme.colors.dangerInk },
   };
   const palette = toneColors[selected ? 'brand' : tone];
 

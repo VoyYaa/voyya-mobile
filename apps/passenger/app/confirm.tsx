@@ -119,7 +119,7 @@ export default function ConfirmScreen(): React.JSX.Element {
             marker="▼"
             label="Destino"
             value={destination.address}
-            markerColor={theme.colors.brandPressed}
+            markerColor={theme.colors.brandInk}
           />
         </View>
 
@@ -209,7 +209,7 @@ export default function ConfirmScreen(): React.JSX.Element {
           </Text>
         )}
         {errorCode === 'ACTIVE_TRIP_REQUEST_EXISTS' && (
-          <Text style={{ ...theme.typography.small, color: theme.colors.danger }}>
+          <Text style={{ ...theme.typography.small, color: theme.colors.dangerInk }}>
             Ya tienes un viaje activo. Revisa la pestaña Viajes.
           </Text>
         )}

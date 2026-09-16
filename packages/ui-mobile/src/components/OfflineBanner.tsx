@@ -72,7 +72,7 @@ export function OfflineBanner({
             style={{
               ...theme.typography.small,
               fontWeight: '700',
-              color: theme.colors.brandPressed,
+              color: theme.colors.brandInk,
             }}
           >
             Reintentar ahora

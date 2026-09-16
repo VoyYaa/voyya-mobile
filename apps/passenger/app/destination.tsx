@@ -121,7 +121,7 @@ export default function DestinationScreen(): React.JSX.Element {
           marker="▼"
           label="Destino"
           value={query || 'Escribe tu destino…'}
-          markerColor={theme.colors.brandPressed}
+          markerColor={theme.colors.brandInk}
         />
 
         <Map
@@ -273,12 +273,12 @@ export default function DestinationScreen(): React.JSX.Element {
                   style={{
                     ...theme.typography.small,
                     fontWeight: '700',
-                    color: theme.colors.danger,
+                    color: theme.colors.dangerInk,
                   }}
                 >
                   Fuera de cobertura
                 </Text>
-                <Text style={{ ...theme.typography.small, color: theme.colors.danger }}>
+                <Text style={{ ...theme.typography.small, color: theme.colors.dangerInk }}>
                   Ese destino está fuera de la zona donde operamos en Yarumal por ahora.
                 </Text>
               </View>

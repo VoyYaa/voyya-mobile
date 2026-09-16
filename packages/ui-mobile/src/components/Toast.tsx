@@ -32,7 +32,7 @@ export function Toast({
   const toneColors: Record<ToastTone, { bg: string; fg: string }> = {
     neutral: { bg: theme.colors.text, fg: theme.colors.bg },
     success: { bg: theme.colors.success, fg: theme.colors.onSuccess },
-    danger: { bg: theme.colors.danger, fg: theme.colors.onDanger },
+    danger: { bg: theme.colors.dangerSolid, fg: theme.colors.onDanger },
   };
   const palette = toneColors[tone];
 

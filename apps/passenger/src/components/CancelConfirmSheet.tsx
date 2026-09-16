@@ -29,8 +29,8 @@ export function CancelConfirmSheet({
             marginBottom: theme.spacing.sm,
           }}
         >
-          <Text style={{ color: theme.colors.success, fontWeight: '700' }}>Gratis</Text> · aún estás
-          dentro de los 2 minutos.
+          <Text style={{ color: theme.colors.successInk, fontWeight: '700' }}>Gratis</Text> · aún
+          estás dentro de los 2 minutos.
         </Text>
       ) : (
         <Text
@@ -41,7 +41,7 @@ export function CancelConfirmSheet({
           }}
         >
           Pasaron más de 2 minutos desde la asignación. Quedará{' '}
-          <Text style={{ color: theme.colors.danger, fontWeight: '700' }}>
+          <Text style={{ color: theme.colors.dangerInk, fontWeight: '700' }}>
             registrada como cancelación tardía
           </Text>
           .
