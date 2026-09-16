@@ -1,15 +1,7 @@
 import { z } from 'zod';
 import { TripStatus } from './trips';
 
-export const DriverStatus = z.enum([
-  'available',
-  'on_trip',
-  'off_shift',
-  'inactive',
-  'suspended',
-  'documents_blocked',
-]);
-export type DriverStatus = z.infer<typeof DriverStatus>;
+export { DriverStatus } from './driver';
 
 export const AssignmentStatus = z.enum([
   'created',
@@ -184,6 +176,7 @@ export const AssignmentCancelledByDriverEvent = z.object({
   trip_request_id: z.number().int().positive(),
   driver_id: z.number().int().positive(),
   reason: z.string(),
+  trip_request_status: TripStatus,
   occurred_at: z.string().datetime(),
 });
 export type AssignmentCancelledByDriverEvent = z.infer<typeof AssignmentCancelledByDriverEvent>;
