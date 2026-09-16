@@ -9,7 +9,7 @@ import { OffShiftPanel } from '../../src/components/OffShiftPanel';
 import { RequestRow } from '../../src/components/RequestRow';
 import { RequestListSkeleton } from '../../src/components/RequestListSkeleton';
 import { AssignmentRulesCard } from '../../src/components/AssignmentRulesCard';
-import { useShiftStore } from '../../src/state/useShiftStore';
+import { useDriverHome } from '../../src/hooks/useDriverHome';
 import { useNearbyOffers } from '../../src/hooks/useNearbyOffers';
 import {
   SEARCH_RADIUS_FALLBACK_KM,
@@ -23,8 +23,8 @@ function sortByProximity(items: readonly AssignmentNotification[]): AssignmentNo
 export default function RequestsScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
-  const onShift = useShiftStore((s) => s.onShift);
-  const startShift = useShiftStore((s) => s.startShift);
+  const home = useDriverHome();
+  const onShift = home.data?.shift.status === 'available';
   const networkStatus = useNetworkStatus();
   const isOffline = networkStatus === 'offline';
 
@@ -66,7 +66,7 @@ export default function RequestsScreen(): React.JSX.Element {
 
       {!onShift ? (
         <View style={{ flex: 1, padding: theme.spacing.lg }}>
-          <OffShiftPanel onActivate={startShift} />
+          <OffShiftPanel onActivate={() => router.replace('/')} />
         </View>
       ) : (
         <FlatList

@@ -45,7 +45,7 @@ export function buildAuthHeader(): Record<string, string> {
 }
 
 interface ApiRequestOptions {
-  method: 'GET' | 'POST';
+  method: 'GET' | 'POST' | 'PUT';
   path: string;
   body?: unknown;
   signal?: AbortSignal;

@@ -16,7 +16,6 @@ import {
 import { useNetworkStatus } from '@voyyaa/app-runtime';
 import { RadarSearch } from '../src/components/RadarSearch';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
-import { useTripSocket } from '../src/hooks/useTripSocket';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useCreateTripRequest } from '../src/hooks/useCreateTripRequest';
@@ -31,7 +30,6 @@ export default function SearchingScreen(): React.JSX.Element {
   const networkStatus = useNetworkStatus();
 
   const { data, isError, refetch } = useTripRequestStatus(tripRequestId);
-  useTripSocket(tripRequestId);
 
   const origin = useTripDraftStore((s) => s.origin);
   const destination = useTripDraftStore((s) => s.destination);

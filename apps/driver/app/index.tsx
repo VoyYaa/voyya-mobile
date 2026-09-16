@@ -1,31 +1,115 @@
-import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card, ErrorState, useTheme } from '@voyyaa/ui-mobile';
+import { Card, ErrorState, Skeleton, useTheme } from '@voyyaa/ui-mobile';
 import { useLogout } from '@voyyaa/app-runtime';
 import { ShiftToggle } from '../src/components/ShiftToggle';
+import { ShiftIssuePanel, type ShiftIssueKind } from '../src/components/ShiftIssuePanel';
 import { AssignmentRulesCard } from '../src/components/AssignmentRulesCard';
 import { OffShiftPanel } from '../src/components/OffShiftPanel';
 import { RequestRow } from '../src/components/RequestRow';
 import { RequestListSkeleton } from '../src/components/RequestListSkeleton';
-import { useShiftStore } from '../src/state/useShiftStore';
+import { PendingCashBanner } from '../src/components/PendingCashBanner';
+import { useDriverHome } from '../src/hooks/useDriverHome';
+import { useShiftActivation, type ShiftActivationPhase } from '../src/hooks/useShiftActivation';
 import { useNearbyOffers } from '../src/hooks/useNearbyOffers';
+import { usePendingCashTrips } from '../src/hooks/usePendingCashTrips';
+import { useBestEffortLocationReport } from '../src/hooks/useReportLocation';
 import {
   SEARCH_RADIUS_FALLBACK_KM,
   ACCEPTANCE_TIMEOUT_FALLBACK_SEC,
+  LOCATION_REFRESH_MS,
 } from '../src/constants/parameters';
+
+function issueFromPhase(phase: ShiftActivationPhase): ShiftIssueKind | null {
+  switch (phase) {
+    case 'permission_denied':
+    case 'gps_disabled':
+    case 'offline':
+    case 'server_error':
+    case 'blocked_by_trip':
+      return phase;
+    default:
+      return null;
+  }
+}
 
 export default function HomeScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
-  const onShift = useShiftStore((s) => s.onShift);
-  const startShift = useShiftStore((s) => s.startShift);
-  const toggleShift = useShiftStore((s) => s.toggleShift);
   const logout = useLogout();
 
-  const offers = useNearbyOffers(onShift);
+  const home = useDriverHome();
+  const shiftActivation = useShiftActivation();
+  const pendingCash = usePendingCashTrips();
+
+  const shift = home.data?.shift;
+  const activeTrip = home.data?.active_trip ?? null;
+  const isOnShift = shift?.status === 'available';
+  const reportLocationBestEffort = useBestEffortLocationReport();
+
+  const offers = useNearbyOffers(isOnShift);
   const firstOffer = offers.data?.[0];
+
+  useEffect(() => {
+    if (activeTrip) {
+      router.replace({
+        pathname: '/trip/[id]',
+        params: { id: String(activeTrip.trip_request_id) },
+      });
+    }
+  }, [activeTrip, router]);
+
+  useEffect(() => {
+    if (!isOnShift) return;
+    const interval = setInterval(reportLocationBestEffort, LOCATION_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [isOnShift, reportLocationBestEffort]);
+
+  if (activeTrip) {
+    return <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
+  }
+
+  if (home.isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+        <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
+          <Skeleton height={72} radius={theme.radius.card} />
+          <Skeleton height={96} radius={theme.radius.card} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (home.isError || !shift) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+        <ErrorState title="No pudimos cargar tu estado de turno" onRetry={() => home.refetch()} />
+      </SafeAreaView>
+    );
+  }
+
+  const issue = issueFromPhase(shiftActivation.phase);
+
+  const handleShiftAction = (): void => {
+    if (shift.on_shift) {
+      shiftActivation.deactivate();
+    } else {
+      shiftActivation.activate();
+    }
+  };
+
+  const handleIssueAction = (kind: ShiftIssueKind): void => {
+    if (kind === 'permission_denied' || kind === 'gps_disabled') {
+      void Linking.openSettings();
+      shiftActivation.dismissIssue();
+      return;
+    }
+    if (kind === 'offline' || kind === 'server_error') {
+      shiftActivation.retry();
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
@@ -54,7 +138,21 @@ export default function HomeScreen(): React.JSX.Element {
           </Pressable>
         </View>
 
-        <ShiftToggle onShift={onShift} onToggle={toggleShift} />
+        <ShiftToggle
+          checked={shift.on_shift}
+          busy={shiftActivation.isBusy}
+          disabled={!shift.vehicle_linked}
+          onToggle={handleShiftAction}
+        />
+
+        {!shift.vehicle_linked && <ShiftIssuePanel kind="no_vehicle" />}
+
+        {issue && <ShiftIssuePanel kind={issue} onAction={() => handleIssueAction(issue)} />}
+
+        <PendingCashBanner
+          count={pendingCash.data?.length ?? 0}
+          onPress={() => router.push('/cash-pending')}
+        />
 
         <Card>
           <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
@@ -90,24 +188,24 @@ export default function HomeScreen(): React.JSX.Element {
             Solicitudes cercanas
           </Text>
 
-          {!onShift && <OffShiftPanel onActivate={startShift} />}
+          {!isOnShift && <OffShiftPanel onActivate={() => shiftActivation.activate()} />}
 
-          {onShift && offers.isLoading && <RequestListSkeleton count={1} />}
+          {isOnShift && offers.isLoading && <RequestListSkeleton count={1} />}
 
-          {onShift && offers.isError && (
+          {isOnShift && offers.isError && (
             <ErrorState
               title="No pudimos cargar tus solicitudes"
               onRetry={() => offers.refetch()}
             />
           )}
 
-          {onShift && offers.isSuccess && offers.data.length === 0 && (
+          {isOnShift && offers.isSuccess && offers.data.length === 0 && (
             <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
               Sin solicitudes cercanas por ahora. Sigues visible para los pasajeros.
             </Text>
           )}
 
-          {onShift && firstOffer && (
+          {isOnShift && firstOffer && (
             <>
               <RequestRow
                 originLabel={firstOffer.origin.address}

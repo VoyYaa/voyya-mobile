@@ -1,15 +1,25 @@
 import { create } from 'zustand';
 
-interface ShiftState {
-  onShift: boolean;
-  startShift: () => void;
-  endShift: () => void;
-  toggleShift: () => void;
+export type ShiftActivationPhase =
+  | 'idle'
+  | 'requesting_permission'
+  | 'activating'
+  | 'permission_denied'
+  | 'gps_disabled'
+  | 'blocked_by_trip'
+  | 'offline'
+  | 'server_error';
+
+interface ShiftUiState {
+  phase: ShiftActivationPhase;
+  lastAction: 'activate' | 'deactivate' | null;
+  setPhase: (phase: ShiftActivationPhase) => void;
+  setLastAction: (action: 'activate' | 'deactivate' | null) => void;
 }
 
-export const useShiftStore = create<ShiftState>((set) => ({
-  onShift: false,
-  startShift: () => set({ onShift: true }),
-  endShift: () => set({ onShift: false }),
-  toggleShift: () => set((s) => ({ onShift: !s.onShift })),
+export const useShiftStore = create<ShiftUiState>((set) => ({
+  phase: 'idle',
+  lastAction: null,
+  setPhase: (phase) => set({ phase }),
+  setLastAction: (lastAction) => set({ lastAction }),
 }));

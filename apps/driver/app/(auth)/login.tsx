@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, Chip, TextField, useCountdown, useTheme } from '@voyyaa/ui-mobile';
+import {
+  Button,
+  Card,
+  Chip,
+  TextField,
+  formatMMSS,
+  useCountdown,
+  useTheme,
+} from '@voyyaa/ui-mobile';
 import { NationalId, Pin } from '@voyyaa/shared';
 import {
   domainErrorCode,
@@ -13,12 +21,6 @@ import {
 import { useDriverLogin } from '../../src/hooks/useDriverLogin';
 
 type LoginOutcome = 'idle' | 'verifying' | 'credentials' | 'blocked' | 'suspended' | 'offline';
-
-function formatMMSS(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
 
 const BLOCKED_FALLBACK_SEC = 90;
 

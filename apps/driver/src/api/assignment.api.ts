@@ -4,6 +4,8 @@ import {
   AcceptAssignmentResult,
   AssignmentError,
   AssignmentNotification,
+  CancelAssignmentByDriverDTO,
+  CancelAssignmentByDriverResult,
   RejectAssignmentDTO,
 } from '@voyyaa/shared';
 import { apiRequest, buildAuthHeader, getApiBaseUrl, ApiError } from '@voyyaa/app-runtime';
@@ -67,5 +69,17 @@ export function listNearbyOffers(): Promise<AssignmentNotification[]> {
   return apiRequest(
     { method: 'GET', path: '/assignments/nearby' },
     z.array(AssignmentNotification),
+  );
+}
+
+export function cancelAssignmentByDriver(
+  assignmentId: number,
+  dto: CancelAssignmentByDriverDTO,
+): Promise<CancelAssignmentByDriverResult> {
+  const body = CancelAssignmentByDriverDTO.parse(dto);
+  return apiRequest(
+    { method: 'POST', path: `/assignments/${assignmentId}/cancel`, body },
+    CancelAssignmentByDriverResult,
+    AssignmentError,
   );
 }

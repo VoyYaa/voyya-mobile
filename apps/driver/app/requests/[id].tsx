@@ -102,7 +102,14 @@ export default function RequestDetailScreen(): React.JSX.Element {
       onSuccess: (result) => {
         if (result.result === 'accepted') {
           setUiStatus('accepted');
-          setTimeout(() => router.replace('/'), 800);
+          setTimeout(
+            () =>
+              router.replace({
+                pathname: '/trip/[id]',
+                params: { id: String(result.trip_request_id) },
+              }),
+            800,
+          );
         } else if (result.result === 'already_taken') {
           setUiStatus('taken_by_other');
           goBackToList(1200);

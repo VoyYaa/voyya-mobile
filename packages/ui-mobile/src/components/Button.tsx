@@ -20,6 +20,7 @@ export interface ButtonProps {
   loadingLabel?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityHint?: string;
+  accessibilityLabel?: string;
   testID?: string;
 }
 
@@ -32,6 +33,7 @@ export function Button({
   loadingLabel,
   style,
   accessibilityHint,
+  accessibilityLabel,
   testID,
 }: ButtonProps): React.JSX.Element {
   const theme = useTheme();
@@ -63,6 +65,7 @@ export function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       accessibilityHint={accessibilityHint}
+      accessibilityLabel={accessibilityLabel ?? label}
       disabled={isDisabled}
       onPress={onPress}
       testID={testID}

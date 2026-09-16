@@ -21,3 +21,4 @@ export * from './components/TextField';
 export * from './components/OtpInput';
 export * from './components/PointRow';
 export * from './components/ScreenHeader';
+export * from './components/LastUpdatedHint';

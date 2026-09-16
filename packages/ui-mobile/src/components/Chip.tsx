@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../theme';
 
-export type ChipTone = 'neutral' | 'brand' | 'success' | 'danger';
+export type ChipTone = 'neutral' | 'brand' | 'brandTint' | 'success' | 'danger';
 
 export interface ChipProps {
   label: string;
@@ -28,6 +28,7 @@ export function Chip({
   const toneColors: Record<ChipTone, { bg: string; fg: string }> = {
     neutral: { bg: theme.colors.surfaceAlt, fg: theme.colors.text },
     brand: { bg: theme.colors.brand, fg: theme.colors.onBrand },
+    brandTint: { bg: theme.colors.surfaceAlt, fg: theme.colors.brandInk },
     success: { bg: theme.colors.success, fg: theme.colors.onSuccess },
     danger: { bg: theme.colors.dangerTint, fg: theme.colors.dangerInk },
   };
