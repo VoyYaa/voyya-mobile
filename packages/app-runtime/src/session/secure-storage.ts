@@ -1,5 +1,5 @@
-import * as SecureStore from 'expo-secure-store';
 import { SessionUser } from '@voyyaa/shared';
+import { getSecureStoragePort } from './secure-storage-port';
 
 const KEYS = {
   accessToken: 'voyya_access_token',
@@ -16,11 +16,12 @@ export interface PersistedSession {
 }
 
 export async function readPersistedSession(): Promise<PersistedSession | null> {
+  const storage = getSecureStoragePort();
   const [accessToken, refreshToken, userJson, expiresAtRaw] = await Promise.all([
-    SecureStore.getItemAsync(KEYS.accessToken),
-    SecureStore.getItemAsync(KEYS.refreshToken),
-    SecureStore.getItemAsync(KEYS.user),
-    SecureStore.getItemAsync(KEYS.accessTokenExpiresAt),
+    storage.getItem(KEYS.accessToken),
+    storage.getItem(KEYS.refreshToken),
+    storage.getItem(KEYS.user),
+    storage.getItem(KEYS.accessTokenExpiresAt),
   ]);
   if (!accessToken || !refreshToken || !userJson || !expiresAtRaw) return null;
 
@@ -32,11 +33,12 @@ export async function readPersistedSession(): Promise<PersistedSession | null> {
 }
 
 export async function saveSession(session: PersistedSession): Promise<void> {
+  const storage = getSecureStoragePort();
   await Promise.all([
-    SecureStore.setItemAsync(KEYS.accessToken, session.accessToken),
-    SecureStore.setItemAsync(KEYS.refreshToken, session.refreshToken),
-    SecureStore.setItemAsync(KEYS.user, JSON.stringify(session.user)),
-    SecureStore.setItemAsync(KEYS.accessTokenExpiresAt, String(session.accessTokenExpiresAt)),
+    storage.setItem(KEYS.accessToken, session.accessToken),
+    storage.setItem(KEYS.refreshToken, session.refreshToken),
+    storage.setItem(KEYS.user, JSON.stringify(session.user)),
+    storage.setItem(KEYS.accessTokenExpiresAt, String(session.accessTokenExpiresAt)),
   ]);
 }
 
@@ -45,18 +47,20 @@ export async function updatePersistedTokens(
   refreshToken: string,
   accessTokenExpiresAt: number,
 ): Promise<void> {
+  const storage = getSecureStoragePort();
   await Promise.all([
-    SecureStore.setItemAsync(KEYS.accessToken, accessToken),
-    SecureStore.setItemAsync(KEYS.refreshToken, refreshToken),
-    SecureStore.setItemAsync(KEYS.accessTokenExpiresAt, String(accessTokenExpiresAt)),
+    storage.setItem(KEYS.accessToken, accessToken),
+    storage.setItem(KEYS.refreshToken, refreshToken),
+    storage.setItem(KEYS.accessTokenExpiresAt, String(accessTokenExpiresAt)),
   ]);
 }
 
 export async function clearPersistedSession(): Promise<void> {
+  const storage = getSecureStoragePort();
   await Promise.all([
-    SecureStore.deleteItemAsync(KEYS.accessToken),
-    SecureStore.deleteItemAsync(KEYS.refreshToken),
-    SecureStore.deleteItemAsync(KEYS.user),
-    SecureStore.deleteItemAsync(KEYS.accessTokenExpiresAt),
+    storage.deleteItem(KEYS.accessToken),
+    storage.deleteItem(KEYS.refreshToken),
+    storage.deleteItem(KEYS.user),
+    storage.deleteItem(KEYS.accessTokenExpiresAt),
   ]);
 }

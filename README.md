@@ -73,6 +73,49 @@ primero (los apps consumen su `dist/` compilado, no el código fuente directamen
 pnpm --filter @voyya/shared --filter @voyya/ui-mobile build
 ```
 
+## Probar en navegador (web) — solo para desarrollo, nunca se publica
+
+En esta máquina el registro de npm corporativo bloquea instalar `eas-cli`, nunca se corrió
+`eas build`, y un build de iOS para dispositivo físico exige Apple Developer Program (cuenta de
+pago). **Web es la única vía disponible para probar los flujos sin EAS, sin QR y sin
+dispositivo.** Ninguna de las dos apps se va a publicar en web — es exclusivamente un entorno de
+prueba local.
+
+```bash
+pnpm add -D react-dom react-native-web --filter @voyya/passenger --filter @voyya/driver
+pnpm --filter @voyya/passenger start -- --web   # o: cd apps/passenger && pnpm exec expo start --web
+```
+
+**El mapa no funciona en web y no se espera que funcione:** `isNativeMapAvailable()`
+(`packages/ui-mobile/src/map/mapbox-env.ts`) detecta `Platform.OS === 'web'` y degrada siempre a
+`MapFallback`, igual que ya hacía en Expo Go. Además, `packages/ui-mobile/src/map/NativeMap.web.tsx`
+reemplaza en el bundle web a `NativeMap.tsx` (que importa `@rnmapbox/maps` de forma estática) — sin
+ese archivo hermano, Metro intenta resolver `@rnmapbox/maps` para la plataforma web, que a su vez
+importa `mapbox-gl` (peer dependency opcional, no instalada) y **rompe el bundle antes de llegar a
+ejecutar nada** (confirmado: no es solo una sospecha de un ciclo anterior, se probó en esta tarea).
+Un `require`/`import()` diferido dentro de `Map.tsx` **no habría bastado**: Metro resuelve el grafo
+de módulos de forma estática en tiempo de bundling, independientemente de si el `require` está
+detrás de una condición o se ejecuta más tarde — solo la resolución **por plataforma** de Metro
+(sufijo `.web.tsx` / `.native.tsx`, el mismo mecanismo que usa `@rnmapbox/maps` internamente) evita
+que el árbol de `@rnmapbox/maps` se toque siquiera al empaquetar para web.
+
+**La sesión NO se persiste entre recargas en web — es una decisión deliberada, no un bug.**
+`expo-secure-store` no tiene almacenamiento seguro real en web (su build web es un stub vacío que
+revienta al llamar `getItemAsync`/`setItemAsync`). En vez de caer en el patrón común de "guardar el
+refresh token en `localStorage`", `packages/app-runtime/src/session/dev-only/web-secure-storage.adapter.ts`
+(nombre y carpeta `dev-only/` explícitos a propósito) **no persiste nada**: `getItem` siempre
+devuelve `null`, `setItem`/`deleteItem` son no-op. La sesión vive únicamente en memoria (el store de
+Zustand) mientras la pestaña sigue abierta — funciona igual durante toda la navegación, incluido el
+refresco silencioso del token — pero **recargar la página equivale a cerrar sesión**. Se eligió
+esto en vez de usar `sessionStorage`/`localStorage` con el refresh token (u otro subconjunto de la
+sesión) porque cualquier dato de sesión escrito en Web Storage es legible por un XSS; no persistir
+nada reduce esa superficie a cero al costo de comodidad (relogin en cada F5), aceptable porque web
+aquí es solo un arnés de pruebas, no un canal de distribución. El adaptador nativo
+(`expo-secure-store`, keychain/keystore) sigue siendo el default en iOS/Android — no cambió.
+El puerto se resuelve automáticamente por `Platform.OS`
+(`packages/app-runtime/src/session/secure-storage-port.ts`); `setSecureStoragePort()` queda
+disponible para forzar un adaptador distinto (tests, por ejemplo).
+
 ## Variables de entorno móvil
 
 Cada app trae su `.env.example`. Expo solo expone al bundle del cliente las variables con
@@ -293,11 +336,17 @@ más los puntos nuevos de esta tarea):
       `app.config.js` documentado arriba).
 - [ ] Que `@rnmapbox/maps` **funciona en tiempo de ejecución** en un dispositivo/simulador
       real — confirma o descarta la sospecha, heredada de ADR-008 §10, del import **estático**
-      de `@rnmapbox/maps` en `packages/ui-mobile/src/map/NativeMap.tsx` (confirmado en esta
-      tarea: es un `import` estático de módulo, no un `require` perezoso; `Map.tsx` solo evita
+      de `@rnmapbox/maps` en `packages/ui-mobile/src/map/NativeMap.tsx` (`Map.tsx` solo evita
       **renderizarlo** vía `isNativeMapAvailable()`, no evita que Metro lo empaquete — en un
       dev-client/APK real el módulo nativo sí está compilado, así que en teoría no debería
-      fallar, pero nunca se ha ejecutado).
+      fallar, pero nunca se ha ejecutado). Confirmado en la tarea de habilitar `--web`: el
+      import estático **sí** rompe el bundle cuando la plataforma no trae el módulo nativo (en
+      web, Metro sigue el `import` de `@rnmapbox/maps` hasta `mapbox-gl`, que no está instalado,
+      y el bundling falla) — se resolvió ahí con `NativeMap.web.tsx` (resolución por plataforma
+      de Metro, no con un `require` diferido: un lazy import no habría evitado que Metro
+      resolviera el grafo en tiempo de bundling). El bundle **nativo** (`?platform=ios`) se
+      verificó sin cambios en esa misma tarea (HTTP 200, tamaño estable) para `passenger` y
+      `driver`; sigue pendiente solo la ejecución real en un dispositivo/simulador.
 - [ ] Que el **autolinking nativo** encuentra `@rnmapbox/maps`, `expo-secure-store` y
       `@react-native-community/netinfo` en el layout plano que deja `hoisted`.
 - [ ] Que no reaparece la advertencia de versión de `typescript` (u otra) reordenada por el
@@ -354,6 +403,7 @@ pnpm install
 pnpm run build       # turbo: compila @voyya/shared y @voyya/ui-mobile (dist/) — dependencia de tipos de passenger/driver
 pnpm run typecheck   # turbo: tsc --noEmit en los 4 paquetes (respeta el orden build → typecheck)
 pnpm run lint        # turbo: eslint en los 4 paquetes
+pnpm run format:check # prettier --check sobre todo el repo
 ```
 
 > `turbo.json` declara `"typecheck": { "dependsOn": ["^build"] }`: por eso los scripts raíz usan
@@ -367,7 +417,10 @@ pnpm run lint        # turbo: eslint en los 4 paquetes
 **Lo que este entorno NO puede verificar:** el render nativo (mapa, cámara, sensores) de
 `passenger`/`driver` — requiere un dev-client o un dispositivo/emulador real (`expo start` +
 Expo Go/dev client, o un build EAS instalado). El typecheck/lint sí cubre el código completo
-(TS strict, sin `any`, ESLint) sin necesidad de ese entorno.
+(TS strict, sin `any`, ESLint) sin necesidad de ese entorno. **Web** (ver sección de arriba)
+permite probar los flujos de UI/navegación/estado sin EAS ni dispositivo, pero tampoco es
+render nativo real: el mapa siempre cae al fallback y la sesión no sobrevive un refresh — son
+las dos limitaciones aceptadas de usar web como arnés de pruebas, no como plataforma objetivo.
 
 ## Principios
 

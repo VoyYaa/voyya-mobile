@@ -2,6 +2,8 @@ export * from './api/errors';
 export * from './api/http-client';
 export * from './api/session.api';
 export * from './session/secure-storage';
+export * from './session/secure-storage-port';
+export * from './session/dev-only/web-secure-storage.adapter';
 export * from './session/useSessionStore';
 export * from './session/useProactiveRefresh';
 export * from './session/useLogout';
