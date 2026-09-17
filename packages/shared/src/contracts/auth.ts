@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const Role = z.enum(['passenger', 'driver', 'company', 'admin', 'operator']);
 export type Role = z.infer<typeof Role>;
 
-export const TENANT_SCOPED_ROLES = ['driver', 'company'] as const;
+export const TENANT_SCOPED_ROLES = ['driver', 'company', 'admin', 'operator'] as const;
 
 export const Phone = z
   .string()
@@ -113,6 +113,8 @@ export const AuthErrorCode = z.enum([
   'REFRESH_REVOKED',
   'SESSION_REQUIRED',
   'FORBIDDEN',
+  'STAFF_WITHOUT_COMPANY',
+  'PIN_NOT_DELIVERED',
 ]);
 export type AuthErrorCode = z.infer<typeof AuthErrorCode>;
 
