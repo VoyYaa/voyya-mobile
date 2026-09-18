@@ -30,6 +30,11 @@
     "ios": {
       "bundleIdentifier": "co.voyya.passenger",
       "supportsTablet": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "a16e7c12-bc4e-4eda-8a8f-3892e0887ee8"
+      }
     }
   }
 }
