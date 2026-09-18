@@ -2,7 +2,7 @@
   "expo": {
     "name": "VoyYa Conductor",
     "slug": "voyya-driver",
-    "owner": "REEMPLAZAR_CUENTA_O_ORG_EXPO",
+    "owner": "voyya",
     "scheme": "voyya-driver",
     "version": "0.0.1",
     "orientation": "portrait",
@@ -14,7 +14,11 @@
       "image": "./assets/splash-mark.png",
       "resizeMode": "contain"
     },
-    "plugins": ["expo-router", "expo-secure-store", "@rnmapbox/maps/app.plugin.js"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "@rnmapbox/maps/app.plugin.js"
+    ],
     "android": {
       "package": "co.voyya.driver",
       "adaptiveIcon": {
