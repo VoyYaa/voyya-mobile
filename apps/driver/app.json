@@ -8,14 +8,19 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#FBF6ED"
+      "backgroundColor": "#FBF6ED",
+      "image": "./assets/splash-mark.png",
+      "resizeMode": "contain"
     },
     "plugins": ["expo-router", "expo-secure-store", "@rnmapbox/maps/app.plugin.js"],
     "android": {
       "package": "co.voyya.driver",
       "adaptiveIcon": {
-        "backgroundColor": "#FBF6ED"
+        "foregroundImage": "./assets/adaptive-icon-foreground.png",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png",
+        "backgroundColor": "#2A2018"
       }
     },
     "ios": {
