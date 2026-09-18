@@ -1,20 +1,68 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Chip, ErrorState, Map, useTheme } from '@voyyaa/ui-mobile';
-import { useLogout } from '@voyyaa/app-runtime';
+import { LOCATION_NOTICE_VERSION } from '@voyyaa/shared';
+import { confirmConsent, hasSeenLocalConsent, useLogout } from '@voyyaa/app-runtime';
 import { CoverageBlockedPanel } from '../src/components/CoverageBlockedPanel';
+import { LocatingPill } from '../src/components/LocatingPill';
+import {
+  LocationConsentSheet,
+  type LocationConsentSheetMode,
+} from '../src/components/LocationConsentSheet';
 import { useCoverageGate } from '../src/hooks/useCoverageGate';
+import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
-import { CURRENT_LOCATION_MOCK, SAVED_PLACES } from '../src/constants/demo-places';
+import { SAVED_PLACES, YARUMAL_CENTER } from '../src/constants/demo-places';
 
 export default function HomeScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
   const municipalityId = useTripDraftStore((s) => s.municipalityId);
-  const coverage = useCoverageGate(CURRENT_LOCATION_MOCK, municipalityId);
+  const origin = useTripDraftStore((s) => s.origin);
+  const setOrigin = useTripDraftStore((s) => s.setOrigin);
+  const coverage = useCoverageGate(origin, municipalityId);
+  const resolveOrigin = useResolveOrigin();
   const logout = useLogout();
+
+  const [consentVisible, setConsentVisible] = useState(false);
+  const [consentMode, setConsentMode] = useState<LocationConsentSheetMode>('consent');
+  const [consentChecked, setConsentChecked] = useState(false);
+
+  useEffect(() => {
+    if (origin || consentChecked) return;
+    void hasSeenLocalConsent('location', LOCATION_NOTICE_VERSION).then((seen) => {
+      setConsentChecked(true);
+      if (seen) {
+        resolveOrigin.resolve();
+      } else {
+        setConsentMode('consent');
+        setConsentVisible(true);
+      }
+    });
+  }, [origin, consentChecked]);
+
+  useEffect(() => {
+    if (resolveOrigin.status === 'resolved' && resolveOrigin.origin) {
+      setOrigin(resolveOrigin.origin, 'gps');
+    }
+  }, [resolveOrigin.status, resolveOrigin.origin, setOrigin]);
+
+  const handleConsentContinue = (): void => {
+    setConsentVisible(false);
+    void confirmConsent('location', LOCATION_NOTICE_VERSION);
+    resolveOrigin.resolve();
+  };
+
+  const handleConsentDismiss = (): void => {
+    setConsentVisible(false);
+  };
+
+  const handleReviewPrivacy = (): void => {
+    setConsentMode('review');
+    setConsentVisible(true);
+  };
 
   const goToDestination = (presetId?: string): void => {
     if (presetId) {
@@ -31,6 +79,8 @@ export default function HomeScreen(): React.JSX.Element {
       </SafeAreaView>
     );
   }
+
+  const isResolving = resolveOrigin.status === 'resolving';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
@@ -57,19 +107,40 @@ export default function HomeScreen(): React.JSX.Element {
           </Pressable>
         </View>
 
-        <Map
-          center={{ lat: CURRENT_LOCATION_MOCK.lat, lng: CURRENT_LOCATION_MOCK.lng }}
-          markers={[
-            {
-              id: 'current-location',
-              kind: 'origin',
-              coord: { lat: CURRENT_LOCATION_MOCK.lat, lng: CURRENT_LOCATION_MOCK.lng },
-              label: `Tu ubicación: ${CURRENT_LOCATION_MOCK.address}`,
-            },
-          ]}
-          interactive={false}
-          height={200}
-        />
+        <Text
+          accessibilityRole="link"
+          onPress={handleReviewPrivacy}
+          style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+        >
+          Privacidad de mi ubicación
+        </Text>
+
+        <View>
+          <Map
+            center={origin ? { lat: origin.lat, lng: origin.lng } : YARUMAL_CENTER}
+            markers={
+              origin
+                ? [
+                    {
+                      id: 'current-location',
+                      kind: 'origin',
+                      coord: { lat: origin.lat, lng: origin.lng },
+                      label: `Tu ubicación: ${origin.address}`,
+                    },
+                  ]
+                : []
+            }
+            interactive={false}
+            height={200}
+          />
+          {isResolving && (
+            <View
+              style={{ position: 'absolute', left: theme.spacing.sm, bottom: theme.spacing.sm }}
+            >
+              <LocatingPill />
+            </View>
+          )}
+        </View>
 
         <Card>
           <Pressable
@@ -114,6 +185,13 @@ export default function HomeScreen(): React.JSX.Element {
           />
         )}
       </ScrollView>
+
+      <LocationConsentSheet
+        visible={consentVisible}
+        mode={consentMode}
+        onContinue={handleConsentContinue}
+        onDismiss={handleConsentDismiss}
+      />
     </SafeAreaView>
   );
 }

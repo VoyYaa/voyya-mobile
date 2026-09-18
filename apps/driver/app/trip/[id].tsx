@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
+import { AccessibilityInfo, Linking, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -29,6 +29,8 @@ import {
 } from '../../src/hooks/useTripActions';
 import { useCancelAssignmentByDriver } from '../../src/hooks/useCancelAssignmentByDriver';
 import { useBestEffortLocationReport } from '../../src/hooks/useReportLocation';
+import { LocationIssueBanner } from '../../src/components/LocationIssueBanner';
+import { useLocationIssueStore } from '../../src/state/useLocationIssueStore';
 
 type SubState = 'en_camino' | 'esperando' | 'en_curso';
 type SheetKind = 'finish' | 'no_show' | 'cancel' | null;
@@ -57,6 +59,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
   const activeTrip = home.data?.active_trip ?? null;
   const activeTripRequestId = activeTrip?.trip_request_id ?? null;
   const reportLocationBestEffort = useBestEffortLocationReport();
+  const locationIssue = useLocationIssueStore((s) => s.issue);
 
   const enRoute = useMarkTripEnRoute(activeTripRequestId);
   const arrived = useMarkTripArrived(activeTripRequestId);
@@ -208,6 +211,13 @@ export default function ActiveTripScreen(): React.JSX.Element {
       <ScrollView
         contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md, flexGrow: 1 }}
       >
+        {locationIssue && (
+          <LocationIssueBanner
+            kind={locationIssue}
+            onOpenSettings={() => void Linking.openSettings()}
+          />
+        )}
+
         <PassengerSummaryRow
           passengerName={activeTrip.passenger.name}
           price={activeTrip.fare.total}

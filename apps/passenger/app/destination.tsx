@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { FlatList, Linking, Pressable, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Controller, useForm } from 'react-hook-form';
@@ -15,12 +15,14 @@ import {
   useTheme,
   type MapLatLng,
 } from '@voyyaa/ui-mobile';
+import type { Location } from '@voyyaa/shared';
 import { domainErrorCode, isNetworkError, useNetworkStatus } from '@voyyaa/app-runtime';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
+import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import {
-  CURRENT_LOCATION_MOCK,
   DESTINATION_SUGGESTIONS,
+  YARUMAL_CENTER,
   type SuggestedPlace,
 } from '../src/constants/demo-places';
 import { POIS_YARUMAL, type PoiYarumal } from '../src/constants/pois-yarumal';
@@ -28,18 +30,35 @@ import { POIS_YARUMAL, type PoiYarumal } from '../src/constants/pois-yarumal';
 const SearchSchema = z.object({ query: z.string() });
 type SearchForm = z.infer<typeof SearchSchema>;
 
+function coverageMessage(target: 'origen' | 'destino'): string {
+  return target === 'origen'
+    ? 'Ese punto de partida está fuera de la zona donde operamos en Yarumal por ahora.'
+    : 'Ese destino está fuera de la zona donde operamos en Yarumal por ahora.';
+}
+
 export default function DestinationScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ preset?: string }>();
   const networkStatus = useNetworkStatus();
   const quoteFare = useQuoteFare();
+  const originQuote = useQuoteFare();
+  const resolveOrigin = useResolveOrigin();
+
+  const origin = useTripDraftStore((s) => s.origin);
+  const originSource = useTripDraftStore((s) => s.originSource);
+  const setOrigin = useTripDraftStore((s) => s.setOrigin);
+  const clearOrigin = useTripDraftStore((s) => s.clearOrigin);
   const setOriginDestination = useTripDraftStore((s) => s.setOriginDestination);
   const setQuote = useTripDraftStore((s) => s.setQuote);
   const municipalityId = useTripDraftStore((s) => s.municipalityId);
 
   const [coverageErrorId, setCoverageErrorId] = useState<string | null>(null);
   const [pinCandidate, setPinCandidate] = useState<MapLatLng | null>(null);
+  const [originPinCandidate, setOriginPinCandidate] = useState<MapLatLng | null>(null);
+  const [originCoverageBlocked, setOriginCoverageBlocked] = useState(false);
+
+  const isFixingOrigin = origin === null;
 
   const { control, watch } = useForm<SearchForm>({
     resolver: zodResolver(SearchSchema),
@@ -53,19 +72,21 @@ export default function DestinationScreen(): React.JSX.Element {
     return DESTINATION_SUGGESTIONS.filter((place) => place.title.toLowerCase().includes(text));
   }, [query]);
 
+  useEffect(() => {
+    if (resolveOrigin.status === 'resolved' && resolveOrigin.origin) {
+      setOrigin(resolveOrigin.origin, 'gps');
+    }
+  }, [resolveOrigin.status, resolveOrigin.origin, setOrigin]);
+
   const selectPlace = (place: SuggestedPlace): void => {
+    if (!origin) return;
     setCoverageErrorId(null);
-    const destination = { address: place.title, lat: place.lat, lng: place.lng };
+    const destination: Location = { address: place.title, lat: place.lat, lng: place.lng };
     quoteFare.mutate(
-      {
-        origin: CURRENT_LOCATION_MOCK,
-        destination,
-        municipality_id: municipalityId,
-        service_type: 'taxi',
-      },
+      { origin, destination, municipality_id: municipalityId, service_type: 'taxi' },
       {
         onSuccess: (quote) => {
-          setOriginDestination(CURRENT_LOCATION_MOCK, destination);
+          setOriginDestination(origin, destination);
           setQuote(quote);
           router.push('/confirm');
         },
@@ -84,7 +105,7 @@ export default function DestinationScreen(): React.JSX.Element {
       id: 'pin-drop',
       icon: '📍',
       title: 'Punto marcado en el mapa',
-      subtitle: `${pinCandidate.lat.toFixed(5)}, ${pinCandidate.lng.toFixed(5)}`,
+      subtitle: 'Yarumal',
       lat: pinCandidate.lat,
       lng: pinCandidate.lng,
     });
@@ -102,6 +123,62 @@ export default function DestinationScreen(): React.JSX.Element {
     });
   };
 
+  const confirmOriginPin = (): void => {
+    if (!originPinCandidate) return;
+    setOriginCoverageBlocked(false);
+    const candidate: Location = {
+      address: 'Punto marcado en el mapa',
+      lat: originPinCandidate.lat,
+      lng: originPinCandidate.lng,
+    };
+    originQuote.mutate(
+      {
+        origin: candidate,
+        destination: candidate,
+        municipality_id: municipalityId,
+        service_type: 'taxi',
+      },
+      {
+        onSuccess: () => setOrigin(candidate, 'manual'),
+        onError: (error) => {
+          if (domainErrorCode(error) === 'OUT_OF_COVERAGE') {
+            setOriginCoverageBlocked(true);
+          }
+        },
+      },
+    );
+  };
+
+  const selectOriginPoi = (poi: PoiYarumal): void => {
+    if (!poi.coord) return;
+    setOriginCoverageBlocked(false);
+    const candidate: Location = { address: poi.title, lat: poi.coord.lat, lng: poi.coord.lng };
+    originQuote.mutate(
+      {
+        origin: candidate,
+        destination: candidate,
+        municipality_id: municipalityId,
+        service_type: 'taxi',
+      },
+      {
+        onSuccess: () => setOrigin(candidate, 'manual'),
+        onError: (error) => {
+          if (domainErrorCode(error) === 'OUT_OF_COVERAGE') {
+            setOriginCoverageBlocked(true);
+          }
+        },
+      },
+    );
+  };
+
+  const retryUseMyLocation = (): void => {
+    if (!resolveOrigin.canAskAgain) {
+      void Linking.openSettings();
+      return;
+    }
+    resolveOrigin.resolve();
+  };
+
   useEffect(() => {
     if (!params.preset) return;
     const preset = DESTINATION_SUGGESTIONS.find((place) => place.id === params.preset);
@@ -116,63 +193,165 @@ export default function DestinationScreen(): React.JSX.Element {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <ScreenHeader title="Tu viaje" onBack={() => router.back()} />
       <View style={{ paddingHorizontal: theme.spacing.lg, gap: theme.spacing.sm }}>
-        <PointRow marker="●" label="Origen" value={CURRENT_LOCATION_MOCK.address} />
-        <PointRow
-          marker="▼"
-          label="Destino"
-          value={query || 'Escribe tu destino…'}
-          markerColor={theme.colors.brandInk}
-        />
+        {isFixingOrigin ? (
+          <View style={{ gap: 2 }}>
+            <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
+              Aún no tienes un punto de partida
+            </Text>
+            <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+              Márcalo en el mapa o elige un lugar conocido.
+            </Text>
+            <Text
+              accessibilityRole="link"
+              onPress={retryUseMyLocation}
+              style={{
+                ...theme.typography.small,
+                fontWeight: '700',
+                color: theme.colors.brandInk,
+                marginTop: 4,
+              }}
+            >
+              Usar mi ubicación
+            </Text>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacing.sm }}>
+            <View style={{ flex: 1 }}>
+              <PointRow marker="●" label="Origen" value={origin.address} />
+            </View>
+            {originSource === 'manual' && (
+              <Text
+                accessibilityRole="link"
+                onPress={clearOrigin}
+                style={{
+                  ...theme.typography.small,
+                  fontWeight: '700',
+                  color: theme.colors.brandInk,
+                  marginTop: theme.spacing.xs,
+                }}
+              >
+                Cambiar
+              </Text>
+            )}
+          </View>
+        )}
 
-        <Map
-          pinDrop
-          center={{ lat: CURRENT_LOCATION_MOCK.lat, lng: CURRENT_LOCATION_MOCK.lng }}
-          markers={[
-            {
-              id: 'origin',
-              kind: 'origin',
-              coord: { lat: CURRENT_LOCATION_MOCK.lat, lng: CURRENT_LOCATION_MOCK.lng },
-              label: `Origen: ${CURRENT_LOCATION_MOCK.address}`,
-            },
-          ]}
-          onPickLocation={setPinCandidate}
-          height={200}
-        />
-        {pinCandidate && (
-          <Button
-            label="Usar este punto como destino"
-            variant="ghost"
-            loading={quoteFare.isPending}
-            loadingLabel="Cotizando…"
-            disabled={networkStatus === 'offline'}
-            onPress={confirmPin}
+        {!isFixingOrigin && (
+          <PointRow
+            marker="▼"
+            label="Destino"
+            value={query || 'Escribe tu destino…'}
+            markerColor={theme.colors.brandInk}
           />
         )}
 
-        <Controller
-          control={control}
-          name="query"
-          render={({ field: { onChange, value } }) => (
-            <TextInput
-              value={value}
-              onChangeText={onChange}
-              placeholder="Buscar dirección, sitio o referencia"
-              placeholderTextColor={theme.colors.textMuted}
-              autoFocus
-              accessibilityLabel="Buscar destino"
-              style={{
-                minHeight: theme.touch.min,
-                borderWidth: 1,
-                borderColor: theme.colors.border,
-                borderRadius: theme.radius.field,
-                paddingHorizontal: theme.spacing.md,
-                color: theme.colors.text,
-                backgroundColor: theme.colors.surface,
-              }}
-            />
-          )}
+        <Map
+          pinDrop
+          center={
+            isFixingOrigin
+              ? (originPinCandidate ?? YARUMAL_CENTER)
+              : { lat: origin.lat, lng: origin.lng }
+          }
+          markers={
+            isFixingOrigin
+              ? []
+              : [
+                  {
+                    id: 'origin',
+                    kind: 'origin',
+                    coord: { lat: origin.lat, lng: origin.lng },
+                    label: `Origen: ${origin.address}`,
+                  },
+                ]
+          }
+          onPickLocation={isFixingOrigin ? setOriginPinCandidate : setPinCandidate}
+          height={200}
         />
-        {networkStatus === 'offline' && (
+
+        {isFixingOrigin && originPinCandidate && (
+          <>
+            <Button
+              label="Usar este punto como origen"
+              variant="ghost"
+              loading={originQuote.isPending}
+              loadingLabel="Verificando…"
+              disabled={networkStatus === 'offline'}
+              onPress={confirmOriginPin}
+            />
+            {originCoverageBlocked && (
+              <View accessibilityRole="alert">
+                <Text
+                  style={{
+                    ...theme.typography.small,
+                    fontWeight: '700',
+                    color: theme.colors.dangerInk,
+                  }}
+                >
+                  Fuera de cobertura
+                </Text>
+                <Text style={{ ...theme.typography.small, color: theme.colors.dangerInk }}>
+                  {coverageMessage('origen')}
+                </Text>
+              </View>
+            )}
+          </>
+        )}
+
+        {!isFixingOrigin && pinCandidate && (
+          <>
+            <Button
+              label="Usar este punto como destino"
+              variant="ghost"
+              loading={quoteFare.isPending}
+              loadingLabel="Cotizando…"
+              disabled={networkStatus === 'offline'}
+              onPress={confirmPin}
+            />
+            {coverageErrorId === 'pin-drop' && (
+              <View accessibilityRole="alert">
+                <Text
+                  style={{
+                    ...theme.typography.small,
+                    fontWeight: '700',
+                    color: theme.colors.dangerInk,
+                  }}
+                >
+                  Fuera de cobertura
+                </Text>
+                <Text style={{ ...theme.typography.small, color: theme.colors.dangerInk }}>
+                  {coverageMessage('destino')}
+                </Text>
+              </View>
+            )}
+          </>
+        )}
+
+        {!isFixingOrigin && (
+          <Controller
+            control={control}
+            name="query"
+            render={({ field: { onChange, value } }) => (
+              <TextInput
+                value={value}
+                onChangeText={onChange}
+                placeholder="Buscar dirección, sitio o referencia"
+                placeholderTextColor={theme.colors.textMuted}
+                autoFocus
+                accessibilityLabel="Buscar destino"
+                style={{
+                  minHeight: theme.touch.min,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  borderRadius: theme.radius.field,
+                  paddingHorizontal: theme.spacing.md,
+                  color: theme.colors.text,
+                  backgroundColor: theme.colors.surface,
+                }}
+              />
+            )}
+          />
+        )}
+        {!isFixingOrigin && networkStatus === 'offline' && (
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
             Sin conexión · no se puede cotizar un destino ahora.
           </Text>
@@ -181,7 +360,7 @@ export default function DestinationScreen(): React.JSX.Element {
 
       <FlatList
         contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.sm }}
-        data={suggestions}
+        data={isFixingOrigin ? [] : suggestions}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View>
@@ -195,46 +374,60 @@ export default function DestinationScreen(): React.JSX.Element {
               LUGARES DE YARUMAL
             </Text>
             {POIS_YARUMAL.map((poi) => (
-              <Pressable
-                key={poi.id}
-                disabled={!poi.coord || networkStatus === 'offline' || quoteFare.isPending}
-                onPress={() => selectPoi(poi)}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  poi.coord ? poi.title : `${poi.title}, ubicación pendiente de confirmar`
-                }
+              <View key={poi.id} style={{ marginBottom: theme.spacing.sm }}>
+                <Pressable
+                  disabled={
+                    !poi.coord ||
+                    networkStatus === 'offline' ||
+                    quoteFare.isPending ||
+                    originQuote.isPending
+                  }
+                  onPress={() => (isFixingOrigin ? selectOriginPoi(poi) : selectPoi(poi))}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    poi.coord
+                      ? poi.title
+                      : `${poi.title}, ubicación pendiente de confirmar, márcalo en el mapa`
+                  }
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    minHeight: theme.touch.min,
+                    gap: theme.spacing.sm,
+                    padding: theme.spacing.sm,
+                    borderRadius: theme.radius.field,
+                    borderWidth: 1,
+                    borderColor: theme.colors.border,
+                    opacity: poi.coord ? 1 : 0.6,
+                  }}
+                >
+                  <Text style={{ fontSize: 20 }}>{poi.icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
+                      {poi.title}
+                    </Text>
+                    {!poi.coord && (
+                      <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+                        Ubicación pendiente de confirmar · márcalo en el mapa
+                      </Text>
+                    )}
+                  </View>
+                  {!poi.coord && <StatusBadge label="Pendiente" tone="warn" />}
+                </Pressable>
+              </View>
+            ))}
+            {!isFixingOrigin && (
+              <Text
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  minHeight: theme.touch.min,
-                  gap: theme.spacing.sm,
-                  padding: theme.spacing.sm,
-                  borderRadius: theme.radius.field,
-                  borderWidth: 1,
-                  borderColor: theme.colors.border,
-                  opacity: poi.coord ? 1 : 0.6,
-                  marginBottom: theme.spacing.sm,
+                  ...theme.typography.small,
+                  color: theme.colors.textMuted,
+                  marginTop: theme.spacing.sm,
+                  marginBottom: theme.spacing.xs,
                 }}
               >
-                <Text style={{ fontSize: 20 }}>{poi.icon}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
-                    {poi.title}
-                  </Text>
-                </View>
-                {!poi.coord && <StatusBadge label="Pendiente" tone="warn" />}
-              </Pressable>
-            ))}
-            <Text
-              style={{
-                ...theme.typography.small,
-                color: theme.colors.textMuted,
-                marginTop: theme.spacing.sm,
-                marginBottom: theme.spacing.xs,
-              }}
-            >
-              SUGERENCIAS
-            </Text>
+                SUGERENCIAS
+              </Text>
+            )}
           </View>
         }
         renderItem={({ item }) => (
@@ -279,7 +472,7 @@ export default function DestinationScreen(): React.JSX.Element {
                   Fuera de cobertura
                 </Text>
                 <Text style={{ ...theme.typography.small, color: theme.colors.dangerInk }}>
-                  Ese destino está fuera de la zona donde operamos en Yarumal por ahora.
+                  {coverageMessage('destino')}
                 </Text>
               </View>
             )}

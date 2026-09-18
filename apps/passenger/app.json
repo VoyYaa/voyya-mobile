@@ -17,7 +17,15 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "@rnmapbox/maps/app.plugin.js"
+      "@rnmapbox/maps/app.plugin.js",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "VoyYa usa tu ubicación aproximada al abrir la app para confirmar que estás en zona de cobertura y ubicarte en el mapa al pedir tu taxi.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ]
     ],
     "android": {
       "package": "co.voyya.passenger",

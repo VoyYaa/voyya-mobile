@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, ErrorState, Skeleton, useTheme } from '@voyyaa/ui-mobile';
-import { useLogout } from '@voyyaa/app-runtime';
+import { LOCATION_NOTICE_VERSION } from '@voyyaa/shared';
+import { confirmConsent, hasSeenLocalConsent, useLogout } from '@voyyaa/app-runtime';
 import { ShiftToggle } from '../src/components/ShiftToggle';
 import { ShiftIssuePanel, type ShiftIssueKind } from '../src/components/ShiftIssuePanel';
 import { AssignmentRulesCard } from '../src/components/AssignmentRulesCard';
@@ -11,11 +12,17 @@ import { OffShiftPanel } from '../src/components/OffShiftPanel';
 import { RequestRow } from '../src/components/RequestRow';
 import { RequestListSkeleton } from '../src/components/RequestListSkeleton';
 import { PendingCashBanner } from '../src/components/PendingCashBanner';
+import { LocationIssueBanner } from '../src/components/LocationIssueBanner';
+import {
+  LocationConsentSheet,
+  type LocationConsentSheetMode,
+} from '../src/components/LocationConsentSheet';
 import { useDriverHome } from '../src/hooks/useDriverHome';
 import { useShiftActivation, type ShiftActivationPhase } from '../src/hooks/useShiftActivation';
 import { useNearbyOffers } from '../src/hooks/useNearbyOffers';
 import { usePendingCashTrips } from '../src/hooks/usePendingCashTrips';
 import { useBestEffortLocationReport } from '../src/hooks/useReportLocation';
+import { useLocationIssueStore } from '../src/state/useLocationIssueStore';
 import {
   SEARCH_RADIUS_FALLBACK_KM,
   ACCEPTANCE_TIMEOUT_FALLBACK_SEC,
@@ -48,6 +55,11 @@ export default function HomeScreen(): React.JSX.Element {
   const activeTrip = home.data?.active_trip ?? null;
   const isOnShift = shift?.status === 'available';
   const reportLocationBestEffort = useBestEffortLocationReport();
+  const locationIssue = useLocationIssueStore((s) => s.issue);
+  const setLocationIssue = useLocationIssueStore((s) => s.setIssue);
+
+  const [consentVisible, setConsentVisible] = useState(false);
+  const [consentMode, setConsentMode] = useState<LocationConsentSheetMode>('consent');
 
   const offers = useNearbyOffers(isOnShift);
   const firstOffer = offers.data?.[0];
@@ -66,6 +78,10 @@ export default function HomeScreen(): React.JSX.Element {
     const interval = setInterval(reportLocationBestEffort, LOCATION_REFRESH_MS);
     return () => clearInterval(interval);
   }, [isOnShift, reportLocationBestEffort]);
+
+  useEffect(() => {
+    if (!isOnShift) setLocationIssue(null);
+  }, [isOnShift, setLocationIssue]);
 
   if (activeTrip) {
     return <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
@@ -95,9 +111,31 @@ export default function HomeScreen(): React.JSX.Element {
   const handleShiftAction = (): void => {
     if (shift.on_shift) {
       shiftActivation.deactivate();
-    } else {
-      shiftActivation.activate();
+      return;
     }
+    void hasSeenLocalConsent('location', LOCATION_NOTICE_VERSION).then((seen) => {
+      if (seen) {
+        shiftActivation.activate();
+        return;
+      }
+      setConsentMode('consent');
+      setConsentVisible(true);
+    });
+  };
+
+  const handleConsentContinue = (): void => {
+    setConsentVisible(false);
+    void confirmConsent('location', LOCATION_NOTICE_VERSION);
+    shiftActivation.activate();
+  };
+
+  const handleConsentDismiss = (): void => {
+    setConsentVisible(false);
+  };
+
+  const handleReviewPrivacy = (): void => {
+    setConsentMode('review');
+    setConsentVisible(true);
   };
 
   const handleIssueAction = (kind: ShiftIssueKind): void => {
@@ -113,7 +151,13 @@ export default function HomeScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
+      <View
+        style={{
+          paddingHorizontal: theme.spacing.lg,
+          paddingTop: theme.spacing.lg,
+          gap: theme.spacing.sm,
+        }}
+      >
         <View
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
         >
@@ -138,6 +182,23 @@ export default function HomeScreen(): React.JSX.Element {
           </Pressable>
         </View>
 
+        <Text
+          accessibilityRole="link"
+          onPress={handleReviewPrivacy}
+          style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+        >
+          Privacidad de mi ubicación
+        </Text>
+
+        {locationIssue && (
+          <LocationIssueBanner
+            kind={locationIssue}
+            onOpenSettings={() => void Linking.openSettings()}
+          />
+        )}
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
         <ShiftToggle
           checked={shift.on_shift}
           busy={shiftActivation.isBusy}
@@ -188,7 +249,7 @@ export default function HomeScreen(): React.JSX.Element {
             Solicitudes cercanas
           </Text>
 
-          {!isOnShift && <OffShiftPanel onActivate={() => shiftActivation.activate()} />}
+          {!isOnShift && <OffShiftPanel onActivate={handleShiftAction} />}
 
           {isOnShift && offers.isLoading && <RequestListSkeleton count={1} />}
 
@@ -240,6 +301,13 @@ export default function HomeScreen(): React.JSX.Element {
           timeoutSeg={ACCEPTANCE_TIMEOUT_FALLBACK_SEC}
         />
       </ScrollView>
+
+      <LocationConsentSheet
+        visible={consentVisible}
+        mode={consentMode}
+        onContinue={handleConsentContinue}
+        onDismiss={handleConsentDismiss}
+      />
     </SafeAreaView>
   );
 }

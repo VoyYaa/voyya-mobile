@@ -11,6 +11,7 @@ export * from './components/Map';
 export * from './components/PriceTag';
 export * from './components/StatusBadge';
 export * from './components/BottomSheet';
+export * from './components/LocationConsentSheet';
 export * from './components/CountdownRing';
 export * from './components/EmptyState';
 export * from './components/ErrorState';

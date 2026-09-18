@@ -55,8 +55,4 @@ export const DESTINATION_SUGGESTIONS: SuggestedPlace[] = [
   },
 ];
 
-export const CURRENT_LOCATION_MOCK = {
-  address: 'Calle 20 #22-04 · Yarumal',
-  lat: 6.9612,
-  lng: -75.4178,
-};
+export const YARUMAL_CENTER = { lat: 6.9612, lng: -75.4178 };

@@ -3,18 +3,23 @@ import type { Location } from '@voyyaa/shared';
 import { quoteFare } from '../api/trips.api';
 import { domainErrorCode, isNetworkError } from '@voyyaa/app-runtime';
 
-export type CoverageGateStatus = 'checking' | 'within' | 'outside' | 'error';
+export type CoverageGateStatus = 'idle' | 'checking' | 'within' | 'outside' | 'error';
 
 export interface CoverageGate {
   status: CoverageGateStatus;
   retry: () => void;
 }
 
-export function useCoverageGate(origin: Location, municipalityId: number): CoverageGate {
-  const [status, setStatus] = useState<CoverageGateStatus>('checking');
+export function useCoverageGate(origin: Location | null, municipalityId: number): CoverageGate {
+  const [status, setStatus] = useState<CoverageGateStatus>('idle');
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (!origin) {
+      setStatus('idle');
+      return;
+    }
+
     let current = true;
     setStatus('checking');
 
@@ -39,7 +44,7 @@ export function useCoverageGate(origin: Location, municipalityId: number): Cover
     return () => {
       current = false;
     };
-  }, [origin.lat, origin.lng, municipalityId, attempt]);
+  }, [origin?.lat, origin?.lng, municipalityId, attempt]);
 
   return { status, retry: () => setAttempt((n) => n + 1) };
 }

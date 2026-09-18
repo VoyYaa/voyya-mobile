@@ -27,6 +27,7 @@ export interface TextFieldProps {
   autoFocus?: boolean;
   autoComplete?: TextInputProps['autoComplete'];
   textContentType?: TextInputProps['textContentType'];
+  accessibilityLabel?: string;
   accessibilityHint?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -47,6 +48,7 @@ export function TextField({
   autoFocus,
   autoComplete,
   textContentType,
+  accessibilityLabel,
   accessibilityHint,
   style,
   testID,
@@ -108,7 +110,7 @@ export function TextField({
           autoFocus={autoFocus}
           autoComplete={autoComplete}
           textContentType={textContentType}
-          accessibilityLabel={label}
+          accessibilityLabel={accessibilityLabel ?? label}
           accessibilityHint={accessibilityHint}
           accessibilityState={{ disabled }}
           testID={testID}

@@ -77,93 +77,95 @@ export function NativeMap({
   }
 
   const styleURL = theme.mode === 'dark' ? Mapbox.StyleURL.Dark : Mapbox.StyleURL.Light;
+  const pinDropAccessibilityLabel =
+    'Mapa para marcar tu punto en pantalla. Si usas lector de pantalla, te recomendamos elegir un lugar de la lista de abajo.';
 
   return (
     <View
       testID={testID}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      accessible={pinDrop}
+      accessibilityLabel={pinDrop ? pinDropAccessibilityLabel : undefined}
+      accessibilityElementsHidden={!pinDrop}
+      importantForAccessibility={pinDrop ? 'yes' : 'no-hide-descendants'}
       style={[{ height, borderRadius: theme.radius.card, overflow: 'hidden' }, style]}
     >
-      <MapView
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         style={StyleSheet.absoluteFillObject}
-        styleURL={styleURL}
-        scrollEnabled={interactive}
-        zoomEnabled={interactive}
-        pitchEnabled={interactive}
-        rotateEnabled={interactive}
-        compassEnabled={false}
-        scaleBarEnabled={false}
-        logoEnabled
-        attributionEnabled
-        onPress={pinDrop ? handlePress : undefined}
-        onMapIdle={pinDrop ? handleMapIdle : undefined}
       >
-        <Camera
-          centerCoordinate={toPosition(focusedCenter)}
-          zoomLevel={zoomLevel}
-          animationMode="easeTo"
-          animationDuration={300}
-        />
+        <MapView
+          style={StyleSheet.absoluteFillObject}
+          styleURL={styleURL}
+          scrollEnabled={interactive}
+          zoomEnabled={interactive}
+          pitchEnabled={interactive}
+          rotateEnabled={interactive}
+          compassEnabled={false}
+          scaleBarEnabled={false}
+          logoEnabled
+          attributionEnabled
+          onPress={pinDrop ? handlePress : undefined}
+          onMapIdle={pinDrop ? handleMapIdle : undefined}
+        >
+          <Camera
+            centerCoordinate={toPosition(focusedCenter)}
+            zoomLevel={zoomLevel}
+            animationMode="easeTo"
+            animationDuration={300}
+          />
 
-        {route && route.points.length > 1 && (
-          <ShapeSource id="voyya-route-source" shape={toRouteFeature(route.points)}>
-            <LineLayer
-              id="voyya-route-line"
-              style={{
-                lineColor: theme.colors.brandPressed,
-                lineWidth: 4,
-                lineCap: 'round',
-                lineJoin: 'round',
-              }}
-            />
-          </ShapeSource>
-        )}
+          {route && route.points.length > 1 && (
+            <ShapeSource id="voyya-route-source" shape={toRouteFeature(route.points)}>
+              <LineLayer
+                id="voyya-route-line"
+                style={{
+                  lineColor: theme.colors.brandPressed,
+                  lineWidth: 4,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              />
+            </ShapeSource>
+          )}
 
-        {markers.map((marker) => (
-          <PointAnnotation key={marker.id} id={marker.id} coordinate={toPosition(marker.coord)}>
+          {markers.map((marker) => (
+            <PointAnnotation key={marker.id} id={marker.id} coordinate={toPosition(marker.coord)}>
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: theme.radius.pill,
+                  backgroundColor: theme.colors.surface,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  ...theme.shadow.sm,
+                }}
+              >
+                <Text style={{ fontSize: 14, color: colorForKind(marker.kind) }}>
+                  {GLYPH_BY_KIND[marker.kind]}
+                </Text>
+              </View>
+            </PointAnnotation>
+          ))}
+        </MapView>
+
+        {pinDrop && (
+          <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
             <View
-              accessible
-              accessibilityLabel={marker.label ?? marker.kind}
               style={{
-                width: 28,
-                height: 28,
-                borderRadius: theme.radius.pill,
-                backgroundColor: theme.colors.surface,
-                alignItems: 'center',
-                justifyContent: 'center',
-                ...theme.shadow.sm,
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                marginLeft: -16,
+                marginTop: -32,
               }}
             >
-              <Text style={{ fontSize: 14, color: colorForKind(marker.kind) }}>
-                {GLYPH_BY_KIND[marker.kind]}
-              </Text>
+              <Text style={{ fontSize: 32 }}>📍</Text>
             </View>
-          </PointAnnotation>
-        ))}
-      </MapView>
-
-      {pinDrop && (
-        <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-          <View
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              marginLeft: -16,
-              marginTop: -32,
-            }}
-          >
-            <Text
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={{ fontSize: 32 }}
-            >
-              📍
-            </Text>
           </View>
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 }

@@ -1,5 +1,4 @@
-import { domainErrorCode, isNetworkError } from '@voyyaa/app-runtime';
-import { requestDeviceLocation } from '../location/device-location';
+import { domainErrorCode, isNetworkError, requestDeviceLocation } from '@voyyaa/app-runtime';
 import { type ShiftActivationPhase, useShiftStore } from '../state/useShiftStore';
 import { useUpdateShift } from './useUpdateShift';
 

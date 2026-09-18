@@ -5,11 +5,12 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from '@voyyaa/ui-mobile';
-import { TripError } from '@voyyaa/shared';
+import { LOCATION_NOTICE_VERSION, TripError } from '@voyyaa/shared';
 import {
   configureApiClient,
   createQueryClient,
   ConnectivityBanner,
+  retryPendingConsentSync,
   useSessionStore,
   useProactiveRefresh,
 } from '@voyyaa/app-runtime';
@@ -26,6 +27,12 @@ function RootStack(): React.JSX.Element {
   useEffect(() => {
     void hydrate();
   }, []);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      void retryPendingConsentSync('location', LOCATION_NOTICE_VERSION);
+    }
+  }, [status]);
 
   useRouteGuard();
   useProactiveRefresh();

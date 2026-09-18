@@ -17,9 +17,11 @@ import type { PaymentMethod, ServiceType } from '@voyyaa/shared';
 import { domainErrorCode, useNetworkStatus } from '@voyyaa/app-runtime';
 import { ServiceTypeSelector, type ServiceTypeOption } from '../src/components/ServiceTypeSelector';
 import { PaymentMethodList, type PaymentMethodOption } from '../src/components/PaymentMethodList';
+import { LocationReferenceField } from '../src/components/LocationReferenceField';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useCreateTripRequest } from '../src/hooks/useCreateTripRequest';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
+import { composeAddress } from '../src/lib/address';
 
 const SERVICE_OPTIONS: readonly ServiceTypeOption[] = [
   { type: 'taxi', label: 'Estándar', icon: '🚗', enabled: true },
@@ -49,6 +51,9 @@ export default function ConfirmScreen(): React.JSX.Element {
   const setQuote = useTripDraftStore((s) => s.setQuote);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [pickupReference, setPickupReference] = useState('');
+  const [dropoffReference, setDropoffReference] = useState('');
+  const [dropoffReferenceExpanded, setDropoffReferenceExpanded] = useState(false);
   const quoteFare = useQuoteFare();
   const createTripRequest = useCreateTripRequest();
 
@@ -74,8 +79,11 @@ export default function ConfirmScreen(): React.JSX.Element {
   const requestTrip = (): void => {
     createTripRequest.mutate(
       {
-        origin,
-        destination,
+        origin: { ...origin, address: composeAddress(origin.address, pickupReference) },
+        destination: {
+          ...destination,
+          address: composeAddress(destination.address, dropoffReference),
+        },
         municipality_id: municipalityId,
         service_type: serviceType,
         payment_method: paymentMethod,
@@ -122,6 +130,30 @@ export default function ConfirmScreen(): React.JSX.Element {
             markerColor={theme.colors.brandInk}
           />
         </View>
+
+        <LocationReferenceField
+          label="¿Alguna referencia para que te encuentren?"
+          value={pickupReference}
+          onChangeText={setPickupReference}
+          accessibilityLabel="Referencia para tu punto de recogida, opcional"
+        />
+
+        {dropoffReferenceExpanded ? (
+          <LocationReferenceField
+            label="Referencia del destino"
+            value={dropoffReference}
+            onChangeText={setDropoffReference}
+            accessibilityLabel="Referencia para tu destino, opcional"
+          />
+        ) : (
+          <Text
+            accessibilityRole="link"
+            onPress={() => setDropoffReferenceExpanded(true)}
+            style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.brandInk }}
+          >
+            + Agregar una referencia del destino
+          </Text>
+        )}
 
         <Map
           center={{
