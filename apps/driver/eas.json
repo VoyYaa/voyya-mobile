@@ -12,7 +12,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://REEMPLAZAR-tu-ip-lan-o-tunel:3000"
+        "EXPO_PUBLIC_API_URL": "http://192.168.1.53:3000"
       }
     },
     "development-simulator": {
@@ -28,14 +28,14 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REEMPLAZAR-api-staging.voyya.co"
+        "EXPO_PUBLIC_API_URL": "https://voyyaapi-production.up.railway.app"
       }
     },
     "production": {
       "autoIncrement": true,
       "environment": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REEMPLAZAR-api.voyya.co"
+        "EXPO_PUBLIC_API_URL": "https://voyyaapi-production.up.railway.app"
       }
     }
   },
