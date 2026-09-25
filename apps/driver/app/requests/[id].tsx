@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, BackHandler, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Button,
@@ -11,6 +10,7 @@ import {
   Map,
   PointRow,
   ScreenHeader,
+  Skeleton,
   Toast,
   type ToastTone,
   useCountdown,
@@ -18,12 +18,11 @@ import {
   useTheme,
 } from '@voyyaa/ui-mobile';
 import { isNetworkError } from '@voyyaa/app-runtime';
-import type { AssignmentNotification } from '@voyyaa/shared';
 import { PassengerSummaryRow } from '../../src/components/PassengerSummaryRow';
 import { ActionButtonPair } from '../../src/components/ActionButtonPair';
 import { useAcceptAssignment } from '../../src/hooks/useAcceptAssignment';
 import { useRejectAssignment } from '../../src/hooks/useRejectAssignment';
-import { NEARBY_OFFERS_QUERY_KEY } from '../../src/hooks/useNearbyOffers';
+import { useNearbyOffers } from '../../src/hooks/useNearbyOffers';
 import { COUNTDOWN_WARN_THRESHOLD_SEC } from '../../src/constants/parameters';
 
 type UiStatus =
@@ -64,12 +63,10 @@ export default function RequestDetailScreen(): React.JSX.Element {
   const reducedMotion = useReducedMotion();
   const params = useLocalSearchParams<{ id: string }>();
   const assignmentId = params.id ? Number(params.id) : null;
-  const queryClient = useQueryClient();
 
-  const notification: AssignmentNotification | null = assignmentId
-    ? ((queryClient.getQueryData<AssignmentNotification[]>(NEARBY_OFFERS_QUERY_KEY) ?? []).find(
-        (n) => n.assignment_id === assignmentId,
-      ) ?? null)
+  const offers = useNearbyOffers(true);
+  const notification = assignmentId
+    ? (offers.data?.find((n) => n.assignment_id === assignmentId) ?? null)
     : null;
 
   const [uiStatus, setUiStatus] = useState<UiStatus>('counting');
@@ -160,7 +157,45 @@ export default function RequestDetailScreen(): React.JSX.Element {
     return () => sub.remove();
   }, [uiStatus]);
 
-  if (!assignmentId || !notification) {
+  if (!assignmentId) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+        <ScreenHeader title="Solicitud" onBack={() => router.back()} />
+        <ErrorState
+          title="No encontramos esta solicitud"
+          body="Puede que ya haya expirado o que la lista se haya actualizado."
+          onRetry={() => router.replace('/requests')}
+          retryLabel="Volver a la lista"
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (!notification && offers.isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+        <ScreenHeader title="Solicitud" onBack={() => router.back()} />
+        <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
+          <Skeleton height={160} radius={theme.radius.card} />
+          <Skeleton height={72} radius={theme.radius.card} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (!notification && offers.isError) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+        <ScreenHeader title="Solicitud" onBack={() => router.back()} />
+        <ErrorState
+          title="No pudimos cargar esta solicitud"
+          onRetry={() => offers.refetch()}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (!notification) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
         <ScreenHeader title="Solicitud" onBack={() => router.back()} />

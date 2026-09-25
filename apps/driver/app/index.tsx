@@ -23,6 +23,7 @@ import { useNearbyOffers } from '../src/hooks/useNearbyOffers';
 import { usePendingCashTrips } from '../src/hooks/usePendingCashTrips';
 import { useBestEffortLocationReport } from '../src/hooks/useReportLocation';
 import { useLocationIssueStore } from '../src/state/useLocationIssueStore';
+import { revokeCurrentPushToken } from '../src/notifications/push-registration';
 import {
   SEARCH_RADIUS_FALLBACK_KM,
   ACCEPTANCE_TIMEOUT_FALLBACK_SEC,
@@ -108,6 +109,10 @@ export default function HomeScreen(): React.JSX.Element {
 
   const issue = issueFromPhase(shiftActivation.phase);
 
+  const handleLogout = (): void => {
+    void revokeCurrentPushToken().finally(() => logout.mutate());
+  };
+
   const handleShiftAction = (): void => {
     if (shift.on_shift) {
       shiftActivation.deactivate();
@@ -168,7 +173,7 @@ export default function HomeScreen(): React.JSX.Element {
             accessibilityRole="button"
             accessibilityLabel="Cerrar sesión"
             hitSlop={8}
-            onPress={() => logout.mutate()}
+            onPress={handleLogout}
             style={{
               width: 36,
               height: 36,

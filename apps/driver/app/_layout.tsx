@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { AppState, type AppStateStatus, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -16,6 +16,8 @@ import {
 } from '@voyyaa/app-runtime';
 import { useRouteGuard } from '../src/hooks/useRouteGuard';
 import { API_BASE_URL } from '../src/constants/env';
+import { registerForPushNotifications } from '../src/notifications/push-registration';
+import { useNotificationRouting } from '../src/notifications/useNotificationRouting';
 
 configureApiClient({ baseUrl: API_BASE_URL, defaultErrorSchema: AssignmentError });
 
@@ -31,11 +33,24 @@ function RootStack(): React.JSX.Element {
   useEffect(() => {
     if (status === 'authenticated') {
       void retryPendingConsentSync('location', LOCATION_NOTICE_VERSION);
+      void registerForPushNotifications();
     }
+  }, [status]);
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+
+    const subscription = AppState.addEventListener('change', (next: AppStateStatus) => {
+      if (next === 'active') {
+        void registerForPushNotifications();
+      }
+    });
+    return () => subscription.remove();
   }, [status]);
 
   useRouteGuard();
   useProactiveRefresh();
+  useNotificationRouting();
 
   if (status === 'hydrating') {
     return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;

@@ -25,6 +25,13 @@
           "isIosBackgroundLocationEnabled": false,
           "isAndroidBackgroundLocationEnabled": false
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#F4A21A",
+          "sounds": ["./assets/assignment_offer.wav"]
+        }
       ]
     ],
     "android": {
