@@ -94,7 +94,7 @@ export function CashPendingRow({
                 style={{ ...theme.typography.small, color: theme.colors.textMuted }}
                 numberOfLines={1}
               >
-                {trip.dropoff_address}
+                {trip.dropoff_address ?? driverCopy.cash.addressRemoved}
               </Text>
               <View style={{ alignSelf: 'flex-start', marginTop: theme.spacing.xs }}>
                 <StatusBadge label={CASH_PENDING_TONE.label} tone={CASH_PENDING_TONE.tone} />

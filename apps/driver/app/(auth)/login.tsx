@@ -5,17 +5,15 @@ import {
   AccentText,
   BrandMark,
   Button,
-  Card,
   LinkButton,
   MarkGlyph,
   Reveal,
   Stage,
   TextField,
   formatMMSS,
-  useCountdown,
   useTheme,
 } from '@voyyaa/ui-mobile';
-import { NationalId, Pin } from '@voyyaa/shared';
+import { DRIVER_PIN_LENGTH, NationalId, Pin } from '@voyyaa/shared';
 import {
   domainErrorCode,
   isNetworkError,
@@ -24,38 +22,15 @@ import {
   useSessionStore,
 } from '@voyyaa/app-runtime';
 import { useDriverLogin } from '../../src/hooks/useDriverLogin';
+import { useBlockCountdown } from '../../src/hooks/useBlockCountdown';
+import { AuthNoticeCard } from '../../src/components/AuthNoticeCard';
+import { forgetTemporaryPin, rememberTemporaryPin } from '../../src/auth/remembered-pin';
+import { onlyDigits } from '../../src/auth/pin-rules';
 import { driverCopy } from '../../src/copy/driver-copy';
 
 type LoginOutcome = 'idle' | 'verifying' | 'credentials' | 'blocked' | 'suspended' | 'offline';
 
-const BLOCKED_FALLBACK_SEC = 90;
 const BRAND_MARK_SIZE = 56;
-const NOTICE_GLYPH_SIZE = 40;
-
-interface NoticeCardProps {
-  glyph: 'clock' | 'error';
-  title: string;
-  body: string;
-  children?: React.ReactNode;
-}
-
-function NoticeCard({ glyph, title, body, children }: NoticeCardProps): React.JSX.Element {
-  const theme = useTheme();
-  return (
-    <Card tone="tint" testID="login-notice">
-      <View accessibilityRole="alert" style={{ gap: theme.spacing.md }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
-          <MarkGlyph glyph={glyph} size={NOTICE_GLYPH_SIZE} />
-          <Text style={{ ...theme.typography.subtitle, color: theme.colors.text, flex: 1 }}>
-            {title}
-          </Text>
-        </View>
-        <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>{body}</Text>
-        {children}
-      </View>
-    </Card>
-  );
-}
 
 export default function LoginScreen(): React.JSX.Element {
   const theme = useTheme();
@@ -69,14 +44,11 @@ export default function LoginScreen(): React.JSX.Element {
   const [outcome, setOutcome] = useState<LoginOutcome>('idle');
   const [credentialsMessage, setCredentialsMessage] = useState('');
   const [suspendedMessage, setSuspendedMessage] = useState('');
-  const [blockedDeadline, setBlockedDeadline] = useState<string | null>(null);
-  const [blockedTimeKnown, setBlockedTimeKnown] = useState(true);
+  const block = useBlockCountdown();
 
-  const blockedRemaining = useCountdown(blockedDeadline);
-  const isBlocked = outcome === 'blocked' && blockedDeadline !== null && blockedRemaining > 0;
+  const isBlocked = block.isBlocked;
   const offline = networkStatus === 'offline';
-  const isFormatValid =
-    NationalId.safeParse(nationalId).success && Pin.safeParse(pin).success && pin.length === 4;
+  const isFormatValid = NationalId.safeParse(nationalId).success && Pin.safeParse(pin).success;
 
   const clearErrorOnEdit = (): void => {
     if (outcome === 'credentials' || outcome === 'offline') setOutcome('idle');
@@ -84,12 +56,12 @@ export default function LoginScreen(): React.JSX.Element {
 
   const handleNationalId = (raw: string): void => {
     clearErrorOnEdit();
-    setNationalId(raw.replace(/\D/g, '').slice(0, 15));
+    setNationalId(onlyDigits(raw, 15));
   };
 
   const handlePin = (raw: string): void => {
     clearErrorOnEdit();
-    setPin(raw.replace(/\D/g, '').slice(0, 4));
+    setPin(onlyDigits(raw, DRIVER_PIN_LENGTH));
   };
 
   const handleLogin = (): void => {
@@ -99,6 +71,8 @@ export default function LoginScreen(): React.JSX.Element {
       { national_id: nationalId, pin },
       {
         onSuccess: (response) => {
+          if (response.user.pin_change_required) rememberTemporaryPin(pin);
+          else forgetTemporaryPin();
           void setSession(response);
         },
         onError: (error) => {
@@ -108,11 +82,7 @@ export default function LoginScreen(): React.JSX.Element {
           }
           const code = domainErrorCode(error);
           if (code === 'ACCOUNT_TEMPORARILY_BLOCKED') {
-            const retrySec = retryInSecOf(error);
-            setBlockedTimeKnown(retrySec !== undefined);
-            setBlockedDeadline(
-              new Date(Date.now() + (retrySec ?? BLOCKED_FALLBACK_SEC) * 1000).toISOString(),
-            );
+            block.startBlock(retryInSecOf(error));
             setOutcome('blocked');
           } else if (code === 'ACCOUNT_SUSPENDED') {
             setSuspendedMessage(error.message || driverCopy.login.suspendedFallback);
@@ -176,7 +146,7 @@ export default function LoginScreen(): React.JSX.Element {
               </Text>
 
               {showSuspended ? (
-                <NoticeCard
+                <AuthNoticeCard
                   glyph="error"
                   title={driverCopy.login.suspendedTitle}
                   body={suspendedMessage}
@@ -186,7 +156,7 @@ export default function LoginScreen(): React.JSX.Element {
                     onPress={handleTryAnotherAccount}
                     testID="login-try-another"
                   />
-                </NoticeCard>
+                </AuthNoticeCard>
               ) : (
                 <>
                   <TextField
@@ -205,7 +175,7 @@ export default function LoginScreen(): React.JSX.Element {
                     onChangeText={handlePin}
                     helper={driverCopy.login.pinHelper}
                     keyboardType="numeric"
-                    maxLength={4}
+                    maxLength={DRIVER_PIN_LENGTH}
                     secureTextEntry
                     revealable
                     disabled={login.isPending || isBlocked}
@@ -215,12 +185,12 @@ export default function LoginScreen(): React.JSX.Element {
                   />
 
                   {showBlocked ? (
-                    <NoticeCard
+                    <AuthNoticeCard
                       glyph="clock"
                       title={driverCopy.login.blockedTitle}
                       body={
-                        blockedTimeKnown
-                          ? driverCopy.login.blockedKnown(formatMMSS(blockedRemaining))
+                        block.timeKnown
+                          ? driverCopy.login.blockedKnown(formatMMSS(block.remainingSec))
                           : driverCopy.login.blockedUnknown
                       }
                     />

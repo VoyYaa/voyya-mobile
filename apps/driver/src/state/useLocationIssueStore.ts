@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type LocationIssueKind = 'permission_denied' | 'gps_disabled';
+export type LocationIssueKind = 'permission_denied' | 'gps_disabled' | 'consent_required';
 
 interface LocationIssueState {
   issue: LocationIssueKind | null;

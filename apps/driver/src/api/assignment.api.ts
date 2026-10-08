@@ -8,7 +8,8 @@ import {
   CancelAssignmentByDriverResult,
   RejectAssignmentDTO,
 } from '@voyyaa/shared';
-import { apiRequest, buildAuthHeader, getApiBaseUrl, ApiError } from '@voyyaa/app-runtime';
+import { buildAuthHeader, getApiBaseUrl, ApiError } from '@voyyaa/app-runtime';
+import { driverRequest, reportPinChangeRequired, withPinChangeRequired } from './driver-request';
 import { ACTION_RESPONSE_TIMEOUT_MS } from '../constants/parameters';
 
 export async function acceptAssignment(
@@ -45,11 +46,12 @@ export async function acceptAssignment(
     throw new ApiError('validation', 'La respuesta del servidor no tiene el formato esperado.');
   }
 
-  const parsedError = AssignmentError.safeParse(json);
-  if (parsedError.success) {
-    throw new ApiError('http', parsedError.data.message, res.status, parsedError.data.code);
-  }
-  throw new ApiError('http', `Error inesperado del servidor (${res.status}).`, res.status);
+  const parsedError = withPinChangeRequired(AssignmentError).safeParse(json);
+  const failure = parsedError.success
+    ? new ApiError('http', parsedError.data.message, res.status, parsedError.data.code)
+    : new ApiError('http', `Error inesperado del servidor (${res.status}).`, res.status);
+  reportPinChangeRequired(failure);
+  throw failure;
 }
 
 const RejectOk = z.object({ ok: z.literal(true) });
@@ -59,14 +61,14 @@ export function rejectAssignment(
   dto: RejectAssignmentDTO = {},
 ): Promise<z.infer<typeof RejectOk>> {
   const body = RejectAssignmentDTO.parse(dto);
-  return apiRequest(
+  return driverRequest(
     { method: 'POST', path: `/assignments/${assignmentId}/reject`, body },
     RejectOk,
   );
 }
 
 export function listNearbyOffers(): Promise<AssignmentNotification[]> {
-  return apiRequest(
+  return driverRequest(
     { method: 'GET', path: '/assignments/nearby' },
     z.array(AssignmentNotification),
   );
@@ -77,7 +79,7 @@ export function cancelAssignmentByDriver(
   dto: CancelAssignmentByDriverDTO,
 ): Promise<CancelAssignmentByDriverResult> {
   const body = CancelAssignmentByDriverDTO.parse(dto);
-  return apiRequest(
+  return driverRequest(
     { method: 'POST', path: `/assignments/${assignmentId}/cancel`, body },
     CancelAssignmentByDriverResult,
     AssignmentError,

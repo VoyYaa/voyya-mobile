@@ -7,14 +7,17 @@ export type ShiftActivationPhase =
   | 'permission_denied'
   | 'gps_disabled'
   | 'blocked_by_trip'
+  | 'consent_required'
   | 'offline'
   | 'server_error';
 
+type ShiftAction = 'activate' | 'deactivate';
+
 interface ShiftUiState {
   phase: ShiftActivationPhase;
-  lastAction: 'activate' | 'deactivate' | null;
+  lastAction: ShiftAction | null;
   setPhase: (phase: ShiftActivationPhase) => void;
-  setLastAction: (action: 'activate' | 'deactivate' | null) => void;
+  setLastAction: (action: ShiftAction | null) => void;
 }
 
 export const useShiftStore = create<ShiftUiState>((set) => ({

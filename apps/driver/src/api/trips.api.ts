@@ -1,5 +1,5 @@
 import { CompleteTripDTO, TripError, TripTransitionResult } from '@voyyaa/shared';
-import { apiRequest } from '@voyyaa/app-runtime';
+import { driverRequest } from './driver-request';
 
 type TripTransitionAction =
   'en-route' | 'arrived' | 'start' | 'complete' | 'no-show' | 'cash-collected';
@@ -9,7 +9,7 @@ function postTripTransition(
   action: TripTransitionAction,
   body?: unknown,
 ): Promise<TripTransitionResult> {
-  return apiRequest(
+  return driverRequest(
     { method: 'POST', path: `/trips/${tripRequestId}/${action}`, body },
     TripTransitionResult,
     TripError,

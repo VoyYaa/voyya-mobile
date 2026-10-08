@@ -13,6 +13,13 @@ export interface ShiftActivation {
   dismissIssue: () => void;
 }
 
+function activationFailurePhase(error: unknown): ShiftActivationPhase {
+  if (isNetworkError(error)) return 'offline';
+  return domainErrorCode(error) === 'LOCATION_CONSENT_REQUIRED'
+    ? 'consent_required'
+    : 'server_error';
+}
+
 export function useShiftActivation(): ShiftActivation {
   const phase = useShiftStore((s) => s.phase);
   const setPhase = useShiftStore((s) => s.setPhase);
@@ -32,12 +39,16 @@ export function useShiftActivation(): ShiftActivation {
         setPhase('gps_disabled');
         return;
       }
+      if (outcome.kind === 'consent_required') {
+        setPhase('consent_required');
+        return;
+      }
       setPhase('activating');
       updateShift.mutate(
         { on_shift: true, location: outcome.coordinate },
         {
           onSuccess: () => setPhase('idle'),
-          onError: (error) => setPhase(isNetworkError(error) ? 'offline' : 'server_error'),
+          onError: (error) => setPhase(activationFailurePhase(error)),
         },
       );
     });

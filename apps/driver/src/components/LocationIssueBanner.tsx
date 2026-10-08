@@ -6,17 +6,18 @@ import { driverCopy } from '../copy/driver-copy';
 
 export interface LocationIssueBannerProps {
   kind: LocationIssueKind;
-  onOpenSettings: () => void;
+  onPress: () => void;
 }
 
 const MESSAGE_BY_KIND: Record<LocationIssueKind, string> = {
   permission_denied: driverCopy.issues.locationPermission,
   gps_disabled: driverCopy.issues.gpsDisabled,
+  consent_required: driverCopy.issues.consentRequired,
 };
 
 export function LocationIssueBanner({
   kind,
-  onOpenSettings,
+  onPress,
 }: LocationIssueBannerProps): React.JSX.Element {
   const theme = useTheme();
   const message = MESSAGE_BY_KIND[kind];
@@ -26,7 +27,7 @@ export function LocationIssueBanner({
       accessibilityRole="button"
       accessibilityLabel={message}
       accessibilityLiveRegion="polite"
-      onPress={onOpenSettings}
+      onPress={onPress}
       testID="location-issue-banner"
       style={{
         flexDirection: 'row',

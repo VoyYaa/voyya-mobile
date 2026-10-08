@@ -372,7 +372,11 @@ export default function ActiveTripScreen(): React.JSX.Element {
           {locationIssue && (
             <LocationIssueBanner
               kind={locationIssue}
-              onOpenSettings={() => void Linking.openSettings()}
+              onPress={() =>
+                locationIssue === 'consent_required'
+                  ? router.push('/privacy')
+                  : void Linking.openSettings()
+              }
             />
           )}
 

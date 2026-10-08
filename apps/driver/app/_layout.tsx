@@ -7,12 +7,12 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BRAND_FONT_ASSETS, BootScreen, ThemeProvider, useTheme } from '@voyyaa/ui-mobile';
-import { AssignmentError, LOCATION_NOTICE_VERSION } from '@voyyaa/shared';
+import { AssignmentError } from '@voyyaa/shared';
 import {
   configureApiClient,
   createQueryClient,
   ConnectivityBanner,
-  retryPendingConsentSync,
+  refreshLocationConsent,
   useSessionStore,
   silenceKnownWebWarnings,
   useProactiveRefresh,
@@ -42,7 +42,7 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      void retryPendingConsentSync('location', LOCATION_NOTICE_VERSION);
+      void refreshLocationConsent().catch(() => undefined);
       void registerForPushNotifications();
     }
   }, [status]);

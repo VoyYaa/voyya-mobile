@@ -1,46 +1,65 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { LocationConsentSheet as BaseLocationConsentSheet } from '@voyyaa/ui-mobile';
+import { LOCATION_NOTICES } from '@voyyaa/shared';
+import { useGrantLocationConsent } from '@voyyaa/app-runtime';
+import { driverCopy } from '../copy/driver-copy';
 
-export type LocationConsentSheetMode = 'consent' | 'review';
+export type LocationConsentSheetMode = 'shift' | 'accept' | 'read';
 
 export interface LocationConsentSheetProps {
   visible: boolean;
   mode: LocationConsentSheetMode;
-  onContinue: () => void;
+  onAccepted: () => void;
   onDismiss: () => void;
 }
 
-const ROWS = [
-  { label: 'Qué usamos', value: 'Tu ubicación aproximada, mientras estás en turno.' },
-  { label: 'Para qué', value: 'Para asignarte los viajes más cercanos a ti.' },
-  {
-    label: 'Cuánto la guardamos',
-    value:
-      'Se borra apenas terminas turno. Si no cierras turno, se borra sola después de un tiempo.',
-  },
-  {
-    label: 'Cómo la quitas',
-    value: 'Cuando quieras, desde los ajustes de ubicación de tu teléfono.',
-  },
-] as const;
+const NOTICE = LOCATION_NOTICES.driver;
+const NOTICE_ROWS = NOTICE.rows.map(({ label, value }) => ({ label, value }));
+const ERROR_ROW = {
+  label: driverCopy.consentNotice.errorLabel,
+  value: driverCopy.consentNotice.errorValue,
+};
 
 export function LocationConsentSheet({
   visible,
   mode,
-  onContinue,
+  onAccepted,
   onDismiss,
 }: LocationConsentSheetProps): React.JSX.Element {
-  const isReview = mode === 'review';
+  const copy = driverCopy.consentNotice;
+  const grant = useGrantLocationConsent();
+  const reset = grant.reset;
+  const isRead = mode === 'read';
+
+  useEffect(() => {
+    if (!visible) reset();
+  }, [visible, reset]);
+
+  const handleAccept = (): void => {
+    if (grant.isPending) return;
+    grant.mutate(undefined, { onSuccess: onAccepted });
+  };
+
+  const primaryLabel = grant.isPending
+    ? copy.saving
+    : grant.isError
+      ? copy.retry
+      : isRead
+        ? copy.primaryRead
+        : mode === 'shift'
+          ? copy.primaryShift
+          : copy.primaryAccept;
 
   return (
     <BaseLocationConsentSheet
       visible={visible}
-      title="Antes de activar tu turno"
-      rows={ROWS}
-      primaryLabel={isReview ? 'Entendido' : 'Continuar'}
-      secondaryLabel={isReview ? undefined : 'Ahora no'}
-      onPrimary={isReview ? onDismiss : onContinue}
-      onSecondary={isReview ? undefined : onDismiss}
+      title={NOTICE.title}
+      rows={grant.isError ? [ERROR_ROW, ...NOTICE_ROWS] : NOTICE_ROWS}
+      primaryLabel={primaryLabel}
+      secondaryLabel={isRead || grant.isPending ? undefined : copy.secondary}
+      onPrimary={isRead ? onDismiss : handleAccept}
+      onSecondary={isRead || grant.isPending ? undefined : onDismiss}
+      testID="location-consent-sheet"
     />
   );
 }

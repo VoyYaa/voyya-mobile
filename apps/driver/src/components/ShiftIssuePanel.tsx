@@ -4,7 +4,12 @@ import { Button, Card, MarkGlyph, useTheme } from '@voyyaa/ui-mobile';
 import { driverCopy } from '../copy/driver-copy';
 
 export type ShiftIssueKind =
-  'permission_denied' | 'gps_disabled' | 'offline' | 'server_error' | 'blocked_by_trip';
+  | 'permission_denied'
+  | 'gps_disabled'
+  | 'offline'
+  | 'server_error'
+  | 'blocked_by_trip'
+  | 'consent_required';
 
 export interface ShiftIssuePanelProps {
   kind: ShiftIssueKind;
@@ -23,6 +28,10 @@ const ISSUE_COPY: Record<ShiftIssueKind, { message: string; actionLabel?: string
   offline: { message: driverCopy.issues.offline, actionLabel: driverCopy.issues.retry },
   server_error: { message: driverCopy.issues.serverError, actionLabel: driverCopy.issues.retry },
   blocked_by_trip: { message: driverCopy.issues.blockedByTrip },
+  consent_required: {
+    message: driverCopy.issues.consentRequired,
+    actionLabel: driverCopy.issues.consentRequiredAction,
+  },
 };
 
 export function ShiftIssuePanel({ kind, onAction }: ShiftIssuePanelProps): React.JSX.Element {

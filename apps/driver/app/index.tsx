@@ -14,10 +14,8 @@ import {
   useDelayedLoading,
   useTheme,
 } from '@voyyaa/ui-mobile';
-import { LOCATION_NOTICE_VERSION } from '@voyyaa/shared';
 import {
-  confirmConsent,
-  hasSeenLocalConsent,
+  resolveLocationConsentConfirmed,
   isNetworkError,
   useLogout,
   useSessionStore,
@@ -30,10 +28,7 @@ import { RequestRow } from '../src/components/RequestRow';
 import { PendingCashBanner } from '../src/components/PendingCashBanner';
 import { LocationIssueBanner } from '../src/components/LocationIssueBanner';
 import { OfferBanner } from '../src/components/OfferBanner';
-import {
-  LocationConsentSheet,
-  type LocationConsentSheetMode,
-} from '../src/components/LocationConsentSheet';
+import { LocationConsentSheet } from '../src/components/LocationConsentSheet';
 import { useDriverHome } from '../src/hooks/useDriverHome';
 import { useIsAuthenticated } from '../src/hooks/useIsAuthenticated';
 import { useShiftActivation, type ShiftActivationPhase } from '../src/hooks/useShiftActivation';
@@ -52,7 +47,6 @@ import {
 
 const HERO_SKELETON_HEIGHT = 168;
 const REFETCH_RAIL_DELAY_MS = 400;
-const SHEET_HANDOFF_MS = 260;
 
 function issueFromPhase(phase: ShiftActivationPhase): ShiftIssueKind | null {
   switch (phase) {
@@ -61,6 +55,7 @@ function issueFromPhase(phase: ShiftActivationPhase): ShiftIssueKind | null {
     case 'offline':
     case 'server_error':
     case 'blocked_by_trip':
+    case 'consent_required':
       return phase;
     default:
       return null;
@@ -87,7 +82,6 @@ export default function HomeScreen(): React.JSX.Element {
   const setLocationIssue = useLocationIssueStore((s) => s.setIssue);
 
   const [consentVisible, setConsentVisible] = useState(false);
-  const [consentMode, setConsentMode] = useState<LocationConsentSheetMode>('consent');
   const [accountVisible, setAccountVisible] = useState(false);
   const [pulling, setPulling] = useState(false);
 
@@ -113,6 +107,11 @@ export default function HomeScreen(): React.JSX.Element {
     const interval = setInterval(reportLocationBestEffort, LOCATION_REFRESH_MS);
     return () => clearInterval(interval);
   }, [isOnShift, reportLocationBestEffort]);
+
+  const activationPhase = shiftActivation.phase;
+  useEffect(() => {
+    if (activationPhase === 'consent_required') setConsentVisible(true);
+  }, [activationPhase]);
 
   useEffect(() => {
     if (!isOnShift) setLocationIssue(null);
@@ -168,38 +167,51 @@ export default function HomeScreen(): React.JSX.Element {
       shiftActivation.deactivate();
       return;
     }
-    void hasSeenLocalConsent('location', LOCATION_NOTICE_VERSION).then((seen) => {
+    void resolveLocationConsentConfirmed().then((seen) => {
       if (seen) {
         shiftActivation.activate();
         return;
       }
-      setConsentMode('consent');
       setConsentVisible(true);
     });
   };
 
-  const handleConsentContinue = (): void => {
+  const handleConsentAccepted = (): void => {
     setConsentVisible(false);
-    void confirmConsent('location', LOCATION_NOTICE_VERSION);
+    if (isOnShift) {
+      setLocationIssue(null);
+      reportLocationBestEffort();
+      return;
+    }
     shiftActivation.activate();
   };
 
   const handleConsentDismiss = (): void => {
     setConsentVisible(false);
+    if (shiftActivation.phase === 'consent_required') shiftActivation.dismissIssue();
   };
 
-  const handleReviewPrivacy = (): void => {
+  const handleOpenPrivacy = (): void => {
     setAccountVisible(false);
-    setTimeout(() => {
-      setConsentMode('review');
+    router.push('/privacy');
+  };
+
+  const handleLocationIssuePress = (): void => {
+    if (locationIssue === 'consent_required') {
       setConsentVisible(true);
-    }, SHEET_HANDOFF_MS);
+      return;
+    }
+    void Linking.openSettings();
   };
 
   const handleIssueAction = (kind: ShiftIssueKind): void => {
     if (kind === 'permission_denied' || kind === 'gps_disabled') {
       void Linking.openSettings();
       shiftActivation.dismissIssue();
+      return;
+    }
+    if (kind === 'consent_required') {
+      setConsentVisible(true);
       return;
     }
     if (kind === 'offline' || kind === 'server_error') {
@@ -241,10 +253,7 @@ export default function HomeScreen(): React.JSX.Element {
         }
       >
         {locationIssue && (
-          <LocationIssueBanner
-            kind={locationIssue}
-            onOpenSettings={() => void Linking.openSettings()}
-          />
+          <LocationIssueBanner kind={locationIssue} onPress={handleLocationIssuePress} />
         )}
 
         <ShiftSwitch
@@ -320,15 +329,15 @@ export default function HomeScreen(): React.JSX.Element {
 
       <LocationConsentSheet
         visible={consentVisible}
-        mode={consentMode}
-        onContinue={handleConsentContinue}
+        mode="shift"
+        onAccepted={handleConsentAccepted}
         onDismiss={handleConsentDismiss}
       />
       <AccountSheet
         visible={accountVisible}
         onClose={() => setAccountVisible(false)}
         name={fullName}
-        onPrivacy={handleReviewPrivacy}
+        onPrivacy={handleOpenPrivacy}
         onLogout={handleLogout}
         loggingOut={logout.isPending}
       />

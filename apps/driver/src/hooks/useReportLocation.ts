@@ -1,7 +1,11 @@
 import { useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { Coordinate } from '@voyyaa/shared';
-import { requestDeviceLocationBestEffort } from '@voyyaa/app-runtime';
+import {
+  handleLocationConsentRequired,
+  isLocationConsentRequiredError,
+  requestDeviceLocationBestEffort,
+} from '@voyyaa/app-runtime';
 import { reportDriverLocation } from '../api/driver.api';
 import { useLocationIssueStore } from '../state/useLocationIssueStore';
 
@@ -9,6 +13,9 @@ export function useReportLocation() {
   return useMutation({
     mutationFn: (coordinate: Coordinate) => reportDriverLocation(coordinate),
     retry: false,
+    onError: (error) => {
+      void handleLocationConsentRequired(error);
+    },
   });
 }
 
@@ -21,7 +28,15 @@ export function useBestEffortLocationReport(): () => void {
     void requestDeviceLocationBestEffort().then((outcome) => {
       if (outcome.kind === 'granted') {
         setIssue(null);
-        mutate(outcome.coordinate);
+        mutate(outcome.coordinate, {
+          onError: (error) => {
+            if (isLocationConsentRequiredError(error)) setIssue('consent_required');
+          },
+        });
+        return;
+      }
+      if (outcome.kind === 'consent_required') {
+        setIssue('consent_required');
         return;
       }
       setIssue(outcome.kind === 'permission_denied' ? 'permission_denied' : 'gps_disabled');

@@ -11,7 +11,7 @@
     "ios": "expo start --dev-client --ios",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
-    "test": "node --test src/offers/offer-rail.spec.ts src/trip/directions-url.spec.ts",
+    "test": "node --test src/offers/offer-rail.spec.ts src/trip/directions-url.spec.ts src/auth/pin-rules.spec.ts src/auth/pin-errors.spec.ts src/auth/route-gate.spec.ts src/privacy/privacy-status.spec.ts",
     "eas-build-post-install": "cd ../.. && pnpm run build",
     "web": "expo start --web"
   },
