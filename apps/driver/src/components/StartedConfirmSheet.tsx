@@ -1,8 +1,9 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { BottomSheet, Button, useTheme } from '@voyyaa/ui-mobile';
+import { driverCopy } from '../copy/driver-copy';
 
-export interface NoShowConfirmSheetProps {
+export interface StartedConfirmSheetProps {
   visible: boolean;
   loading: boolean;
   errorMessage?: string;
@@ -10,19 +11,24 @@ export interface NoShowConfirmSheetProps {
   onKeepWaiting: () => void;
 }
 
-export function NoShowConfirmSheet({
+export function StartedConfirmSheet({
   visible,
   loading,
   errorMessage,
   onConfirm,
   onKeepWaiting,
-}: NoShowConfirmSheetProps): React.JSX.Element {
+}: StartedConfirmSheetProps): React.JSX.Element {
   const theme = useTheme();
 
   return (
-    <BottomSheet visible={visible} onClose={onKeepWaiting} title="¿Confirmar que no se presentó?">
+    <BottomSheet
+      visible={visible}
+      onClose={onKeepWaiting}
+      title={driverCopy.trip.startedSheetTitle}
+      testID="started-confirm-sheet"
+    >
       <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
-        El viaje se cerrará y quedará registrado. No podrás deshacer esta acción.
+        {driverCopy.trip.startedSheetBody}
       </Text>
 
       {errorMessage && (
@@ -40,14 +46,14 @@ export function NoShowConfirmSheet({
 
       <View style={{ marginTop: theme.spacing.md, gap: theme.spacing.sm }}>
         <Button
-          label="Sí, no se presentó"
-          variant="danger"
+          label={driverCopy.trip.startedSheetConfirm}
+          loadingLabel={driverCopy.trip.startedSheetLoading}
           loading={loading}
-          loadingLabel="Confirmando…"
           onPress={onConfirm}
+          testID="started-confirm"
         />
         <Button
-          label="Seguir esperando"
+          label={driverCopy.trip.startedSheetKeep}
           variant="ghost"
           disabled={loading}
           onPress={onKeepWaiting}

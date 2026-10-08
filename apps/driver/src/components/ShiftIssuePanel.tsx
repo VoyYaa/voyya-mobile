@@ -1,14 +1,10 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { useTheme } from '@voyyaa/ui-mobile';
+import { Text, View } from 'react-native';
+import { Button, MarkGlyph, useTheme } from '@voyyaa/ui-mobile';
+import { driverCopy } from '../copy/driver-copy';
 
 export type ShiftIssueKind =
-  | 'permission_denied'
-  | 'gps_disabled'
-  | 'no_vehicle'
-  | 'offline'
-  | 'server_error'
-  | 'blocked_by_trip';
+  'permission_denied' | 'gps_disabled' | 'offline' | 'server_error' | 'blocked_by_trip';
 
 export interface ShiftIssuePanelProps {
   kind: ShiftIssueKind;
@@ -17,27 +13,16 @@ export interface ShiftIssuePanelProps {
 
 const ISSUE_COPY: Record<ShiftIssueKind, { message: string; actionLabel?: string }> = {
   permission_denied: {
-    message: 'Necesitamos tu ubicación para activar el turno.',
-    actionLabel: 'Cómo habilitarlo',
+    message: driverCopy.issues.permissionDenied,
+    actionLabel: driverCopy.issues.permissionDeniedAction,
   },
   gps_disabled: {
-    message: 'Activa la ubicación de tu teléfono para poder recibir solicitudes.',
-    actionLabel: 'Abrir ajustes',
+    message: driverCopy.issues.gpsDisabled,
+    actionLabel: driverCopy.issues.gpsDisabledAction,
   },
-  no_vehicle: {
-    message: 'No tienes un vehículo vinculado. Contacta al administrador.',
-  },
-  offline: {
-    message: 'Sin conexión · no pudimos activar tu turno.',
-    actionLabel: 'Reintentar',
-  },
-  server_error: {
-    message: 'No pudimos activar tu turno.',
-    actionLabel: 'Reintentar',
-  },
-  blocked_by_trip: {
-    message: 'No puedes salir de turno con un viaje en curso. Finalízalo o cancélalo primero.',
-  },
+  offline: { message: driverCopy.issues.offline, actionLabel: driverCopy.issues.retry },
+  server_error: { message: driverCopy.issues.serverError, actionLabel: driverCopy.issues.retry },
+  blocked_by_trip: { message: driverCopy.issues.blockedByTrip },
 };
 
 export function ShiftIssuePanel({ kind, onAction }: ShiftIssuePanelProps): React.JSX.Element {
@@ -47,30 +32,22 @@ export function ShiftIssuePanel({ kind, onAction }: ShiftIssuePanelProps): React
   return (
     <View
       accessibilityRole="alert"
+      testID="shift-issue-panel"
       style={{
         backgroundColor: theme.colors.dangerTint,
         borderRadius: theme.radius.card,
         padding: theme.spacing.lg,
-        gap: theme.spacing.sm as number,
+        gap: theme.spacing.md,
       }}
     >
-      <Text style={{ ...theme.typography.body, color: theme.colors.dangerInk }}>
-        {copy.message}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
+        <MarkGlyph glyph="error" size={40} />
+        <Text style={{ ...theme.typography.body, color: theme.colors.dangerInk, flex: 1 }}>
+          {copy.message}
+        </Text>
+      </View>
       {copy.actionLabel && onAction && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={copy.actionLabel}
-          onPress={onAction}
-          hitSlop={8}
-          style={{ minHeight: theme.touch.min, justifyContent: 'center' }}
-        >
-          <Text
-            style={{ ...theme.typography.body, fontWeight: '700', color: theme.colors.dangerInk }}
-          >
-            {copy.actionLabel}
-          </Text>
-        </Pressable>
+        <Button label={copy.actionLabel} variant="secondary" size="sm" onPress={onAction} />
       )}
     </View>
   );

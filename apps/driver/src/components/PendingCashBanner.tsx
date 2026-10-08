@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, Text } from 'react-native';
-import { useTheme } from '@voyyaa/ui-mobile';
+import { Text, View } from 'react-native';
+import { Card, useTheme } from '@voyyaa/ui-mobile';
+import { driverCopy } from '../copy/driver-copy';
 
 export interface PendingCashBannerProps {
   count: number;
@@ -15,31 +16,25 @@ export function PendingCashBanner({
 
   if (count <= 0) return null;
 
-  const label =
-    count === 1
-      ? 'Tienes 1 viaje sin confirmar el cobro.'
-      : `Tienes ${count} viajes sin confirmar el cobro.`;
+  const label = driverCopy.home.cashBanner(count);
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityLiveRegion="polite"
-      onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        minHeight: theme.touch.min,
-        backgroundColor: theme.colors.dangerTint,
-        borderRadius: theme.radius.card,
-        paddingHorizontal: theme.spacing.lg,
-      }}
-    >
-      <Text style={{ ...theme.typography.body, color: theme.colors.dangerInk, flex: 1 }}>
-        {label}
-      </Text>
-      <Text style={{ ...theme.typography.title, color: theme.colors.dangerInk }}>›</Text>
-    </Pressable>
+    <Card tone="tint" onPress={onPress} accessibilityLabel={label} testID="pending-cash-banner">
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
+        <Text
+          accessibilityLiveRegion="polite"
+          style={{ ...theme.typography.bodyStrong, color: theme.colors.text, flex: 1 }}
+        >
+          {label}
+        </Text>
+        <Text
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={{ ...theme.typography.title, color: theme.colors.brandInk }}
+        >
+          ›
+        </Text>
+      </View>
+    </Card>
   );
 }

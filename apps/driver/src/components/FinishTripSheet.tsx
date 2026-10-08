@@ -51,7 +51,7 @@ export function FinishTripSheet({
         <View
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
-          pointerEvents="none"
+          style={{ pointerEvents: 'none' }}
         >
           <Switch
             value={cashCollected}

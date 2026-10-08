@@ -1,24 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Linking, ScrollView, Text, View } from 'react-native';
+import { AccessibilityInfo, Linking, Platform, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  BrandLoader,
   Button,
+  Card,
   Chip,
-  PointRow,
-  ScreenHeader,
-  Skeleton,
+  ErrorState,
+  LinkButton,
+  MarkGlyph,
+  OfflineState,
+  PointRoute,
+  Stage,
   Toast,
   type ToastTone,
-  formatMMSS,
   useCountdown,
   useTheme,
 } from '@voyyaa/ui-mobile';
-import { ApiError, isNetworkError } from '@voyyaa/app-runtime';
+import { ApiError, isNetworkError, useSessionStore } from '@voyyaa/app-runtime';
 import { PassengerSummaryRow } from '../../src/components/PassengerSummaryRow';
+import { DriverStepRail } from '../../src/components/DriverStepRail';
+import { NoShowWait } from '../../src/components/NoShowWait';
 import { FinishTripSheet } from '../../src/components/FinishTripSheet';
 import { NoShowConfirmSheet } from '../../src/components/NoShowConfirmSheet';
 import { CancelTripSheet } from '../../src/components/CancelTripSheet';
+import { StartedConfirmSheet } from '../../src/components/StartedConfirmSheet';
+import { LocationIssueBanner } from '../../src/components/LocationIssueBanner';
 import { useDriverHome } from '../../src/hooks/useDriverHome';
 import {
   useCompleteTrip,
@@ -29,31 +37,44 @@ import {
 } from '../../src/hooks/useTripActions';
 import { useCancelAssignmentByDriver } from '../../src/hooks/useCancelAssignmentByDriver';
 import { useBestEffortLocationReport } from '../../src/hooks/useReportLocation';
-import { LocationIssueBanner } from '../../src/components/LocationIssueBanner';
 import { useLocationIssueStore } from '../../src/state/useLocationIssueStore';
+import { buildDirectionsUrl, type DirectionsPlatform } from '../../src/trip/directions-url';
+import { driverCopy } from '../../src/copy/driver-copy';
 
 type SubState = 'en_camino' | 'esperando' | 'en_curso';
-type SheetKind = 'finish' | 'no_show' | 'cancel' | null;
+type SheetKind = 'finish' | 'no_show' | 'cancel' | 'started' | null;
 type ActionIssue = 'offline' | 'generic' | null;
 
-function actionErrorMessage(issue: ActionIssue): string {
-  return issue === 'offline'
-    ? 'Sin conexión · no pudimos enviar tu acción.'
-    : 'No pudimos procesar la acción.';
+interface ClosedState {
+  title: string;
+  glyph: 'success' | 'empty';
 }
 
-function noShowAccessibleLabel(remainingSec: number): string {
-  const minutes = Math.floor(remainingSec / 60);
-  const seconds = remainingSec % 60;
-  const parts: string[] = [];
-  if (minutes > 0) parts.push(`${minutes} minuto${minutes === 1 ? '' : 's'}`);
-  parts.push(`${seconds} segundo${seconds === 1 ? '' : 's'}`);
-  return `Disponible en ${parts.join(' con ')}`;
+const STEP_INDEX: Record<SubState, number> = { en_camino: 0, esperando: 1, en_curso: 2 };
+const CLOSE_REDIRECT_MS = 1100;
+const TOAST_DURATION_MS = 1000;
+const REMATE_GLYPH_SIZE = 96;
+
+function actionErrorMessage(issue: ActionIssue): string {
+  return issue === 'offline' ? driverCopy.trip.actionOffline : driverCopy.trip.actionGeneric;
+}
+
+function directionsPlatform(): DirectionsPlatform {
+  if (Platform.OS === 'ios') return 'ios';
+  if (Platform.OS === 'android') return 'android';
+  return 'web';
+}
+
+function secondsBetween(fromIso: string | null, toIso: string | null): number {
+  if (!fromIso || !toIso) return 0;
+  return Math.max(0, Math.round((new Date(toIso).getTime() - new Date(fromIso).getTime()) / 1000));
 }
 
 export default function ActiveTripScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const municipality = useSessionStore((s) => s.user?.tenant?.municipality_name ?? null);
 
   const home = useDriverHome();
   const activeTrip = home.data?.active_trip ?? null;
@@ -75,12 +96,13 @@ export default function ActiveTripScreen(): React.JSX.Element {
   const [sheet, setSheet] = useState<SheetKind>(null);
   const [sheetError, setSheetError] = useState<string | undefined>(undefined);
   const [toast, setToast] = useState<{ message: string; tone: ToastTone } | null>(null);
+  const [closed, setClosed] = useState<ClosedState | null>(null);
 
   useEffect(() => {
-    if (!home.isLoading && !activeTrip) {
+    if (!home.isLoading && !activeTrip && !closed) {
       router.replace('/');
     }
-  }, [home.isLoading, activeTrip, router]);
+  }, [home.isLoading, activeTrip, closed, router]);
 
   const subState: SubState | null = !activeTrip
     ? null
@@ -90,13 +112,15 @@ export default function ActiveTripScreen(): React.JSX.Element {
         ? 'esperando'
         : 'en_camino';
 
+  const passengerName = activeTrip?.passenger.name.trim() || null;
+
   const title = !activeTrip
     ? ''
     : subState === 'en_curso'
-      ? 'Viaje en curso'
+      ? driverCopy.trip.inProgressTitle
       : subState === 'esperando'
-        ? `Esperando a ${activeTrip.passenger.name}`
-        : `En camino a recoger a ${activeTrip.passenger.name}`;
+        ? driverCopy.trip.waitingTitle(passengerName)
+        : driverCopy.trip.enRouteTitle(passengerName);
 
   const announcedTitle = useRef<string | null>(null);
   useEffect(() => {
@@ -110,6 +134,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
   const noShowDeadline = activeTrip?.no_show_available_at ?? null;
   const noShowRemainingSec = useCountdown(noShowDeadline);
   const noShowEnabled = noShowDeadline !== null && noShowRemainingSec <= 0;
+  const noShowTotalSec = secondsBetween(activeTrip?.arrived_at ?? null, noShowDeadline);
 
   function handleActionError(error: unknown): void {
     if (error instanceof ApiError && error.status === 409) {
@@ -146,11 +171,36 @@ export default function ActiveTripScreen(): React.JSX.Element {
     else if (lastPrimaryAction === 'start') handleIniciar();
   }
 
-  function closeWithToast(message: string, tone: ToastTone): void {
+  function closeSheet(): void {
     setSheet(null);
     setSheetError(undefined);
+  }
+
+  function sheetFailure(error: unknown): void {
+    setSheetError(actionErrorMessage(isNetworkError(error) ? 'offline' : 'generic'));
+  }
+
+  function handleStartedConfirm(): void {
+    setSheetError(undefined);
+    reportLocationBestEffort();
+    start.mutate(undefined, {
+      onSuccess: closeSheet,
+      onError: (error) => {
+        if (error instanceof ApiError && error.status === 409) {
+          closeSheet();
+          void home.refetch();
+          return;
+        }
+        sheetFailure(error);
+      },
+    });
+  }
+
+  function closeWithRemate(state: ClosedState, message: string, tone: ToastTone): void {
+    closeSheet();
+    setClosed(state);
     setToast({ message, tone });
-    setTimeout(() => router.replace('/'), 1100);
+    setTimeout(() => router.replace('/'), CLOSE_REDIRECT_MS);
   }
 
   function handleFinishConfirm(cashCollected: boolean): void {
@@ -159,12 +209,12 @@ export default function ActiveTripScreen(): React.JSX.Element {
       { cash_collected: cashCollected },
       {
         onSuccess: () =>
-          closeWithToast(
-            cashCollected ? 'Viaje finalizado. Cobro confirmado.' : 'Viaje finalizado.',
+          closeWithRemate(
+            { title: driverCopy.trip.closedFinished, glyph: 'success' },
+            cashCollected ? driverCopy.trip.toastFinishedCash : driverCopy.trip.toastFinished,
             'success',
           ),
-        onError: (error) =>
-          setSheetError(actionErrorMessage(isNetworkError(error) ? 'offline' : 'generic')),
+        onError: sheetFailure,
       },
     );
   }
@@ -173,9 +223,13 @@ export default function ActiveTripScreen(): React.JSX.Element {
     setSheetError(undefined);
     reportLocationBestEffort();
     noShow.mutate(undefined, {
-      onSuccess: () => closeWithToast('Viaje cerrado · el pasajero no se presentó.', 'neutral'),
-      onError: (error) =>
-        setSheetError(actionErrorMessage(isNetworkError(error) ? 'offline' : 'generic')),
+      onSuccess: () =>
+        closeWithRemate(
+          { title: driverCopy.trip.closedNoShow, glyph: 'empty' },
+          driverCopy.trip.toastNoShow,
+          'neutral',
+        ),
+      onError: sheetFailure,
     });
   }
 
@@ -184,198 +238,297 @@ export default function ActiveTripScreen(): React.JSX.Element {
     cancelAssignment.mutate(
       { reason },
       {
-        onSuccess: () => closeWithToast('Viaje cancelado.', 'neutral'),
-        onError: (error) =>
-          setSheetError(actionErrorMessage(isNetworkError(error) ? 'offline' : 'generic')),
+        onSuccess: () =>
+          closeWithRemate(
+            { title: driverCopy.trip.closedCancelled, glyph: 'empty' },
+            driverCopy.trip.toastCancelled,
+            'neutral',
+          ),
+        onError: sheetFailure,
       },
+    );
+  }
+
+  function handleDirections(address: string): void {
+    const url = buildDirectionsUrl(address, municipality, directionsPlatform());
+    Linking.openURL(url).catch(() =>
+      setToast({ message: driverCopy.trip.directionsError, tone: 'danger' }),
+    );
+  }
+
+  if (closed) {
+    return (
+      <Stage topInset={insets.top} style={{ flex: 1 }}>
+        <View
+          testID="trip-closed"
+          accessibilityRole="alert"
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: theme.spacing.lg,
+            padding: theme.spacing.xl,
+          }}
+        >
+          <MarkGlyph
+            glyph={closed.glyph}
+            size={REMATE_GLYPH_SIZE}
+            color={closed.glyph === 'success' ? theme.colors.success : theme.colors.onStageMuted}
+          />
+          <Text
+            style={{
+              ...theme.typography.headline,
+              color: theme.colors.onStage,
+              textAlign: 'center',
+            }}
+          >
+            {closed.title}
+          </Text>
+        </View>
+        <Toast
+          message={toast?.message ?? ''}
+          tone={toast?.tone ?? 'neutral'}
+          visible={toast !== null}
+          durationMs={TOAST_DURATION_MS}
+          onHide={() => setToast(null)}
+        />
+      </Stage>
+    );
+  }
+
+  if (home.isError && !home.data) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.colors.bg, paddingTop: insets.top }}>
+        {isNetworkError(home.error) ? (
+          <OfflineState onRetry={() => home.refetch()} />
+        ) : (
+          <ErrorState title={driverCopy.trip.loadError} onRetry={() => home.refetch()} />
+        )}
+      </View>
     );
   }
 
   if (home.isLoading || !activeTrip || !subState) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Viaje" />
-        <View style={{ padding: theme.spacing.lg, gap: theme.spacing.md }}>
-          <Skeleton height={72} radius={theme.radius.card} />
-          <Skeleton height={120} radius={theme.radius.card} />
-        </View>
-      </SafeAreaView>
+      <Stage topInset={insets.top} style={{ flex: 1 }}>
+        <BrandLoader variant="screen" label={driverCopy.trip.loadingLabel} />
+      </Stage>
     );
   }
 
   const isAssignedNotYetMoving = activeTrip.status === 'assigned';
+  const towardsDropoff = subState === 'en_curso';
+  const directionsAddress = towardsDropoff ? activeTrip.dropoff_address : activeTrip.pickup_address;
+  const directionsLabel = towardsDropoff
+    ? driverCopy.trip.directionsToDropoff
+    : driverCopy.trip.directionsToPickup;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title={title} />
-      <ScrollView
-        contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md, flexGrow: 1 }}
-      >
-        {locationIssue && (
-          <LocationIssueBanner
-            kind={locationIssue}
-            onOpenSettings={() => void Linking.openSettings()}
-          />
-        )}
-
-        <PassengerSummaryRow
-          passengerName={activeTrip.passenger.name}
-          price={activeTrip.fare.total}
-        />
-
-        {subState === 'esperando' && (
-          <View style={{ alignSelf: 'flex-start' }}>
-            <Chip tone="brandTint" label="Llegaste · cortesía en curso" />
-          </View>
-        )}
-
-        <View style={{ gap: theme.spacing.sm as number }}>
-          <PointRow marker="●" label="Recoger en" value={activeTrip.pickup_address} />
-          <PointRow
-            marker="▼"
-            label="Destino"
-            value={activeTrip.dropoff_address}
-            markerColor={theme.colors.brandInk}
+    <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+      <Stage topInset={insets.top}>
+        <View
+          style={{
+            paddingHorizontal: theme.spacing.gutter,
+            paddingTop: theme.spacing.lg,
+            paddingBottom: theme.spacing.xl + theme.radius.sheet / 2,
+            gap: theme.spacing.lg,
+          }}
+        >
+          <Text
+            accessibilityRole="header"
+            numberOfLines={2}
+            style={{ ...theme.typography.title, color: theme.colors.onStage }}
+          >
+            {title}
+          </Text>
+          <DriverStepRail
+            steps={[
+              driverCopy.trip.steps.enRoute,
+              driverCopy.trip.steps.waiting,
+              driverCopy.trip.steps.inProgress,
+            ]}
+            activeIndex={STEP_INDEX[subState]}
           />
         </View>
-        <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-          Ruta de referencia
-        </Text>
+      </Stage>
 
-        {actionIssue && subState !== 'en_curso' && (
-          <View accessibilityRole="alert">
-            <Text
-              style={{ ...theme.typography.body, fontWeight: '700', color: theme.colors.dangerInk }}
-            >
-              {actionErrorMessage(actionIssue)}
-            </Text>
-            <Button
-              label="Reintentar"
-              onPress={retryLastPrimaryAction}
-              style={{ marginTop: theme.spacing.sm }}
+      <View
+        style={{
+          flex: 1,
+          marginTop: -theme.radius.sheet,
+          backgroundColor: theme.colors.bg,
+          borderTopLeftRadius: theme.radius.sheet,
+          borderTopRightRadius: theme.radius.sheet,
+        }}
+      >
+        <ScrollView
+          contentContainerStyle={{
+            padding: theme.spacing.gutter,
+            paddingBottom: insets.bottom + theme.spacing.xl,
+            gap: theme.spacing.md,
+            flexGrow: 1,
+          }}
+        >
+          {locationIssue && (
+            <LocationIssueBanner
+              kind={locationIssue}
+              onOpenSettings={() => void Linking.openSettings()}
             />
-          </View>
-        )}
-
-        <View style={{ flex: 1 }} />
-
-        <View style={{ gap: theme.spacing.xl as number }}>
-          {subState === 'en_camino' && (
-            <>
-              <Button
-                label={isAssignedNotYetMoving ? 'Voy en camino' : 'Llegué al punto de recogida'}
-                loading={isAssignedNotYetMoving ? enRoute.isPending : arrived.isPending}
-                onPress={isAssignedNotYetMoving ? handleVoyEnCamino : handleLlegue}
-                style={{ minHeight: 56 }}
-              />
-              <View style={{ gap: theme.spacing.sm as number }}>
-                <Text
-                  accessibilityRole="link"
-                  onPress={handleIniciar}
-                  style={{ ...theme.typography.small, color: theme.colors.textMuted }}
-                >
-                  Ya inició el viaje
-                </Text>
-                <Text
-                  accessibilityRole="link"
-                  onPress={() => setSheet('cancel')}
-                  style={{ ...theme.typography.body, fontWeight: '600', color: theme.colors.text }}
-                >
-                  Cancelar viaje
-                </Text>
-              </View>
-            </>
           )}
+
+          <PassengerSummaryRow
+            passengerName={activeTrip.passenger.name}
+            price={activeTrip.fare.total}
+          />
 
           {subState === 'esperando' && (
-            <>
-              <Button
-                label="Inicié el viaje"
-                loading={start.isPending}
-                onPress={handleIniciar}
-                style={{ minHeight: 56 }}
-              />
-              <View style={{ gap: theme.spacing.sm as number }}>
-                {noShowEnabled ? (
-                  <Text
-                    accessibilityRole="link"
-                    onPress={() => setSheet('no_show')}
-                    style={{
-                      ...theme.typography.body,
-                      fontWeight: '600',
-                      color: theme.colors.dangerInk,
-                    }}
-                  >
-                    Pasajero no se presentó
-                  </Text>
-                ) : (
-                  <Text
-                    accessibilityLabel={noShowAccessibleLabel(noShowRemainingSec)}
-                    style={{ ...theme.typography.small, color: theme.colors.textMuted }}
-                  >
-                    Pasajero no se presentó (disponible en {formatMMSS(noShowRemainingSec)})
-                  </Text>
-                )}
-                <Text
-                  accessibilityRole="link"
-                  onPress={() => setSheet('cancel')}
-                  style={{ ...theme.typography.body, fontWeight: '600', color: theme.colors.text }}
-                >
-                  Cancelar viaje
-                </Text>
-              </View>
-            </>
+            <View style={{ alignSelf: 'flex-start' }}>
+              <Chip tone="brandTint" label={driverCopy.trip.arrivedChip} />
+            </View>
           )}
 
-          {subState === 'en_curso' && (
-            <Button
-              label="Finalizar viaje"
-              onPress={() => setSheet('finish')}
-              style={{ minHeight: 56 }}
+          <Card>
+            <PointRoute
+              origin={{ label: driverCopy.trip.pickupLabel, value: activeTrip.pickup_address }}
+              destination={{
+                label: driverCopy.trip.destinationLabel,
+                value: activeTrip.dropoff_address,
+              }}
             />
-          )}
-        </View>
-      </ScrollView>
+          </Card>
 
+          <Button
+            label={directionsLabel}
+            variant="ghost"
+            onPress={() => handleDirections(directionsAddress)}
+            testID="trip-directions"
+          />
+
+          {actionIssue && subState !== 'en_curso' && (
+            <View accessibilityRole="alert" style={{ gap: theme.spacing.sm }}>
+              <Text style={{ ...theme.typography.bodyStrong, color: theme.colors.dangerInk }}>
+                {actionErrorMessage(actionIssue)}
+              </Text>
+              <Button
+                label={driverCopy.issues.retry}
+                variant="secondary"
+                onPress={retryLastPrimaryAction}
+              />
+            </View>
+          )}
+
+          <View style={{ flex: 1 }} />
+
+          <View style={{ gap: theme.spacing.lg }}>
+            {subState === 'en_camino' && (
+              <Button
+                label={
+                  isAssignedNotYetMoving ? driverCopy.trip.startEnRoute : driverCopy.trip.arrived
+                }
+                size="lg"
+                loading={isAssignedNotYetMoving ? enRoute.isPending : arrived.isPending}
+                onPress={isAssignedNotYetMoving ? handleVoyEnCamino : handleLlegue}
+                testID="trip-primary"
+              />
+            )}
+
+            {subState === 'esperando' && (
+              <>
+                <Button
+                  label={driverCopy.trip.startTrip}
+                  size="lg"
+                  loading={start.isPending}
+                  onPress={handleIniciar}
+                  testID="trip-primary"
+                />
+                {!noShowEnabled && (
+                  <NoShowWait remainingSec={noShowRemainingSec} totalSec={noShowTotalSec} />
+                )}
+              </>
+            )}
+
+            {subState === 'en_curso' && (
+              <Button
+                label={driverCopy.trip.finishTrip}
+                size="lg"
+                onPress={() => setSheet('finish')}
+                testID="trip-primary"
+              />
+            )}
+
+            {subState !== 'en_curso' && (
+              <View style={{ gap: theme.spacing.xs }}>
+                <Text style={{ ...theme.typography.eyebrow, color: theme.colors.textMuted }}>
+                  {driverCopy.trip.moreOptions}
+                </Text>
+                <View
+                  style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: theme.spacing.lg }}
+                >
+                  {subState === 'en_camino' && (
+                    <LinkButton
+                      label={driverCopy.trip.alreadyStarted}
+                      tone="muted"
+                      onPress={() => setSheet('started')}
+                      testID="trip-already-started"
+                    />
+                  )}
+                  {subState === 'esperando' && noShowEnabled && (
+                    <LinkButton
+                      label={driverCopy.trip.noShow}
+                      tone="danger"
+                      onPress={() => setSheet('no_show')}
+                      testID="trip-no-show"
+                    />
+                  )}
+                  <LinkButton
+                    label={driverCopy.trip.cancelTrip}
+                    onPress={() => setSheet('cancel')}
+                    testID="trip-cancel"
+                  />
+                </View>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+
+      <StartedConfirmSheet
+        visible={sheet === 'started'}
+        loading={start.isPending}
+        errorMessage={sheetError}
+        onConfirm={handleStartedConfirm}
+        onKeepWaiting={closeSheet}
+      />
       <FinishTripSheet
         visible={sheet === 'finish'}
         price={activeTrip.fare.total}
         loading={complete.isPending}
         errorMessage={sheetError}
         onConfirm={handleFinishConfirm}
-        onKeepGoing={() => {
-          setSheet(null);
-          setSheetError(undefined);
-        }}
+        onKeepGoing={closeSheet}
       />
       <NoShowConfirmSheet
         visible={sheet === 'no_show'}
         loading={noShow.isPending}
         errorMessage={sheetError}
         onConfirm={handleNoShowConfirm}
-        onKeepWaiting={() => {
-          setSheet(null);
-          setSheetError(undefined);
-        }}
+        onKeepWaiting={closeSheet}
       />
       <CancelTripSheet
         visible={sheet === 'cancel'}
         loading={cancelAssignment.isPending}
         errorMessage={sheetError}
         onConfirm={handleCancelConfirm}
-        onKeepGoing={() => {
-          setSheet(null);
-          setSheetError(undefined);
-        }}
+        onKeepGoing={closeSheet}
       />
 
       <Toast
         message={toast?.message ?? ''}
         tone={toast?.tone ?? 'neutral'}
         visible={toast !== null}
-        durationMs={1000}
+        durationMs={TOAST_DURATION_MS}
         onHide={() => setToast(null)}
       />
-    </SafeAreaView>
+    </View>
   );
 }

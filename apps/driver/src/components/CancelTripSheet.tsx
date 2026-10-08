@@ -64,6 +64,7 @@ export function CancelTripSheet({
       <View style={{ marginTop: theme.spacing.md, gap: theme.spacing.sm }}>
         <Button
           label="Cancelar viaje"
+          variant="danger"
           loading={loading}
           loadingLabel="Cancelando…"
           disabled={!isValid}

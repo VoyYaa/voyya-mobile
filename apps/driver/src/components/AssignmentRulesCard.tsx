@@ -1,26 +1,44 @@
-import React from 'react';
-import { Text } from 'react-native';
-import { Card, useTheme } from '@voyyaa/ui-mobile';
+import React, { useState } from 'react';
+import { Text, View } from 'react-native';
+import { Card, LinkButton, useTheme } from '@voyyaa/ui-mobile';
+import { driverCopy } from '../copy/driver-copy';
 
 export interface AssignmentRulesCardProps {
-  radioKm: number;
-  timeoutSeg: number;
+  radiusKm: number;
+  timeoutSec: number;
 }
 
 export function AssignmentRulesCard({
-  radioKm,
-  timeoutSeg,
+  radiusKm,
+  timeoutSec,
 }: AssignmentRulesCardProps): React.JSX.Element {
   const theme = useTheme();
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <Card tone="alt">
-      <Text style={{ ...theme.typography.small, fontWeight: '600', color: theme.colors.text }}>
-        Reglas de asignación
-      </Text>
-      <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, marginTop: 2 }}>
-        Mostradas por cercanía · radio {radioKm} km · timeout {timeoutSeg} s por conductor
-      </Text>
-    </Card>
+    <View style={{ gap: theme.spacing.sm }}>
+      <LinkButton
+        label={driverCopy.home.rulesTrigger}
+        tone="muted"
+        onPress={() => setExpanded((current) => !current)}
+        testID="rules-trigger"
+      />
+      {expanded && (
+        <Card tone="tint" testID="rules-card">
+          <Text style={{ ...theme.typography.smallStrong, color: theme.colors.text }}>
+            {driverCopy.home.rulesTitle}
+          </Text>
+          <Text
+            style={{
+              ...theme.typography.small,
+              color: theme.colors.textMuted,
+              marginTop: theme.spacing.xxs,
+            }}
+          >
+            {driverCopy.home.rulesBody(radiusKm, timeoutSec)}
+          </Text>
+        </Card>
+      )}
+    </View>
   );
 }

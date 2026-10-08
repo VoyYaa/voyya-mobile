@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { Card, Chip, PriceTag, formatCOP, useTheme } from '@voyyaa/ui-mobile';
+import { driverCopy } from '../copy/driver-copy';
 
 export interface RequestRowProps {
   passengerName?: string;
@@ -30,9 +31,10 @@ export function RequestRow({
 
   return (
     <Card
-      tone={isNearest ? 'alt' : 'surface'}
+      tone={isNearest ? 'tint' : 'surface'}
       onPress={onPress}
       accessibilityLabel={`${name}, recoger a ${distanceToPickup}, ${spokenPrice} pesos. Toca para ver el detalle.`}
+      testID="request-row"
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
         <View
@@ -53,17 +55,12 @@ export function RequestRow({
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs }}>
             <Text
-              style={{
-                ...theme.typography.body,
-                fontWeight: '600',
-                color: theme.colors.text,
-                flexShrink: 1,
-              }}
+              style={{ ...theme.typography.bodyStrong, color: theme.colors.text, flexShrink: 1 }}
               numberOfLines={1}
             >
               {name}
             </Text>
-            {isNearest && <Chip label="nuevo" tone="brand" />}
+            {isNearest && <Chip label={driverCopy.home.nearest} tone="brand" />}
           </View>
           <Text
             style={{ ...theme.typography.small, color: theme.colors.textMuted }}

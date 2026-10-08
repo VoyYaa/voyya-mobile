@@ -1,6 +1,7 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
-import { useTheme } from '@voyyaa/ui-mobile';
+import { View } from 'react-native';
+import { Button, useTheme } from '@voyyaa/ui-mobile';
+import { driverCopy } from '../copy/driver-copy';
 
 export type ActionButtonLoading = 'accept' | 'reject' | null;
 
@@ -10,6 +11,9 @@ export interface ActionButtonPairProps {
   loading?: ActionButtonLoading;
   disabled?: boolean;
 }
+
+const REJECT_FLEX = 1;
+const ACCEPT_FLEX = 2;
 
 export function ActionButtonPair({
   onAccept,
@@ -22,63 +26,28 @@ export function ActionButtonPair({
 
   return (
     <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Rechazar solicitud"
-        accessibilityState={{ disabled: isDisabled, busy: loading === 'reject' }}
-        disabled={isDisabled}
+      <Button
+        label={driverCopy.offer.reject}
+        accessibilityLabel={driverCopy.offer.rejectLabel}
+        variant="ghost"
+        size="lg"
+        loading={loading === 'reject'}
+        disabled={isDisabled && loading !== 'reject'}
         onPress={onReject}
-        style={({ pressed }) => ({
-          flex: 1,
-          minHeight: 48,
-          borderRadius: theme.radius.button,
-          backgroundColor: theme.colors.dangerTint,
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'row',
-          opacity: isDisabled && loading !== 'reject' ? 0.5 : pressed ? 0.85 : 1,
-        })}
-      >
-        {loading === 'reject' && (
-          <ActivityIndicator
-            size="small"
-            color={theme.colors.text}
-            style={{ marginRight: theme.spacing.sm }}
-          />
-        )}
-        <Text style={{ ...theme.typography.button, color: theme.colors.text }} numberOfLines={1}>
-          {loading === 'reject' ? 'Rechazando…' : 'Rechazar'}
-        </Text>
-      </Pressable>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Aceptar solicitud"
-        accessibilityState={{ disabled: isDisabled, busy: loading === 'accept' }}
-        disabled={isDisabled}
+        style={{ flex: REJECT_FLEX }}
+        testID="offer-reject"
+      />
+      <Button
+        label={driverCopy.offer.accept}
+        loadingLabel={driverCopy.offer.accepting}
+        accessibilityLabel={driverCopy.offer.acceptLabel}
+        size="lg"
+        loading={loading === 'accept'}
+        disabled={isDisabled && loading !== 'accept'}
         onPress={onAccept}
-        style={({ pressed }) => ({
-          flex: 1,
-          minHeight: 48,
-          borderRadius: theme.radius.button,
-          backgroundColor: pressed && !isDisabled ? theme.colors.brandPressed : theme.colors.brand,
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'row',
-          opacity: isDisabled && loading !== 'accept' ? 0.5 : 1,
-        })}
-      >
-        {loading === 'accept' && (
-          <ActivityIndicator
-            size="small"
-            color={theme.colors.onBrand}
-            style={{ marginRight: theme.spacing.sm }}
-          />
-        )}
-        <Text style={{ ...theme.typography.button, color: theme.colors.onBrand }} numberOfLines={1}>
-          {loading === 'accept' ? 'Aceptando…' : 'Aceptar'}
-        </Text>
-      </Pressable>
+        style={{ flex: ACCEPT_FLEX }}
+        testID="offer-accept"
+      />
     </View>
   );
 }

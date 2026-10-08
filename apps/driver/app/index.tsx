@@ -1,34 +1,58 @@
-import React, { useEffect, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ErrorState, Skeleton, useTheme } from '@voyyaa/ui-mobile';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  AccountSheet,
+  EmptyState,
+  ErrorState,
+  LinkButton,
+  OfflineState,
+  ProgressRail,
+  Skeleton,
+  SkeletonList,
+  useDelayedLoading,
+  useTheme,
+} from '@voyyaa/ui-mobile';
 import { LOCATION_NOTICE_VERSION } from '@voyyaa/shared';
-import { confirmConsent, hasSeenLocalConsent, useLogout } from '@voyyaa/app-runtime';
-import { ShiftToggle } from '../src/components/ShiftToggle';
+import {
+  confirmConsent,
+  hasSeenLocalConsent,
+  isNetworkError,
+  useLogout,
+  useSessionStore,
+} from '@voyyaa/app-runtime';
+import { ShiftHero } from '../src/components/ShiftHero';
+import { ShiftSwitch } from '../src/components/ShiftSwitch';
 import { ShiftIssuePanel, type ShiftIssueKind } from '../src/components/ShiftIssuePanel';
 import { AssignmentRulesCard } from '../src/components/AssignmentRulesCard';
-import { OffShiftPanel } from '../src/components/OffShiftPanel';
 import { RequestRow } from '../src/components/RequestRow';
-import { RequestListSkeleton } from '../src/components/RequestListSkeleton';
 import { PendingCashBanner } from '../src/components/PendingCashBanner';
 import { LocationIssueBanner } from '../src/components/LocationIssueBanner';
+import { OfferBanner } from '../src/components/OfferBanner';
 import {
   LocationConsentSheet,
   type LocationConsentSheetMode,
 } from '../src/components/LocationConsentSheet';
 import { useDriverHome } from '../src/hooks/useDriverHome';
+import { useIsAuthenticated } from '../src/hooks/useIsAuthenticated';
 import { useShiftActivation, type ShiftActivationPhase } from '../src/hooks/useShiftActivation';
 import { useNearbyOffers } from '../src/hooks/useNearbyOffers';
+import { useNewOfferAlert } from '../src/hooks/useNewOfferAlert';
 import { usePendingCashTrips } from '../src/hooks/usePendingCashTrips';
 import { useBestEffortLocationReport } from '../src/hooks/useReportLocation';
 import { useLocationIssueStore } from '../src/state/useLocationIssueStore';
 import { revokeCurrentPushToken } from '../src/notifications/push-registration';
+import { driverCopy } from '../src/copy/driver-copy';
 import {
   SEARCH_RADIUS_FALLBACK_KM,
   ACCEPTANCE_TIMEOUT_FALLBACK_SEC,
   LOCATION_REFRESH_MS,
 } from '../src/constants/parameters';
+
+const HERO_SKELETON_HEIGHT = 168;
+const REFETCH_RAIL_DELAY_MS = 400;
+const SHEET_HANDOFF_MS = 260;
 
 function issueFromPhase(phase: ShiftActivationPhase): ShiftIssueKind | null {
   switch (phase) {
@@ -46,7 +70,10 @@ function issueFromPhase(phase: ShiftActivationPhase): ShiftIssueKind | null {
 export default function HomeScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const logout = useLogout();
+  const authenticated = useIsAuthenticated();
+  const user = useSessionStore((s) => s.user);
 
   const home = useDriverHome();
   const shiftActivation = useShiftActivation();
@@ -61,9 +88,16 @@ export default function HomeScreen(): React.JSX.Element {
 
   const [consentVisible, setConsentVisible] = useState(false);
   const [consentMode, setConsentMode] = useState<LocationConsentSheetMode>('consent');
+  const [accountVisible, setAccountVisible] = useState(false);
+  const [pulling, setPulling] = useState(false);
 
   const offers = useNearbyOffers(isOnShift);
   const firstOffer = offers.data?.[0];
+  const offerAlert = useNewOfferAlert(offers.data);
+  const showRefetchRail = useDelayedLoading(
+    (home.isRefetching || offers.isRefetching || pulling) && !home.isLoading,
+    { delayMs: REFETCH_RAIL_DELAY_MS },
+  );
 
   useEffect(() => {
     if (activeTrip) {
@@ -84,30 +118,46 @@ export default function HomeScreen(): React.JSX.Element {
     if (!isOnShift) setLocationIssue(null);
   }, [isOnShift, setLocationIssue]);
 
-  if (activeTrip) {
-    return <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
+  const handleRefresh = useCallback((): void => {
+    setPulling(true);
+    void Promise.allSettled([home.refetch(), offers.refetch(), pendingCash.refetch()]).finally(() =>
+      setPulling(false),
+    );
+  }, [home, offers, pendingCash]);
+
+  if (!authenticated || activeTrip) {
+    return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
   }
 
   if (home.isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.bg }} testID="home-loading">
+        <Skeleton height={HERO_SKELETON_HEIGHT + insets.top} radius={0} />
+        <View style={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
           <Skeleton height={72} radius={theme.radius.card} />
-          <Skeleton height={96} radius={theme.radius.card} />
-        </ScrollView>
-      </SafeAreaView>
+          <SkeletonList count={2} variant="request" />
+        </View>
+      </View>
     );
   }
 
   if (home.isError || !shift) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ErrorState title="No pudimos cargar tu estado de turno" onRetry={() => home.refetch()} />
-      </SafeAreaView>
+      <View
+        style={{ flex: 1, backgroundColor: theme.colors.bg, paddingTop: insets.top }}
+        testID="home-error"
+      >
+        {isNetworkError(home.error) ? (
+          <OfflineState onRetry={() => home.refetch()} />
+        ) : (
+          <ErrorState title={driverCopy.home.homeLoadError} onRetry={() => home.refetch()} />
+        )}
+      </View>
     );
   }
 
   const issue = issueFromPhase(shiftActivation.phase);
+  const driverName = user?.first_name ?? undefined;
 
   const handleLogout = (): void => {
     void revokeCurrentPushToken().finally(() => logout.mutate());
@@ -139,8 +189,11 @@ export default function HomeScreen(): React.JSX.Element {
   };
 
   const handleReviewPrivacy = (): void => {
-    setConsentMode('review');
-    setConsentVisible(true);
+    setAccountVisible(false);
+    setTimeout(() => {
+      setConsentMode('review');
+      setConsentVisible(true);
+    }, SHEET_HANDOFF_MS);
   };
 
   const handleIssueAction = (kind: ShiftIssueKind): void => {
@@ -154,64 +207,52 @@ export default function HomeScreen(): React.JSX.Element {
     }
   };
 
+  const openOffer = (assignmentId: number): void => {
+    offerAlert.dismiss();
+    router.push({ pathname: '/requests/[id]', params: { id: String(assignmentId) } });
+  };
+
+  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || undefined;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <View
-        style={{
-          paddingHorizontal: theme.spacing.lg,
-          paddingTop: theme.spacing.lg,
-          gap: theme.spacing.sm,
+    <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+      <ShiftHero
+        onShift={isOnShift}
+        topInset={insets.top}
+        driverName={driverName}
+        onAvatarPress={() => setAccountVisible(true)}
+      />
+      {showRefetchRail && <ProgressRail />}
+
+      <ScrollView
+        contentContainerStyle={{
+          padding: theme.spacing.lg,
+          paddingBottom: insets.bottom + theme.spacing.xl,
+          gap: theme.spacing.lg,
         }}
+        refreshControl={
+          <RefreshControl
+            refreshing={pulling}
+            onRefresh={handleRefresh}
+            colors={[theme.colors.brand]}
+            progressBackgroundColor={theme.colors.surfaceRaised}
+            tintColor={theme.colors.brandInk}
+          />
+        }
       >
-        <View
-          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Text style={{ ...theme.typography.title, color: theme.colors.brandPressed }}>
-            VoyYa Conductor
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar sesión"
-            hitSlop={8}
-            onPress={handleLogout}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              backgroundColor: theme.colors.surfaceAlt,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ ...theme.typography.small, color: theme.colors.text }}>Yo</Text>
-          </Pressable>
-        </View>
-
-        <Text
-          accessibilityRole="link"
-          onPress={handleReviewPrivacy}
-          style={{ ...theme.typography.small, color: theme.colors.textMuted }}
-        >
-          Privacidad de mi ubicación
-        </Text>
-
         {locationIssue && (
           <LocationIssueBanner
             kind={locationIssue}
             onOpenSettings={() => void Linking.openSettings()}
           />
         )}
-      </View>
 
-      <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
-        <ShiftToggle
+        <ShiftSwitch
           checked={shift.on_shift}
           busy={shiftActivation.isBusy}
           disabled={!shift.vehicle_linked}
           onToggle={handleShiftAction}
         />
-
-        {!shift.vehicle_linked && <ShiftIssuePanel kind="no_vehicle" />}
 
         {issue && <ShiftIssuePanel kind={issue} onAction={() => handleIssueAction(issue)} />}
 
@@ -220,63 +261,62 @@ export default function HomeScreen(): React.JSX.Element {
           onPress={() => router.push('/cash-pending')}
         />
 
-        <View style={{ gap: theme.spacing.sm as number }}>
-          <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
-            Solicitudes cercanas
-          </Text>
-
-          {!isOnShift && <OffShiftPanel onActivate={handleShiftAction} />}
-
-          {isOnShift && offers.isLoading && <RequestListSkeleton count={1} />}
-
-          {isOnShift && offers.isError && (
-            <ErrorState
-              title="No pudimos cargar tus solicitudes"
-              onRetry={() => offers.refetch()}
-            />
-          )}
-
-          {isOnShift && offers.isSuccess && offers.data.length === 0 && (
-            <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
-              Sin solicitudes cercanas por ahora. Sigues visible para los pasajeros.
+        {isOnShift && (
+          <View style={{ gap: theme.spacing.md }}>
+            <Text
+              accessibilityRole="header"
+              style={{ ...theme.typography.title, color: theme.colors.text }}
+            >
+              {driverCopy.home.nearbyTitle}
             </Text>
-          )}
 
-          {isOnShift && firstOffer && (
-            <>
-              <RequestRow
-                originLabel={firstOffer.origin.address}
-                destinationLabel={firstOffer.dropoff_neighborhood}
-                distanceToPickup={`${firstOffer.distance_to_origin_m} m`}
-                price={firstOffer.total_fare}
-                isNearest
-                onPress={() =>
-                  router.push({
-                    pathname: '/requests/[id]',
-                    params: { id: String(firstOffer.assignment_id) },
-                  })
-                }
+            {offers.isLoading && <SkeletonList count={1} variant="request" />}
+
+            {offers.isError &&
+              (isNetworkError(offers.error) ? (
+                <OfflineState onRetry={() => offers.refetch()} />
+              ) : (
+                <ErrorState
+                  title={driverCopy.home.offersLoadError}
+                  onRetry={() => offers.refetch()}
+                />
+              ))}
+
+            {offers.isSuccess && offers.data.length === 0 && (
+              <EmptyState
+                glyph="empty"
+                title={driverCopy.home.emptyTitle}
+                body={driverCopy.home.emptyBody}
               />
-              <Text
-                accessibilityRole="link"
-                onPress={() => router.push('/requests')}
-                style={{
-                  ...theme.typography.small,
-                  fontWeight: '700',
-                  color: theme.colors.brandInk,
-                }}
-              >
-                Ver todas ({offers.data?.length ?? 0})
-              </Text>
-            </>
-          )}
-        </View>
+            )}
+
+            {firstOffer && (
+              <>
+                <RequestRow
+                  originLabel={firstOffer.origin.address}
+                  destinationLabel={firstOffer.dropoff_neighborhood}
+                  distanceToPickup={`${firstOffer.distance_to_origin_m} m`}
+                  price={firstOffer.total_fare}
+                  isNearest
+                  onPress={() => openOffer(firstOffer.assignment_id)}
+                />
+                <LinkButton
+                  label={driverCopy.home.seeAll(offers.data?.length ?? 0)}
+                  onPress={() => router.push('/requests')}
+                  testID="see-all-requests"
+                />
+              </>
+            )}
+          </View>
+        )}
 
         <AssignmentRulesCard
-          radioKm={SEARCH_RADIUS_FALLBACK_KM}
-          timeoutSeg={ACCEPTANCE_TIMEOUT_FALLBACK_SEC}
+          radiusKm={SEARCH_RADIUS_FALLBACK_KM}
+          timeoutSec={ACCEPTANCE_TIMEOUT_FALLBACK_SEC}
         />
       </ScrollView>
+
+      <OfferBanner offer={offerAlert.offer} topInset={insets.top} onPress={openOffer} />
 
       <LocationConsentSheet
         visible={consentVisible}
@@ -284,6 +324,14 @@ export default function HomeScreen(): React.JSX.Element {
         onContinue={handleConsentContinue}
         onDismiss={handleConsentDismiss}
       />
-    </SafeAreaView>
+      <AccountSheet
+        visible={accountVisible}
+        onClose={() => setAccountVisible(false)}
+        name={fullName}
+        onPrivacy={handleReviewPrivacy}
+        onLogout={handleLogout}
+        loggingOut={logout.isPending}
+      />
+    </View>
   );
 }

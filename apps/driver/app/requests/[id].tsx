@@ -1,29 +1,32 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, BackHandler, ScrollView, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  Button,
+  BrandLoader,
   CountdownRing,
   type CountdownRingStatus,
+  EmptyState,
   ErrorState,
-  Map,
-  PointRow,
+  OfflineState,
+  PointRoute,
+  PriceTag,
   ScreenHeader,
-  Skeleton,
+  Stage,
   Toast,
   type ToastTone,
+  Button,
   useCountdown,
-  useReducedMotion,
   useTheme,
 } from '@voyyaa/ui-mobile';
 import { isNetworkError } from '@voyyaa/app-runtime';
-import { PassengerSummaryRow } from '../../src/components/PassengerSummaryRow';
 import { ActionButtonPair } from '../../src/components/ActionButtonPair';
 import { useAcceptAssignment } from '../../src/hooks/useAcceptAssignment';
 import { useRejectAssignment } from '../../src/hooks/useRejectAssignment';
 import { useNearbyOffers } from '../../src/hooks/useNearbyOffers';
+import { useConsumedBackPress } from '../../src/hooks/useConsumedBackPress';
 import { COUNTDOWN_WARN_THRESHOLD_SEC } from '../../src/constants/parameters';
+import { driverCopy } from '../../src/copy/driver-copy';
 
 type UiStatus =
   | 'counting'
@@ -57,10 +60,23 @@ const RING_STATUS_BY_UI: Record<UiStatus, CountdownRingStatus> = {
   generic_error: 'frozen',
 };
 
+const MAX_RING_SIZE = 220;
+const MIN_RING_SIZE = 150;
+const RING_HEIGHT_SHARE = 0.28;
+const ACTION_BAR_TOAST_OFFSET = 96;
+const NOTICE_DURATION_MS = 2200;
+
+interface ToastSpec {
+  message: string;
+  tone: ToastTone;
+  durationMs: number;
+}
+
 export default function RequestDetailScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
-  const reducedMotion = useReducedMotion();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const params = useLocalSearchParams<{ id: string }>();
   const assignmentId = params.id ? Number(params.id) : null;
 
@@ -71,6 +87,8 @@ export default function RequestDetailScreen(): React.JSX.Element {
 
   const [uiStatus, setUiStatus] = useState<UiStatus>('counting');
   const [lastAction, setLastAction] = useState<'accept' | 'reject' | null>(null);
+  const [toastDismissedFor, setToastDismissedFor] = useState<UiStatus | null>(null);
+  const [backNoticeVisible, setBackNoticeVisible] = useState(false);
   const mountAnnounced = useRef(false);
 
   const acceptMutation = useAcceptAssignment(assignmentId);
@@ -82,11 +100,18 @@ export default function RequestDetailScreen(): React.JSX.Element {
   useEffect(() => {
     if (notification && !mountAnnounced.current) {
       mountAnnounced.current = true;
-      AccessibilityInfo.announceForAccessibility(
-        `Nueva solicitud, quedan ${remainingSec} segundos.`,
-      );
+      AccessibilityInfo.announceForAccessibility(driverCopy.offer.mountAnnouncement(remainingSec));
     }
   }, [notification?.assignment_id]);
+
+  const hideStatusToast = useCallback(() => setToastDismissedFor(uiStatus), [uiStatus]);
+  const hideBackNotice = useCallback(() => setBackNoticeVisible(false), []);
+
+  const announceBackNotice = useCallback(() => {
+    setBackNoticeVisible(true);
+    AccessibilityInfo.announceForAccessibility(driverCopy.offer.backNotice);
+  }, []);
+  useConsumedBackPress(uiStatus === 'counting', announceBackNotice);
 
   function goBackToList(delayMs: number): void {
     setTimeout(() => router.replace('/requests'), delayMs);
@@ -148,163 +173,185 @@ export default function RequestDetailScreen(): React.JSX.Element {
     else if (lastAction === 'reject') handleReject();
   }
 
-  useEffect(() => {
-    if (uiStatus !== 'counting') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      handleReject();
-      return true;
-    });
-    return () => sub.remove();
-  }, [uiStatus]);
+  const stageScreen = (children: React.ReactNode): React.JSX.Element => (
+    <Stage style={{ flex: 1 }} topInset={insets.top}>
+      <ScreenHeader
+        title={driverCopy.offer.title}
+        tone="stage"
+        hideTitle
+        onBack={() => router.back()}
+      />
+      {children}
+    </Stage>
+  );
+
+  const lightScreen = (children: React.ReactNode): React.JSX.Element => (
+    <View style={{ flex: 1, backgroundColor: theme.colors.bg, paddingTop: insets.top }}>
+      <ScreenHeader title={driverCopy.offer.title} onBack={() => router.back()} />
+      {children}
+    </View>
+  );
 
   if (!assignmentId) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Solicitud" onBack={() => router.back()} />
-        <ErrorState
-          title="No encontramos esta solicitud"
-          body="Puede que ya haya expirado o que la lista se haya actualizado."
-          onRetry={() => router.replace('/requests')}
-          retryLabel="Volver a la lista"
-        />
-      </SafeAreaView>
+    return lightScreen(
+      <EmptyState
+        glyph="empty"
+        title={driverCopy.offer.notFoundTitle}
+        body={driverCopy.offer.notFoundBody}
+        primaryAction={{
+          label: driverCopy.offer.backToList,
+          onPress: () => router.replace('/requests'),
+        }}
+      />,
     );
   }
 
   if (!notification && offers.isLoading) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Solicitud" onBack={() => router.back()} />
-        <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
-          <Skeleton height={160} radius={theme.radius.card} />
-          <Skeleton height={72} radius={theme.radius.card} />
-        </ScrollView>
-      </SafeAreaView>
-    );
+    return stageScreen(<BrandLoader variant="screen" label={driverCopy.offer.loadingLabel} />);
   }
 
   if (!notification && offers.isError) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Solicitud" onBack={() => router.back()} />
-        <ErrorState title="No pudimos cargar esta solicitud" onRetry={() => offers.refetch()} />
-      </SafeAreaView>
+    return lightScreen(
+      isNetworkError(offers.error) ? (
+        <OfflineState onRetry={() => offers.refetch()} />
+      ) : (
+        <ErrorState title={driverCopy.offer.loadError} onRetry={() => offers.refetch()} />
+      ),
     );
   }
 
   if (!notification) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Solicitud" onBack={() => router.back()} />
-        <ErrorState
-          title="No encontramos esta solicitud"
-          body="Puede que ya haya expirado o que la lista se haya actualizado."
-          onRetry={() => router.replace('/requests')}
-          retryLabel="Volver a la lista"
-        />
-      </SafeAreaView>
+    return lightScreen(
+      <EmptyState
+        glyph="empty"
+        title={driverCopy.offer.notFoundTitle}
+        body={driverCopy.offer.notFoundBody}
+        primaryAction={{
+          label: driverCopy.offer.backToList,
+          onPress: () => router.replace('/requests'),
+        }}
+      />,
     );
   }
 
   const acceptedResult = acceptMutation.data?.result === 'accepted' ? acceptMutation.data : null;
-  const toastByStatus: Partial<
-    Record<UiStatus, { message: string; tone: ToastTone; durationMs: number }>
-  > = {
+  const toastByStatus: Partial<Record<UiStatus, ToastSpec>> = {
     accepted: {
-      message: acceptedResult
-        ? `¡Aceptada! Vas hacia ${acceptedResult.passenger.name}.`
-        : '¡Aceptada!',
+      message: driverCopy.offer.accepted(acceptedResult?.passenger.name.trim() || null),
       tone: 'success',
       durationMs: 800,
     },
-    rejected: {
-      message: 'Rechazada · buscando otro conductor.',
-      tone: 'neutral',
-      durationMs: 900,
-    },
-    expired: {
-      message: 'Se agotó el tiempo · pasando al siguiente conductor.',
-      tone: 'neutral',
-      durationMs: 900,
-    },
-    taken_by_other: {
-      message: 'Esta solicitud ya fue tomada · sigues en turno, te avisaremos de la próxima.',
-      tone: 'neutral',
-      durationMs: 1200,
-    },
+    rejected: { message: driverCopy.offer.rejected, tone: 'neutral', durationMs: 900 },
+    expired: { message: driverCopy.offer.expired, tone: 'neutral', durationMs: 900 },
+    taken_by_other: { message: driverCopy.offer.takenByOther, tone: 'neutral', durationMs: 1200 },
   };
   const toast = toastByStatus[uiStatus];
+  const toastVisible = Boolean(toast) && toastDismissedFor !== uiStatus;
 
   const canDecide = !NO_DECISION_STATES.includes(uiStatus);
+  const ringSize = Math.max(
+    MIN_RING_SIZE,
+    Math.min(MAX_RING_SIZE, Math.round(windowHeight * RING_HEIGHT_SHARE)),
+  );
+  const responseError = uiStatus === 'offline_response' || uiStatus === 'generic_error';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader
-        title="Nueva solicitud"
-        onBack={uiStatus === 'counting' ? undefined : () => router.back()}
-      />
-      <ScrollView
-        contentContainerStyle={{
-          padding: theme.spacing.lg,
-          gap: theme.spacing.lg,
-          alignItems: 'center',
+    <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+      <Stage topInset={insets.top} safeTop>
+        <ScreenHeader
+          title={driverCopy.offer.title}
+          tone="stage"
+          hideTitle
+          onBack={uiStatus === 'counting' ? undefined : () => router.back()}
+        />
+        <View
+          style={{
+            alignItems: 'center',
+            paddingHorizontal: theme.spacing.gutter,
+            paddingBottom: theme.spacing.xxl + theme.radius.sheet,
+            gap: theme.spacing.sm,
+          }}
+        >
+          <Text style={{ ...theme.typography.eyebrow, color: theme.colors.onStageMuted }}>
+            {`● ${driverCopy.offer.detailEyebrow}`}
+          </Text>
+          <CountdownRing
+            testID="countdown-ring"
+            durationSec={notification.seconds_to_respond}
+            remainingSec={remainingSec}
+            status={RING_STATUS_BY_UI[uiStatus]}
+            warnThresholdSec={COUNTDOWN_WARN_THRESHOLD_SEC}
+            onExpire={handleLocalExpiration}
+            size={ringSize}
+            tone="onStage"
+            dimmed={uiStatus === 'taken_by_other'}
+          />
+          <PriceTag
+            amountCOP={notification.total_fare}
+            size="xl"
+            color={theme.colors.onStage}
+            testID="offer-fare"
+          />
+          <Text style={{ ...theme.typography.small, color: theme.colors.onStageMuted }}>
+            {driverCopy.offer.fareCaption}
+          </Text>
+        </View>
+      </Stage>
+
+      <View
+        style={{
+          flex: 1,
+          marginTop: -theme.radius.sheet,
+          backgroundColor: theme.colors.bg,
+          borderTopLeftRadius: theme.radius.sheet,
+          borderTopRightRadius: theme.radius.sheet,
         }}
       >
-        <CountdownRing
-          durationSec={notification.seconds_to_respond}
-          remainingSec={remainingSec}
-          status={RING_STATUS_BY_UI[uiStatus]}
-          warnThresholdSec={COUNTDOWN_WARN_THRESHOLD_SEC}
-          reducedMotion={reducedMotion}
-          onExpire={handleLocalExpiration}
-        />
-
-        <View style={{ width: '100%' }}>
-          <PassengerSummaryRow price={notification.total_fare} />
-        </View>
-
-        <Map
-          center={{ lat: notification.origin.lat, lng: notification.origin.lng }}
-          markers={[
-            {
-              id: 'origin',
-              kind: 'origin',
-              coord: { lat: notification.origin.lat, lng: notification.origin.lng },
-              label: `Recoger en ${notification.origin.address}`,
-            },
-          ]}
-          interactive={false}
-          height={120}
-          style={{ width: '100%' }}
-        />
-        <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-          Recoger a {notification.distance_to_origin_m} m
-        </Text>
-
-        <View style={{ width: '100%', gap: theme.spacing.sm as number }}>
-          <PointRow marker="●" label="Recoger en" value={notification.origin.address} />
-          <PointRow
-            marker="▼"
-            label="Destino"
-            value={notification.dropoff_neighborhood}
-            markerColor={theme.colors.brandInk}
+        <ScrollView
+          contentContainerStyle={{
+            padding: theme.spacing.gutter,
+            paddingTop: theme.spacing.xl,
+            gap: theme.spacing.lg,
+          }}
+        >
+          <PointRoute
+            origin={{
+              label: driverCopy.offer.pickupLabel,
+              value: driverCopy.offer.pickupValue(
+                notification.origin.address,
+                notification.distance_to_origin_m,
+              ),
+            }}
+            destination={{
+              label: driverCopy.offer.destinationLabel,
+              value: notification.dropoff_neighborhood,
+            }}
           />
-        </View>
 
-        {(uiStatus === 'offline_response' || uiStatus === 'generic_error') && (
-          <View accessibilityRole="alert" style={{ width: '100%' }}>
-            <Text
-              style={{ ...theme.typography.body, fontWeight: '700', color: theme.colors.dangerInk }}
-            >
-              {uiStatus === 'offline_response'
-                ? 'Sin conexión · no pudimos enviar tu respuesta.'
-                : 'No pudimos procesar tu respuesta.'}
-            </Text>
-            <Button label="Reintentar" onPress={retry} style={{ marginTop: theme.spacing.sm }} />
-          </View>
-        )}
+          {responseError && (
+            <View accessibilityRole="alert" style={{ gap: theme.spacing.sm }}>
+              <Text style={{ ...theme.typography.bodyStrong, color: theme.colors.dangerInk }}>
+                {uiStatus === 'offline_response'
+                  ? driverCopy.offer.offlineResponse
+                  : driverCopy.offer.genericResponse}
+              </Text>
+              <Button
+                label={driverCopy.issues.retry}
+                variant="secondary"
+                onPress={retry}
+                testID="offer-retry"
+              />
+            </View>
+          )}
+        </ScrollView>
 
-        <View style={{ width: '100%', marginTop: theme.spacing.md }}>
+        <View
+          style={{
+            paddingHorizontal: theme.spacing.gutter,
+            paddingTop: theme.spacing.md,
+            paddingBottom: Math.max(insets.bottom, theme.spacing.lg),
+          }}
+        >
           <ActionButtonPair
             onAccept={handleAccept}
             onReject={handleReject}
@@ -314,15 +361,25 @@ export default function RequestDetailScreen(): React.JSX.Element {
             disabled={!canDecide}
           />
         </View>
-      </ScrollView>
+      </View>
 
       <Toast
         message={toast?.message ?? ''}
         tone={toast?.tone ?? 'neutral'}
-        visible={Boolean(toast)}
+        visible={toastVisible}
         durationMs={toast?.durationMs}
-        onHide={() => {}}
+        bottomOffset={ACTION_BAR_TOAST_OFFSET}
+        onHide={hideStatusToast}
       />
-    </SafeAreaView>
+      <Toast
+        testID="back-notice"
+        message={driverCopy.offer.backNotice}
+        tone="info"
+        visible={backNoticeVisible}
+        durationMs={NOTICE_DURATION_MS}
+        bottomOffset={ACTION_BAR_TOAST_OFFSET}
+        onHide={hideBackNotice}
+      />
+    </View>
   );
 }

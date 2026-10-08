@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  AccentText,
+  BrandMark,
   Button,
   Card,
-  Chip,
+  LinkButton,
+  MarkGlyph,
+  Reveal,
+  Stage,
   TextField,
   formatMMSS,
   useCountdown,
@@ -19,13 +24,42 @@ import {
   useSessionStore,
 } from '@voyyaa/app-runtime';
 import { useDriverLogin } from '../../src/hooks/useDriverLogin';
+import { driverCopy } from '../../src/copy/driver-copy';
 
 type LoginOutcome = 'idle' | 'verifying' | 'credentials' | 'blocked' | 'suspended' | 'offline';
 
 const BLOCKED_FALLBACK_SEC = 90;
+const BRAND_MARK_SIZE = 56;
+const NOTICE_GLYPH_SIZE = 40;
+
+interface NoticeCardProps {
+  glyph: 'clock' | 'error';
+  title: string;
+  body: string;
+  children?: React.ReactNode;
+}
+
+function NoticeCard({ glyph, title, body, children }: NoticeCardProps): React.JSX.Element {
+  const theme = useTheme();
+  return (
+    <Card tone="tint" testID="login-notice">
+      <View accessibilityRole="alert" style={{ gap: theme.spacing.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
+          <MarkGlyph glyph={glyph} size={NOTICE_GLYPH_SIZE} />
+          <Text style={{ ...theme.typography.subtitle, color: theme.colors.text, flex: 1 }}>
+            {title}
+          </Text>
+        </View>
+        <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>{body}</Text>
+        {children}
+      </View>
+    </Card>
+  );
+}
 
 export default function LoginScreen(): React.JSX.Element {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const networkStatus = useNetworkStatus();
   const login = useDriverLogin();
   const setSession = useSessionStore((s) => s.setSession);
@@ -81,13 +115,10 @@ export default function LoginScreen(): React.JSX.Element {
             );
             setOutcome('blocked');
           } else if (code === 'ACCOUNT_SUSPENDED') {
-            setSuspendedMessage(
-              error.message ||
-                'Tu empresa suspendió tu acceso. Contacta a tu empresa para más información.',
-            );
+            setSuspendedMessage(error.message || driverCopy.login.suspendedFallback);
             setOutcome('suspended');
           } else {
-            setCredentialsMessage(error.message || 'Cédula o PIN incorrectos.');
+            setCredentialsMessage(error.message || driverCopy.login.credentialsFallback);
             setOutcome('credentials');
           }
         },
@@ -95,140 +126,163 @@ export default function LoginScreen(): React.JSX.Element {
     );
   };
 
-  if (outcome === 'suspended') {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <Header />
-        <View
-          accessibilityRole="alert"
-          style={{
-            flex: 1,
-            padding: theme.spacing.xl,
-            justifyContent: 'center',
-            gap: theme.spacing.sm as number,
-          }}
-        >
-          <Text
-            style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center' }}
-          >
-            No puedes ingresar ahora
-          </Text>
-          <Text
-            style={{ ...theme.typography.body, color: theme.colors.textMuted, textAlign: 'center' }}
-          >
-            {suspendedMessage}
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const handleTryAnotherAccount = (): void => {
+    setPin('');
+    setOutcome('idle');
+  };
+
+  const showBlocked = isBlocked;
+  const showSuspended = outcome === 'suspended';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <Header />
-      <View style={{ padding: theme.spacing.lg, gap: theme.spacing.lg as number }}>
-        <View>
-          <Text style={{ ...theme.typography.title, color: theme.colors.text }}>
-            Ingreso conductor
-          </Text>
-          <Text
-            style={{
-              ...theme.typography.body,
-              color: theme.colors.textMuted,
-              marginTop: theme.spacing.xs,
-            }}
-          >
-            Tu empresa creó esta cuenta. Ingresa con la cédula y el PIN que te enviaron por SMS.
-          </Text>
-        </View>
-
-        <TextField
-          label="Cédula"
-          value={nationalId}
-          onChangeText={handleNationalId}
-          placeholder="1020304050"
-          keyboardType="numeric"
-          maxLength={15}
-          disabled={login.isPending || isBlocked}
-          testID="cedula-input"
-        />
-        <TextField
-          label="PIN"
-          value={pin}
-          onChangeText={handlePin}
-          placeholder="••••"
-          keyboardType="numeric"
-          maxLength={4}
-          secureTextEntry
-          revealable
-          disabled={login.isPending || isBlocked}
-          error={outcome === 'credentials' ? credentialsMessage : undefined}
-          testID="pin-input"
-        />
-
-        {isBlocked ? (
+    <Stage safeTop topInset={insets.top} style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + theme.spacing.lg }}
+        >
           <View
-            accessibilityRole="alert"
             style={{
-              backgroundColor: theme.colors.surfaceAlt,
-              borderRadius: theme.radius.card,
-              padding: theme.spacing.lg,
-              gap: theme.spacing.xs as number,
+              paddingHorizontal: theme.spacing.gutter,
+              paddingTop: theme.spacing.xl,
+              gap: theme.spacing.lg,
             }}
           >
-            <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
-              Demasiados intentos
-            </Text>
-            <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
-              {blockedTimeKnown
-                ? `Por seguridad, espera ${formatMMSS(blockedRemaining)} para volver a intentar. `
-                : 'Por seguridad, espera unos minutos para volver a intentar. '}
-              Si no recuerdas tu PIN, contacta a tu empresa.
+            <Reveal index={0}>
+              <BrandMark role="driver" size={BRAND_MARK_SIZE} wordmark />
+            </Reveal>
+            <Reveal index={1}>
+              <AccentText accent="conductor" color={theme.colors.onStage} testID="login-title">
+                {driverCopy.login.title}
+              </AccentText>
+            </Reveal>
+          </View>
+
+          <Reveal index={2} style={{ marginTop: theme.spacing.xl }}>
+            <View
+              style={{
+                backgroundColor: theme.colors.bg,
+                borderRadius: theme.radius.sheet,
+                marginHorizontal: theme.spacing.sm,
+                padding: theme.spacing.lg,
+                gap: theme.spacing.lg,
+              }}
+            >
+              <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
+                {driverCopy.login.subtitle}
+              </Text>
+
+              {showSuspended ? (
+                <NoticeCard
+                  glyph="error"
+                  title={driverCopy.login.suspendedTitle}
+                  body={suspendedMessage}
+                >
+                  <LinkButton
+                    label={driverCopy.login.suspendedBack}
+                    onPress={handleTryAnotherAccount}
+                    testID="login-try-another"
+                  />
+                </NoticeCard>
+              ) : (
+                <>
+                  <TextField
+                    label={driverCopy.login.nationalIdLabel}
+                    value={nationalId}
+                    onChangeText={handleNationalId}
+                    placeholder={driverCopy.login.nationalIdPlaceholder}
+                    keyboardType="numeric"
+                    maxLength={15}
+                    disabled={login.isPending || isBlocked}
+                    testID="cedula-input"
+                  />
+                  <TextField
+                    label={driverCopy.login.pinLabel}
+                    value={pin}
+                    onChangeText={handlePin}
+                    helper={driverCopy.login.pinHelper}
+                    keyboardType="numeric"
+                    maxLength={4}
+                    secureTextEntry
+                    revealable
+                    disabled={login.isPending || isBlocked}
+                    error={outcome === 'credentials' ? credentialsMessage : undefined}
+                    onSubmitEditing={handleLogin}
+                    testID="pin-input"
+                  />
+
+                  {showBlocked ? (
+                    <NoticeCard
+                      glyph="clock"
+                      title={driverCopy.login.blockedTitle}
+                      body={
+                        blockedTimeKnown
+                          ? driverCopy.login.blockedKnown(formatMMSS(blockedRemaining))
+                          : driverCopy.login.blockedUnknown
+                      }
+                    />
+                  ) : (
+                    <Button
+                      label={driverCopy.login.submit}
+                      onPress={handleLogin}
+                      size="lg"
+                      disabled={!isFormatValid || offline}
+                      loading={login.isPending}
+                      loadingLabel={driverCopy.login.verifying}
+                      accessibilityHint={offline ? driverCopy.login.offlineHint : undefined}
+                      testID="iniciar-turno-button"
+                    />
+                  )}
+
+                  {offline && !showBlocked && (
+                    <View
+                      accessibilityLiveRegion="polite"
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: theme.spacing.sm,
+                      }}
+                    >
+                      <MarkGlyph glyph="offline" size={24} animate={false} />
+                      <Text
+                        style={{
+                          ...theme.typography.small,
+                          color: theme.colors.infoInk,
+                          flex: 1,
+                        }}
+                      >
+                        {driverCopy.login.offline}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
+          </Reveal>
+
+          <View
+            style={{
+              flexGrow: 1,
+              justifyContent: 'flex-end',
+              padding: theme.spacing.gutter,
+              minHeight: 72,
+            }}
+          >
+            <Text
+              style={{
+                ...theme.typography.small,
+                color: theme.colors.onStageMuted,
+                textAlign: 'center',
+              }}
+            >
+              {driverCopy.login.footer}
             </Text>
           </View>
-        ) : (
-          <Button
-            label="Iniciar turno"
-            onPress={handleLogin}
-            disabled={!isFormatValid || offline}
-            loading={login.isPending}
-            loadingLabel="Verificando…"
-            accessibilityHint={offline ? 'Sin conexión, no se puede verificar ahora' : undefined}
-            testID="iniciar-turno-button"
-          />
-        )}
-
-        {offline && !isBlocked && (
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-            Sin conexión · no se puede verificar ahora.
-          </Text>
-        )}
-
-        <Card tone="alt">
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-            La cuenta la crea tu empresa. Si no la tienes, contáctala directamente.
-          </Text>
-        </Card>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-function Header(): React.JSX.Element {
-  const theme = useTheme();
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: theme.spacing.lg,
-      }}
-    >
-      <Text style={{ ...theme.typography.title, color: theme.colors.brandPressed }}>
-        VoyYa Conductor
-      </Text>
-      <Chip label="conductor" tone="neutral" />
-    </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Stage>
   );
 }

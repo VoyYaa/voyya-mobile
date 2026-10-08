@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text } from 'react-native';
 import { useTheme } from '@voyyaa/ui-mobile';
 import type { LocationIssueKind } from '../state/useLocationIssueStore';
+import { driverCopy } from '../copy/driver-copy';
 
 export interface LocationIssueBannerProps {
   kind: LocationIssueKind;
@@ -9,8 +10,8 @@ export interface LocationIssueBannerProps {
 }
 
 const MESSAGE_BY_KIND: Record<LocationIssueKind, string> = {
-  permission_denied: 'Revisa el permiso de ubicación: no estás recibiendo solicitudes.',
-  gps_disabled: 'Activa la ubicación de tu teléfono para poder recibir solicitudes.',
+  permission_denied: driverCopy.issues.locationPermission,
+  gps_disabled: driverCopy.issues.gpsDisabled,
 };
 
 export function LocationIssueBanner({
@@ -26,20 +27,29 @@ export function LocationIssueBanner({
       accessibilityLabel={message}
       accessibilityLiveRegion="polite"
       onPress={onOpenSettings}
+      testID="location-issue-banner"
       style={{
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         minHeight: theme.touch.min,
-        backgroundColor: theme.colors.dangerTint,
+        backgroundColor: theme.colors.infoTint,
         borderRadius: theme.radius.card,
         paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.sm,
+        gap: theme.spacing.md,
       }}
     >
-      <Text style={{ ...theme.typography.body, color: theme.colors.dangerInk, flex: 1 }}>
+      <Text style={{ ...theme.typography.body, color: theme.colors.infoInk, flex: 1 }}>
         {message}
       </Text>
-      <Text style={{ ...theme.typography.title, color: theme.colors.dangerInk }}>›</Text>
+      <Text
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={{ ...theme.typography.title, color: theme.colors.infoInk }}
+      >
+        ›
+      </Text>
     </Pressable>
   );
 }
