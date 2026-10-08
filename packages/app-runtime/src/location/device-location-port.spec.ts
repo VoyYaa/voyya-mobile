@@ -117,7 +117,9 @@ describe('expoDeviceLocationPort (ADR-019 §9.7.10)', () => {
   });
 
   it('a cached coordinate outside Colombia is also rejected -> unavailable, never granted', async () => {
-    getLastKnownPositionAsync.mockResolvedValue(position(OUTSIDE_COLOMBIA_LAT, OUTSIDE_COLOMBIA_LNG));
+    getLastKnownPositionAsync.mockResolvedValue(
+      position(OUTSIDE_COLOMBIA_LAT, OUTSIDE_COLOMBIA_LNG),
+    );
 
     const outcome = await expoDeviceLocationPort.requestLocation({ timeoutMs: 1000 });
 

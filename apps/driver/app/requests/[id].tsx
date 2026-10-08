@@ -187,10 +187,7 @@ export default function RequestDetailScreen(): React.JSX.Element {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
         <ScreenHeader title="Solicitud" onBack={() => router.back()} />
-        <ErrorState
-          title="No pudimos cargar esta solicitud"
-          onRetry={() => offers.refetch()}
-        />
+        <ErrorState title="No pudimos cargar esta solicitud" onRetry={() => offers.refetch()} />
       </SafeAreaView>
     );
   }
