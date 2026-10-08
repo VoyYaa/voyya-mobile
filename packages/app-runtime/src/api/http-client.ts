@@ -50,6 +50,7 @@ interface ApiRequestOptions {
   body?: unknown;
   signal?: AbortSignal;
   skipAuth?: boolean;
+  skipRefreshOn401?: boolean;
 }
 
 const RetryInSecShape = z.object({ retry_in_sec: z.number().int().positive().optional() });
@@ -88,7 +89,13 @@ async function performRequest<TResponse>(
     throw new ApiError('network', networkErrorMessage(e));
   }
 
-  if (res.status === 401 && !options.skipAuth && !isRetry && authHandlers) {
+  if (
+    res.status === 401 &&
+    !options.skipAuth &&
+    !options.skipRefreshOn401 &&
+    !isRetry &&
+    authHandlers
+  ) {
     const newToken = await authHandlers.refreshAndRetry();
     if (newToken) {
       return performRequest(options, responseSchema, errorSchema, true);
@@ -108,9 +115,17 @@ async function performRequest<TResponse>(
         res.status,
         parsedError.data.code,
         withBackoff.success ? withBackoff.data.retry_in_sec : undefined,
+        json,
       );
     }
-    throw new ApiError('http', `Error inesperado del servidor (${res.status}).`, res.status);
+    throw new ApiError(
+      'http',
+      `Error inesperado del servidor (${res.status}).`,
+      res.status,
+      undefined,
+      undefined,
+      json,
+    );
   }
 
   const parsed = responseSchema.safeParse(json);

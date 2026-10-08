@@ -97,6 +97,14 @@ export function useCreatePinForm(): CreatePinForm {
               setServerNextError(driverCopy.createPin.tooWeak);
               setOutcome('idle');
               return;
+            case 'invalid_data':
+              if (failure.current !== undefined) {
+                setForceCurrent(true);
+                setServerCurrentError(failure.current);
+              }
+              if (failure.next !== undefined) setServerNextError(failure.next);
+              setOutcome('idle');
+              return;
             default:
               setOutcome('server');
           }

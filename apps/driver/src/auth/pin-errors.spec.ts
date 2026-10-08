@@ -41,6 +41,47 @@ describe('classifyChangePinError', () => {
   });
 });
 
+describe('classifyChangePinError with INVALID_DATA', () => {
+  const invalid = (details: unknown) => ({
+    kind: 'http',
+    status: 400,
+    code: 'INVALID_DATA',
+    body: { code: 'INVALID_DATA', message: 'Solicitud inválida', details },
+  });
+
+  it('maps new_pin and current_pin details to field messages', () => {
+    assert.deepEqual(
+      classifyChangePinError(
+        invalid([{ field: 'new_pin', error: 'Elige un PIN menos fácil de adivinar' }]),
+      ),
+      { kind: 'invalid_data', next: 'Elige un PIN menos fácil de adivinar', current: undefined },
+    );
+    assert.deepEqual(
+      classifyChangePinError(
+        invalid([
+          { field: 'current_pin', error: 'PIN inválido (4 a 6 dígitos)' },
+          { field: 'new_pin', error: 'El PIN debe tener 6 dígitos' },
+        ]),
+      ),
+      {
+        kind: 'invalid_data',
+        next: 'El PIN debe tener 6 dígitos',
+        current: 'PIN inválido (4 a 6 dígitos)',
+      },
+    );
+  });
+
+  it('falls back to a server failure for unknown fields or malformed bodies', () => {
+    assert.deepEqual(classifyChangePinError(invalid([{ field: 'other', error: 'x' }])), {
+      kind: 'server',
+    });
+    assert.deepEqual(classifyChangePinError(invalid('nope')), { kind: 'server' });
+    assert.deepEqual(classifyChangePinError({ kind: 'http', status: 400, code: 'INVALID_DATA' }), {
+      kind: 'server',
+    });
+  });
+});
+
 describe('isPinChangeRequiredError', () => {
   it('recognizes only 403 PIN_CHANGE_REQUIRED', () => {
     assert.equal(isPinChangeRequiredError({ status: 403, code: 'PIN_CHANGE_REQUIRED' }), true);

@@ -1,9 +1,12 @@
+import { z } from 'zod';
+
 export type ChangePinFailure =
   | { kind: 'offline' }
   | { kind: 'expired' }
   | { kind: 'blocked'; retryInSec: number | undefined }
   | { kind: 'wrong_current' }
   | { kind: 'too_weak' }
+  | { kind: 'invalid_data'; next: string | undefined; current: string | undefined }
   | { kind: 'server' };
 
 export const PIN_CHANGE_REQUIRED_CODE = 'PIN_CHANGE_REQUIRED';
@@ -13,6 +16,24 @@ interface ErrorShape {
   status?: unknown;
   code?: unknown;
   retryInSec?: unknown;
+  body?: unknown;
+}
+
+const InvalidDataBody = z.object({
+  details: z.array(z.object({ field: z.string(), error: z.string() })),
+});
+
+const INVALID_DATA_CODE = 'INVALID_DATA';
+
+function classifyInvalidData(body: unknown): ChangePinFailure {
+  const parsed = InvalidDataBody.safeParse(body);
+  if (!parsed.success) return { kind: 'server' };
+  const messageOf = (field: string): string | undefined =>
+    parsed.data.details.find((detail) => detail.field === field)?.error;
+  const next = messageOf('new_pin');
+  const current = messageOf('current_pin');
+  if (next === undefined && current === undefined) return { kind: 'server' };
+  return { kind: 'invalid_data', next, current };
 }
 
 function asShape(error: unknown): ErrorShape | null {
@@ -40,6 +61,8 @@ export function classifyChangePinError(error: unknown): ChangePinFailure {
       return { kind: 'wrong_current' };
     case 'PIN_TOO_WEAK':
       return { kind: 'too_weak' };
+    case INVALID_DATA_CODE:
+      return classifyInvalidData(shape.body);
     default:
       return { kind: 'server' };
   }
