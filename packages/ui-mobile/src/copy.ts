@@ -19,6 +19,7 @@ export const uiCopy = {
   accountTitle: 'Tu cuenta',
   accountOpen: 'Mi cuenta',
   privacyLink: 'Privacidad de mi ubicación',
+  consentScrollHint: 'Desliza para leer todo el aviso',
   logout: 'Cerrar sesión',
   logoutConfirmTitle: '¿Cerrar sesión en este teléfono?',
   logoutConfirmBody: 'Tendrás que ingresar de nuevo para pedir o recibir viajes.',

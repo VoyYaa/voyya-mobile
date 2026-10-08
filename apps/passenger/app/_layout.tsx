@@ -7,16 +7,17 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BRAND_FONT_ASSETS, BootScreen, ThemeProvider, useTheme } from '@voyyaa/ui-mobile';
-import { LOCATION_NOTICE_VERSION, TripError } from '@voyyaa/shared';
+import { TripError } from '@voyyaa/shared';
 import {
   configureApiClient,
   createQueryClient,
   ConnectivityBanner,
-  retryPendingConsentSync,
+  refreshLocationConsent,
   useSessionStore,
   silenceKnownWebWarnings,
   useProactiveRefresh,
 } from '@voyyaa/app-runtime';
+import { ActiveTripStartupGate } from '../src/components/ActiveTripStartupGate';
 import { useRouteGuard } from '../src/hooks/useRouteGuard';
 import { API_BASE_URL } from '../src/constants/env';
 
@@ -40,7 +41,7 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      void retryPendingConsentSync('location', LOCATION_NOTICE_VERSION);
+      void refreshLocationConsent().catch(() => undefined);
     }
   }, [status]);
 
@@ -72,6 +73,7 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
               options={{ animation: 'fade', gestureEnabled: false }}
             />
           </Stack>
+          <ActiveTripStartupGate />
         </>
       )}
       {booting && (

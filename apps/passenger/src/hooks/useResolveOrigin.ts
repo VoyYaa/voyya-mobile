@@ -3,7 +3,8 @@ import type { Location } from '@voyyaa/shared';
 import { requestDeviceLocation } from '@voyyaa/app-runtime';
 
 export type OriginResolutionStatus = 'idle' | 'resolving' | 'resolved' | 'unresolved';
-export type OriginUnresolvedReason = 'permission_denied' | 'unavailable' | null;
+export type OriginUnresolvedReason =
+  'permission_denied' | 'consent_required' | 'unavailable' | null;
 
 export interface OriginResolution {
   status: OriginResolutionStatus;
@@ -31,6 +32,8 @@ export function useResolveOrigin(): OriginResolution {
       if (outcome.kind === 'permission_denied') {
         setCanAskAgain(outcome.canAskAgain);
         setUnresolvedReason('permission_denied');
+      } else if (outcome.kind === 'consent_required') {
+        setUnresolvedReason('consent_required');
       } else {
         setUnresolvedReason('unavailable');
       }

@@ -19,6 +19,7 @@ import { useNetworkStatus } from '@voyyaa/app-runtime';
 import { CrossFadeText } from '../src/components/CrossFadeText';
 import { SearchRadar } from '../src/components/SearchRadar';
 import { StageTicket } from '../src/components/StageTicket';
+import { useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
@@ -90,7 +91,7 @@ export default function SearchingScreen(): React.JSX.Element {
   const municipalityId = useTripDraftStore((s) => s.municipalityId);
   const resetDraft = useTripDraftStore((s) => s.reset);
   const quote = useTripDraftStore((s) => s.quote);
-  const setActiveTripRequestId = useTripDraftStore((s) => s.setActiveTripRequestId);
+  const activeTripCache = useActiveTripCache();
 
   const cancelTripRequest = useCancelTripRequest(tripRequestId);
   const quoteFare = useQuoteFare();
@@ -183,7 +184,7 @@ export default function SearchingScreen(): React.JSX.Element {
             },
             {
               onSuccess: (newTripRequest) => {
-                setActiveTripRequestId(newTripRequest.trip_request_id);
+                void activeTripCache.refresh().catch(() => undefined);
                 router.replace({
                   pathname: '/searching',
                   params: { id: String(newTripRequest.trip_request_id) },
@@ -197,6 +198,7 @@ export default function SearchingScreen(): React.JSX.Element {
   };
 
   const goBackHome = (): void => {
+    activeTripCache.clear();
     resetDraft();
     router.replace('/');
   };

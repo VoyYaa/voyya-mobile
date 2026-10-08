@@ -15,14 +15,22 @@ import {
   useTheme,
 } from '@voyyaa/ui-mobile';
 import type { PaymentMethod } from '@voyyaa/shared';
-import { domainErrorCode, useNetworkStatus } from '@voyyaa/app-runtime';
+import { domainErrorCode, isNetworkError, useNetworkStatus } from '@voyyaa/app-runtime';
+import {
+  ActiveTripConflictSheet,
+  type ActiveTripConflictFailure,
+} from '../src/components/ActiveTripConflictSheet';
 import { InlineNotice } from '../src/components/InlineNotice';
 import { LocationReferenceField } from '../src/components/LocationReferenceField';
+import { useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useCreateTripRequest } from '../src/hooks/useCreateTripRequest';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { composeAddress } from '../src/lib/address';
+import { activeTripRoute } from '../src/lib/active-trip-route';
 import { passengerCopy } from '../src/copy/passenger-copy';
+
+import { TRIP_ENDED_NOTICE } from '../src/constants/notices';
 
 const PAYMENT_METHOD: PaymentMethod = 'cash';
 const MAP_HEIGHT = 120;
@@ -40,12 +48,15 @@ export default function ConfirmScreen(): React.JSX.Element {
   const serviceType = useTripDraftStore((s) => s.serviceType);
   const quote = useTripDraftStore((s) => s.quote);
   const setQuote = useTripDraftStore((s) => s.setQuote);
-  const activeTripRequestId = useTripDraftStore((s) => s.activeTripRequestId);
-  const setActiveTripRequestId = useTripDraftStore((s) => s.setActiveTripRequestId);
+  const resetDraft = useTripDraftStore((s) => s.reset);
+  const activeTripCache = useActiveTripCache();
 
   const [pickupReference, setPickupReference] = useState('');
   const [dropoffReference, setDropoffReference] = useState('');
   const [referencesExpanded, setReferencesExpanded] = useState(false);
+  const [conflictOpen, setConflictOpen] = useState(false);
+  const [conflictLoading, setConflictLoading] = useState(false);
+  const [conflictFailure, setConflictFailure] = useState<ActiveTripConflictFailure>(null);
   const quoteFare = useQuoteFare();
   const createTripRequest = useCreateTripRequest();
 
@@ -74,13 +85,18 @@ export default function ConfirmScreen(): React.JSX.Element {
       },
       {
         onSuccess: (tripRequest) => {
-          setActiveTripRequestId(tripRequest.trip_request_id);
+          void activeTripCache.refresh().catch(() => undefined);
           router.replace({
             pathname: '/searching',
             params: { id: String(tripRequest.trip_request_id) },
           });
         },
         onError: (error) => {
+          if (domainErrorCode(error) === 'ACTIVE_TRIP_REQUEST_EXISTS') {
+            setConflictFailure(null);
+            setConflictOpen(true);
+            return;
+          }
           if (domainErrorCode(error) === 'QUOTE_EXPIRED') {
             quoteFare.mutate(
               { origin, destination, municipality_id: municipalityId, service_type: serviceType },
@@ -92,6 +108,31 @@ export default function ConfirmScreen(): React.JSX.Element {
     );
   };
 
+  const openActiveTrip = (): void => {
+    setConflictLoading(true);
+    setConflictFailure(null);
+    activeTripCache
+      .refresh()
+      .then((trip) => {
+        setConflictOpen(false);
+        const route = trip ? activeTripRoute(trip) : null;
+        if (!trip || !route) {
+          resetDraft();
+          router.replace({ pathname: '/', params: { notice: TRIP_ENDED_NOTICE } });
+          return;
+        }
+        activeTripCache.seed(trip);
+        router.replace(route);
+      })
+      .catch((error: unknown) => setConflictFailure(isNetworkError(error) ? 'offline' : 'error'))
+      .finally(() => setConflictLoading(false));
+  };
+
+  const closeConflict = (): void => {
+    setConflictOpen(false);
+    createTripRequest.reset();
+  };
+
   const errorCode = domainErrorCode(createTripRequest.error);
   const showGenericError =
     createTripRequest.isError &&
@@ -99,7 +140,8 @@ export default function ConfirmScreen(): React.JSX.Element {
     errorCode !== 'ACTIVE_TRIP_REQUEST_EXISTS';
   const currentFare = quoteFare.data ?? quote;
   const offline = networkStatus === 'offline';
-  const requestDisabled = offline || createTripRequest.isPending || quoteFare.isPending;
+  const requestDisabled =
+    offline || createTripRequest.isPending || quoteFare.isPending || conflictOpen;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={['top']}>
@@ -111,25 +153,6 @@ export default function ConfirmScreen(): React.JSX.Element {
       >
         {errorCode === 'QUOTE_EXPIRED' && (
           <InlineNotice tone="info" glyph="clock" title={copy.requote} testID="confirm-requote" />
-        )}
-        {errorCode === 'ACTIVE_TRIP_REQUEST_EXISTS' && (
-          <InlineNotice
-            tone="brand"
-            glyph="clock"
-            title={copy.activeTripTitle}
-            body={copy.activeTripBody}
-            actionLabel={activeTripRequestId !== null ? copy.activeTripAction : undefined}
-            onAction={
-              activeTripRequestId !== null
-                ? () =>
-                    router.replace({
-                      pathname: '/searching',
-                      params: { id: String(activeTripRequestId) },
-                    })
-                : undefined
-            }
-            testID="confirm-active-trip"
-          />
         )}
         {showGenericError && (
           <InlineNotice
@@ -250,6 +273,14 @@ export default function ConfirmScreen(): React.JSX.Element {
           testID="request-trip-button"
         />
       </View>
+
+      <ActiveTripConflictSheet
+        visible={conflictOpen}
+        loading={conflictLoading}
+        failure={conflictFailure}
+        onViewTrip={openActiveTrip}
+        onClose={closeConflict}
+      />
     </SafeAreaView>
   );
 }

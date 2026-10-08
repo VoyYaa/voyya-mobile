@@ -1,12 +1,20 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useTheme } from '../theme';
+import { uiCopy } from '../copy';
 import { BottomSheet } from './BottomSheet';
 import { Button } from './Button';
+import { LinkButton } from './LinkButton';
 
 export interface LocationConsentRow {
   label: string;
   value: string;
+}
+
+export interface LocationConsentLinkRow {
+  label: string;
+  onPress: () => void;
+  accessibilityHint?: string;
 }
 
 export interface LocationConsentSheetProps {
@@ -17,8 +25,16 @@ export interface LocationConsentSheetProps {
   secondaryLabel?: string;
   onPrimary: () => void;
   onSecondary?: () => void;
+  primaryLoading?: boolean;
+  primaryLoadingLabel?: string;
+  errorMessage?: string;
+  linkRow?: LocationConsentLinkRow;
+  maxBodyHeightRatio?: number;
   testID?: string;
 }
+
+const DEFAULT_MAX_BODY_HEIGHT_RATIO = 0.7;
+const SHEET_CHROME_RESERVE_DP = 320;
 
 export function LocationConsentSheet({
   visible,
@@ -28,16 +44,32 @@ export function LocationConsentSheet({
   secondaryLabel,
   onPrimary,
   onSecondary,
+  primaryLoading = false,
+  primaryLoadingLabel,
+  errorMessage,
+  linkRow,
+  maxBodyHeightRatio = DEFAULT_MAX_BODY_HEIGHT_RATIO,
   testID,
 }: LocationConsentSheetProps): React.JSX.Element {
   const theme = useTheme();
-  const onClose = onSecondary ?? onPrimary;
+  const { height: windowHeight } = useWindowDimensions();
+  const bodyMaxHeight = Math.round(
+    Math.min(windowHeight * maxBodyHeightRatio, windowHeight - SHEET_CHROME_RESERVE_DP),
+  );
+  const onClose = primaryLoading ? noop : (onSecondary ?? onPrimary);
 
   return (
     <BottomSheet visible={visible} onClose={onClose} title={title} testID={testID}>
-      <View style={{ gap: theme.spacing.md }}>
+      <ScrollView
+        style={{ flexGrow: 0, maxHeight: bodyMaxHeight }}
+        contentContainerStyle={{ gap: theme.spacing.md, paddingBottom: theme.spacing.md }}
+        showsVerticalScrollIndicator
+        persistentScrollbar
+        accessibilityHint={uiCopy.consentScrollHint}
+        testID={testID ? `${testID}-body` : undefined}
+      >
         {rows.map((row) => (
-          <View key={row.label}>
+          <View key={row.label} accessible accessibilityLabel={`${row.label}. ${row.value}`}>
             <Text style={{ ...theme.typography.smallStrong, color: theme.colors.text }}>
               {row.label}
             </Text>
@@ -46,13 +78,57 @@ export function LocationConsentSheet({
             </Text>
           </View>
         ))}
-      </View>
-      <View style={{ marginTop: theme.spacing.lg, gap: theme.spacing.sm }}>
-        <Button label={primaryLabel} onPress={onPrimary} />
+        {linkRow && (
+          <View style={{ alignItems: 'flex-start' }}>
+            <LinkButton
+              label={linkRow.label}
+              onPress={linkRow.onPress}
+              accessibilityHint={linkRow.accessibilityHint}
+              testID={testID ? `${testID}-link` : undefined}
+            />
+          </View>
+        )}
+      </ScrollView>
+      <View
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border,
+          paddingTop: theme.spacing.md,
+          gap: theme.spacing.sm,
+        }}
+      >
+        {errorMessage ? (
+          <Text
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            style={{ ...theme.typography.small, color: theme.colors.dangerInk }}
+            testID={testID ? `${testID}-error` : undefined}
+          >
+            {errorMessage}
+          </Text>
+        ) : null}
+        <Button
+          label={primaryLabel}
+          size="lg"
+          onPress={onPrimary}
+          loading={primaryLoading}
+          loadingLabel={primaryLoadingLabel}
+          testID={testID ? `${testID}-primary` : undefined}
+        />
         {secondaryLabel && onSecondary && (
-          <Button label={secondaryLabel} variant="ghost" onPress={onSecondary} />
+          <Button
+            label={secondaryLabel}
+            variant="ghost"
+            disabled={primaryLoading}
+            onPress={onSecondary}
+            testID={testID ? `${testID}-secondary` : undefined}
+          />
         )}
       </View>
     </BottomSheet>
   );
+}
+
+function noop(): void {
+  return undefined;
 }

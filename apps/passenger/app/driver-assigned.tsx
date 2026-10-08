@@ -19,6 +19,7 @@ import { BranchFade } from '../src/components/BranchFade';
 import { CancelConfirmSheet } from '../src/components/CancelConfirmSheet';
 import { TripOutcomeView, type TripOutcomeKind } from '../src/components/TripOutcomeView';
 import type { TripStep } from '../src/components/TripStepRail';
+import { useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
@@ -60,6 +61,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
   const assignedAtLocal = useTripDraftStore((s) => s.assignedAtLocal);
   const markAssignedLocal = useTripDraftStore((s) => s.markAssignedLocal);
   const resetDraft = useTripDraftStore((s) => s.reset);
+  const activeTripCache = useActiveTripCache();
   const cancelTripRequest = useCancelTripRequest(tripRequestId);
 
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -86,6 +88,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
   const withinWindow = deadlineIso !== null && remainingSec > 0;
 
   const goHome = (): void => {
+    activeTripCache.clear();
     resetDraft();
     router.replace('/');
   };

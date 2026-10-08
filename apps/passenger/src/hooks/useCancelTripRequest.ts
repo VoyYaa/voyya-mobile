@@ -1,9 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { CancelTripRequestDTO } from '@voyyaa/shared';
 import { cancelTripRequest } from '../api/trips.api';
+import { tripRequestQueryKey, useActiveTripCache } from './useActiveTrip';
 
 export function useCancelTripRequest(tripRequestId: number | null) {
   const queryClient = useQueryClient();
+  const activeTrip = useActiveTripCache();
 
   return useMutation({
     mutationFn: (dto?: CancelTripRequestDTO) => {
@@ -15,8 +17,9 @@ export function useCancelTripRequest(tripRequestId: number | null) {
     retry: false,
     onSuccess: () => {
       if (tripRequestId !== null) {
-        void queryClient.invalidateQueries({ queryKey: ['tripRequest', tripRequestId] });
+        void queryClient.invalidateQueries({ queryKey: tripRequestQueryKey(tripRequestId) });
       }
+      activeTrip.clear();
     },
   });
 }

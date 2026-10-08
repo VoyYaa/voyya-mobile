@@ -11,14 +11,12 @@ interface TripDraftState {
   municipalityId: number;
   quote: QuoteResponse | null;
   assignedAtLocal: string | null;
-  activeTripRequestId: number | null;
 
   setOrigin: (origin: Location, source: OriginSource) => void;
   clearOrigin: () => void;
   setOriginDestination: (origin: Location, destination: Location) => void;
   setQuote: (quote: QuoteResponse) => void;
   markAssignedLocal: () => void;
-  setActiveTripRequestId: (id: number) => void;
   reset: () => void;
 }
 
@@ -32,7 +30,6 @@ export const useTripDraftStore = create<TripDraftState>((set, get) => ({
   municipalityId: YARUMAL_MUNICIPALITY_ID,
   quote: null,
   assignedAtLocal: null,
-  activeTripRequestId: null,
 
   setOrigin: (origin, originSource) => set({ origin, originSource }),
   clearOrigin: () => set({ origin: null, originSource: null }),
@@ -43,7 +40,6 @@ export const useTripDraftStore = create<TripDraftState>((set, get) => ({
       set({ assignedAtLocal: new Date().toISOString() });
     }
   },
-  setActiveTripRequestId: (activeTripRequestId) => set({ activeTripRequestId }),
   reset: () =>
     set({
       origin: null,
@@ -52,6 +48,5 @@ export const useTripDraftStore = create<TripDraftState>((set, get) => ({
       serviceType: 'taxi',
       quote: null,
       assignedAtLocal: null,
-      activeTripRequestId: null,
     }),
 }));

@@ -1,4 +1,5 @@
 import {
+  ActiveTripResponse,
   CancelTripRequestDTO,
   CreateTripRequestDTO,
   QuoteFareDTO,
@@ -32,4 +33,8 @@ export function cancelTripRequest(
     { method: 'POST', path: `/trips/${tripRequestId}/cancel`, body },
     TripRequestCancelled,
   );
+}
+
+export function getActiveTrip(): Promise<ActiveTripResponse> {
+  return apiRequest({ method: 'GET', path: '/trips/active' }, ActiveTripResponse);
 }
