@@ -213,7 +213,12 @@ export function MotionSection(): React.JSX.Element {
       <Stage>
         <GalleryRow>
           <BrandHop size={144} target="person" testID="gallery-hop-person" />
-          <BrandHop size={144} target="car" ringColor={theme.colors.success} testID="gallery-hop-car" />
+          <BrandHop
+            size={144}
+            target="car"
+            ringColor={theme.colors.success}
+            testID="gallery-hop-car"
+          />
           <BrandHop size={96} testID="gallery-hop-neutral" />
         </GalleryRow>
       </Stage>

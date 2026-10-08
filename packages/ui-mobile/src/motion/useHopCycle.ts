@@ -57,10 +57,7 @@ export function useHopCycle({
         useNativeDriver: USE_NATIVE_DRIVER,
       });
 
-    const play = (
-      animation: Animated.CompositeAnimation,
-      onComplete: () => void,
-    ): void => {
+    const play = (animation: Animated.CompositeAnimation, onComplete: () => void): void => {
       running.current = animation;
       animation.start(({ finished }) => {
         if (finished && !disposed) onComplete();

@@ -168,7 +168,10 @@ export function BrandHop({
       <Animated.View
         style={[
           groundLayer,
-          { opacity: rippleOpacity, transform: [{ scaleY: RIPPLE_FLATTEN }, { scale: rippleScale }] },
+          {
+            opacity: rippleOpacity,
+            transform: [{ scaleY: RIPPLE_FLATTEN }, { scale: rippleScale }],
+          },
         ]}
       >
         <Svg width={size} height={size} viewBox="0 0 200 200">

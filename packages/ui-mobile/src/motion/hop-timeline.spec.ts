@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { HOP, buildHopKeyframes, createMonotoneCurve, figureMix, jumpHeight } from './hop-timeline.ts';
+import {
+  HOP,
+  buildHopKeyframes,
+  createMonotoneCurve,
+  figureMix,
+  jumpHeight,
+} from './hop-timeline.ts';
 
 function valueAt(frames: { inputRange: number[]; outputRange: number[] }, t: number): number {
   const index = frames.inputRange.findIndex((input) => input >= t);

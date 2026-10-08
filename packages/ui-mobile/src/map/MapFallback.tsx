@@ -3,7 +3,7 @@ import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../theme';
 import type { MapMarker, MapMarkerKind } from './types';
 
-export const MAP_WEB_UNAVAILABLE_LABEL = 'Mapa no disponible en la versi�n web de desarrollo';
+export const MAP_WEB_UNAVAILABLE_LABEL = 'Mapa no disponible en la versión web de desarrollo';
 
 const MARKER_KIND_LABELS: Record<MapMarkerKind, string> = {
   origin: 'Origen',
