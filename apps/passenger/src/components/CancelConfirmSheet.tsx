@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { BottomSheet, Button, useTheme } from '@voyyaa/ui-mobile';
+import { BottomSheet, Button, LinkButton, useTheme } from '@voyyaa/ui-mobile';
+import { passengerCopy } from '../copy/passenger-copy';
 
 export interface CancelConfirmSheetProps {
   visible: boolean;
@@ -18,49 +19,44 @@ export function CancelConfirmSheet({
   onKeepWaiting,
 }: CancelConfirmSheetProps): React.JSX.Element {
   const theme = useTheme();
+  const copy = passengerCopy.cancelSheet;
 
   return (
-    <BottomSheet visible={visible} onClose={onKeepWaiting} title="¿Cancelar viaje?">
+    <BottomSheet visible={visible} onClose={onKeepWaiting} title={copy.title}>
       {withinWindow ? (
-        <Text
-          style={{
-            ...theme.typography.body,
-            color: theme.colors.text,
-            marginBottom: theme.spacing.sm,
-          }}
-        >
-          <Text style={{ color: theme.colors.successInk, fontWeight: '700' }}>Gratis</Text> · aún
-          estás dentro de los 2 minutos.
+        <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
+          <Text style={{ ...theme.typography.bodyStrong, color: theme.colors.successInk }}>
+            {copy.free}
+          </Text>{' '}
+          {copy.freeBody}
         </Text>
       ) : (
-        <Text
-          style={{
-            ...theme.typography.body,
-            color: theme.colors.text,
-            marginBottom: theme.spacing.sm,
-          }}
-        >
-          Pasaron más de 2 minutos desde la asignación. Quedará{' '}
-          <Text style={{ color: theme.colors.dangerInk, fontWeight: '700' }}>
-            registrada como cancelación tardía
+        <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
+          {copy.lateBodyPrefix}{' '}
+          <Text style={{ ...theme.typography.bodyStrong, color: theme.colors.dangerInk }}>
+            {copy.lateEmphasis}
           </Text>
           .
         </Text>
       )}
-      <View style={{ marginTop: theme.spacing.md, gap: theme.spacing.sm }}>
+      <View style={{ marginTop: theme.spacing.lg, gap: theme.spacing.sm }}>
         <Button
-          label="Sí, cancelar"
-          variant="primary"
+          label={copy.confirm}
+          variant="danger"
+          size="lg"
           loading={loading}
-          loadingLabel="Cancelando…"
+          loadingLabel={copy.cancelling}
           onPress={onConfirmCancel}
+          testID="cancel-confirm-button"
         />
-        <Button
-          label="Seguir esperando"
-          variant="ghost"
-          disabled={loading}
-          onPress={onKeepWaiting}
-        />
+        <View style={{ alignItems: 'center' }}>
+          <LinkButton
+            label={copy.keep}
+            disabled={loading}
+            onPress={onKeepWaiting}
+            style={{ alignSelf: 'center' }}
+          />
+        </View>
       </View>
     </BottomSheet>
   );

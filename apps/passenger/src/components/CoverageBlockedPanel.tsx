@@ -1,6 +1,7 @@
 import React from 'react';
-import { Text, View } from 'react-native';
-import { Button, useTheme } from '@voyyaa/ui-mobile';
+import { View } from 'react-native';
+import { StatePanel, useTheme } from '@voyyaa/ui-mobile';
+import { passengerCopy } from '../copy/passenger-copy';
 
 export interface CoverageBlockedPanelProps {
   onAdjustLocation: () => void;
@@ -17,28 +18,16 @@ export function CoverageBlockedPanel({
       style={{
         flex: 1,
         backgroundColor: theme.colors.bg,
-        alignItems: 'center',
         justifyContent: 'center',
-        padding: theme.spacing.xl,
-        gap: theme.spacing.md,
+        padding: theme.spacing.lg,
       }}
     >
-      <Text
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={{ fontSize: 40 }}
-      >
-        📍
-      </Text>
-      <Text
-        accessibilityRole="header"
-        style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center' }}
-      >
-        Tu ubicación actual está fuera de la zona de cobertura de Yarumal.
-      </Text>
-      <View style={{ width: '100%', marginTop: theme.spacing.md }}>
-        <Button label="Ajustar ubicación en el mapa" onPress={onAdjustLocation} />
-      </View>
+      <StatePanel
+        glyph="pin"
+        title={passengerCopy.coverage.title}
+        primaryAction={{ label: passengerCopy.coverage.action, onPress: onAdjustLocation }}
+        testID="coverage-blocked"
+      />
     </View>
   );
 }

@@ -1,16 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
+  BrandMark,
   Button,
+  Card,
+  LinkButton,
+  MarkGlyph,
   OtpInput,
+  Reveal,
   ScreenHeader,
   Toast,
+  formatMMSS,
   useCountdown,
   useTheme,
   type OtpInputStatus,
 } from '@voyyaa/ui-mobile';
+import type { SessionResponse } from '@voyyaa/shared';
 import {
   domainErrorCode,
   isNetworkError,
@@ -19,25 +26,23 @@ import {
 } from '@voyyaa/app-runtime';
 import { useVerifyOtp } from '../../src/hooks/useVerifyOtp';
 import { useRequestOtp } from '../../src/hooks/useRequestOtp';
+import { passengerCopy } from '../../src/copy/passenger-copy';
 
 type VerifyOutcome = 'idle' | 'verifying' | 'incorrect' | 'expired' | 'offline' | 'success';
 
+const copy = passengerCopy.auth;
+
 const ANNOUNCE_MESSAGES: Record<VerifyOutcome, string | null> = {
   idle: null,
-  verifying: 'Verificando código.',
-  incorrect: 'Código incorrecto. Inténtalo de nuevo.',
-  expired: 'Este código venció. Solicita uno nuevo.',
-  offline: 'Sin conexión, no pudimos verificar tu código.',
-  success: 'Código verificado.',
+  verifying: copy.otpVerifyingAnnounce,
+  incorrect: copy.otpIncorrect,
+  expired: copy.otpExpired,
+  offline: copy.otpOfflineAnnounce,
+  success: copy.otpSuccess,
 };
 
-function formatMMSS(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
-
 const RATE_LIMIT_FALLBACK_SEC = 90;
+const SUCCESS_HOLD_MS = 700;
 
 function maskPhone(phone: string): string {
   const digits = phone.replace(/\D/g, '');
@@ -81,38 +86,43 @@ function ResendArea({
 
   if (isRateLimited) {
     return (
-      <View
-        accessibilityRole="alert"
-        style={{
-          backgroundColor: theme.colors.surfaceAlt,
-          borderRadius: theme.radius.card,
-          padding: theme.spacing.lg,
-        }}
-      >
-        <Text style={{ ...theme.typography.small, color: theme.colors.text }}>
-          {rateLimitTimeKnown
-            ? `Ya pediste varios códigos · espera ${formatMMSS(rateLimitRemaining)} antes de pedir otro.`
-            : 'Ya pediste varios códigos · espera unos minutos antes de pedir otro.'}
-        </Text>
-      </View>
+      <Card tone="tint" testID="rate-limit-card">
+        <View
+          accessibilityRole="alert"
+          style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}
+        >
+          <MarkGlyph glyph="clock" size={32} />
+          <Text style={{ ...theme.typography.small, color: theme.colors.text, flex: 1 }}>
+            {rateLimitTimeKnown
+              ? copy.otpRateLimited(formatMMSS(rateLimitRemaining))
+              : copy.otpRateLimitedUnknown}
+          </Text>
+        </View>
+      </Card>
     );
   }
 
   if (canResend) {
     return (
-      <Pressable accessibilityRole="link" hitSlop={12} onPress={onResend}>
-        <Text
-          style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.brandInk }}
-        >
-          {resending ? 'Reenviando…' : 'Reenviar código'}
-        </Text>
-      </Pressable>
+      <LinkButton
+        label={resending ? copy.otpResending : copy.otpResend}
+        disabled={resending}
+        onPress={onResend}
+        style={{ alignSelf: 'center' }}
+        testID="resend-code-button"
+      />
     );
   }
 
   return (
-    <Text style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.textMuted }}>
-      Reenviar código en {resendRemaining} s
+    <Text
+      style={{
+        ...theme.typography.smallStrong,
+        color: theme.colors.textMuted,
+        textAlign: 'center',
+      }}
+    >
+      {copy.otpResendIn(resendRemaining)}
     </Text>
   );
 }
@@ -140,15 +150,17 @@ export default function OtpScreen(): React.JSX.Element {
 
   const previousOutcome = useRef<VerifyOutcome | null>(null);
   const canResendAnnounced = useRef(false);
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!params.phone) router.replace('/(auth)/phone');
   }, [params.phone, router]);
 
   useEffect(() => {
-    AccessibilityInfo.announceForAccessibility(
-      `Código enviado a ${maskPhone(params.phone ?? '')}. Ingresa los 4 dígitos.`,
-    );
+    AccessibilityInfo.announceForAccessibility(copy.otpAnnounce(maskPhone(params.phone ?? '')));
+    return () => {
+      if (successTimer.current) clearTimeout(successTimer.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -161,7 +173,7 @@ export default function OtpScreen(): React.JSX.Element {
   useEffect(() => {
     if (canResend && !canResendAnnounced.current) {
       canResendAnnounced.current = true;
-      AccessibilityInfo.announceForAccessibility('Ya puedes reenviar el código.');
+      AccessibilityInfo.announceForAccessibility(copy.otpResendAvailable);
     } else if (!canResend) {
       canResendAnnounced.current = false;
     }
@@ -172,17 +184,17 @@ export default function OtpScreen(): React.JSX.Element {
     setOutcome('idle');
   }, [value]);
 
+  const completeSession = (response: SessionResponse): void => {
+    setOutcome('success');
+    successTimer.current = setTimeout(() => void setSession(response), SUCCESS_HOLD_MS);
+  };
+
   const handleComplete = (code: string): void => {
     setOutcome('verifying');
     verifyOtp.mutate(
       { phone: params.phone, code },
       {
-        onSuccess: (response) => {
-          void setSession(response).then(() => {
-            setOutcome('success');
-            setTimeout(() => router.replace('/'), 500);
-          });
-        },
+        onSuccess: completeSession,
         onError: (error) => {
           if (isNetworkError(error)) {
             setOutcome('offline');
@@ -223,80 +235,106 @@ export default function OtpScreen(): React.JSX.Element {
   };
 
   const otpStatus = toOtpStatus(outcome);
+  const feedbackColor =
+    outcome === 'incorrect' || outcome === 'expired'
+      ? theme.colors.dangerInk
+      : outcome === 'success'
+        ? theme.colors.successInk
+        : theme.colors.textMuted;
+  const feedback: Record<VerifyOutcome, string | null> = {
+    idle: null,
+    verifying: copy.otpVerifying,
+    incorrect: copy.otpIncorrect,
+    expired: copy.otpExpired,
+    offline: copy.otpOffline,
+    success: copy.otpSuccess,
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title="Verificación" onBack={() => router.back()} />
-      <View
-        style={{
-          padding: theme.spacing.lg,
-          gap: theme.spacing.lg as number,
-          alignItems: 'flex-start',
-        }}
+      <ScreenHeader title={copy.otpHeader} onBack={() => router.back()} />
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ padding: theme.spacing.xl, gap: theme.spacing.xl }}
       >
-        <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
-          Enviamos un código de 4 dígitos a{' '}
-          <Text style={{ fontWeight: '700', color: theme.colors.text }}>
-            {maskPhone(params.phone ?? '')}
-          </Text>
-        </Text>
-
-        <OtpInput
-          value={value}
-          onChangeValue={setValue}
-          onComplete={handleComplete}
-          status={otpStatus}
-          disabled={outcome === 'verifying' || outcome === 'success'}
-          autoFocus
-          testID="otp-input"
-        />
-
-        {outcome === 'verifying' && (
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-            Verificando código…
-          </Text>
-        )}
-        {outcome === 'incorrect' && (
-          <Text
-            accessibilityRole="alert"
-            style={{ ...theme.typography.small, color: theme.colors.dangerInk }}
-          >
-            Código incorrecto. Inténtalo de nuevo.
-          </Text>
-        )}
-        {outcome === 'expired' && (
-          <Text
-            accessibilityRole="alert"
-            style={{ ...theme.typography.small, color: theme.colors.dangerInk }}
-          >
-            Este código venció. Solicita uno nuevo.
-          </Text>
-        )}
-        {outcome === 'offline' && (
-          <View style={{ gap: theme.spacing.sm as number }}>
+        <Reveal>
+          <View style={{ alignItems: 'center', gap: theme.spacing.lg }}>
+            <BrandMark size={56} tone="onLight" />
             <Text
-              accessibilityRole="alert"
-              style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+              style={{
+                ...theme.typography.body,
+                color: theme.colors.textMuted,
+                textAlign: 'center',
+              }}
             >
-              Sin conexión · no pudimos verificar tu código.
+              {copy.otpSentTo}
             </Text>
-            <Button label="Reintentar" variant="ghost" onPress={handleRetry} />
+            <Text
+              testID="otp-phone"
+              style={{ ...theme.typography.title, color: theme.colors.text, textAlign: 'center' }}
+            >
+              {maskPhone(params.phone ?? '')}
+            </Text>
           </View>
-        )}
+        </Reveal>
 
-        <ResendArea
-          isRateLimited={isRateLimited}
-          rateLimitRemaining={rateLimitRemaining}
-          rateLimitTimeKnown={rateLimitTimeKnown}
-          canResend={canResend}
-          resending={resendOtp.isPending}
-          resendRemaining={resendRemaining}
-          onResend={handleResend}
-        />
-      </View>
+        <Reveal index={1}>
+          <View style={{ alignItems: 'center', gap: theme.spacing.md }}>
+            <OtpInput
+              value={value}
+              onChangeValue={setValue}
+              onComplete={handleComplete}
+              status={otpStatus}
+              disabled={outcome === 'verifying' || outcome === 'success'}
+              autoFocus
+              testID="otp-input"
+            />
+            <View
+              style={{
+                minHeight: 24,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: theme.spacing.sm,
+              }}
+            >
+              {feedback[outcome] !== null && (
+                <>
+                  {(outcome === 'incorrect' || outcome === 'expired') && (
+                    <MarkGlyph glyph="error" size={20} animate={false} />
+                  )}
+                  {outcome === 'offline' && <MarkGlyph glyph="offline" size={20} animate={false} />}
+                  <Text
+                    accessibilityRole={outcome === 'verifying' ? undefined : 'alert'}
+                    style={{ ...theme.typography.smallStrong, color: feedbackColor }}
+                  >
+                    {feedback[outcome]}
+                  </Text>
+                </>
+              )}
+            </View>
+            {outcome === 'offline' && (
+              <Button label={copy.otpRetry} variant="ghost" onPress={handleRetry} />
+            )}
+          </View>
+        </Reveal>
+
+        {outcome !== 'verifying' && outcome !== 'success' && (
+          <Reveal index={2}>
+            <ResendArea
+              isRateLimited={isRateLimited}
+              rateLimitRemaining={rateLimitRemaining}
+              rateLimitTimeKnown={rateLimitTimeKnown}
+              canResend={canResend}
+              resending={resendOtp.isPending}
+              resendRemaining={resendRemaining}
+              onResend={handleResend}
+            />
+          </Reveal>
+        )}
+      </ScrollView>
 
       <Toast
-        message="Código reenviado."
+        message={copy.otpResent}
         tone="success"
         visible={toastVisible}
         onHide={() => setToastVisible(false)}

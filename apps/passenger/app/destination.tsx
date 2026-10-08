@@ -1,27 +1,34 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Linking, Pressable, Text, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, Linking, Pressable, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import Svg, { Path } from 'react-native-svg';
 import {
+  BrandSpinner,
   Button,
-  ErrorState,
+  LinkButton,
   Map,
-  PointRow,
+  MarkGlyph,
+  PointRoute,
   ScreenHeader,
   StatusBadge,
+  TextField,
   useTheme,
   type MapLatLng,
 } from '@voyyaa/ui-mobile';
 import type { Location } from '@voyyaa/shared';
 import { domainErrorCode, isNetworkError, useNetworkStatus } from '@voyyaa/app-runtime';
+import { InlineNotice } from '../src/components/InlineNotice';
+import { LocatingPill } from '../src/components/LocatingPill';
+import { PlaceIcon } from '../src/components/PlaceIcon';
+import { useKeyboardVisible } from '../src/hooks/useKeyboardVisible';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { YARUMAL_CENTER } from '../src/constants/demo-places';
+import { CAN_PIN_DROP } from '../src/constants/platform';
 import { POIS_YARUMAL, type PoiYarumal } from '../src/constants/pois-yarumal';
+import { passengerCopy } from '../src/copy/passenger-copy';
 
 interface SelectedPlace {
   id: string;
@@ -30,19 +37,33 @@ interface SelectedPlace {
   lng: number;
 }
 
-const SearchSchema = z.object({ query: z.string() });
-type SearchForm = z.infer<typeof SearchSchema>;
+const copy = passengerCopy.destination;
+const PIN_DROP_ID = 'pin-drop';
+const MAP_HEIGHT = 200;
+const MAP_HEIGHT_COLLAPSED = 120;
+const ROW_MIN_HEIGHT = 56;
 
-function coverageMessage(target: 'origen' | 'destino'): string {
-  return target === 'origen'
-    ? 'Ese punto de partida está fuera de la zona donde operamos en Yarumal por ahora.'
-    : 'Ese destino está fuera de la zona donde operamos en Yarumal por ahora.';
+function Chevron({ color }: { color: string }): React.JSX.Element {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24">
+      <Path
+        d="M9.5 5.5 L16 12 L9.5 18.5"
+        stroke={color}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </Svg>
+  );
 }
 
 export default function DestinationScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
+  const params = useLocalSearchParams<{ poi?: string }>();
   const networkStatus = useNetworkStatus();
+  const keyboardVisible = useKeyboardVisible();
   const quoteFare = useQuoteFare();
   const originQuote = useQuoteFare();
   const resolveOrigin = useResolveOrigin();
@@ -55,18 +76,17 @@ export default function DestinationScreen(): React.JSX.Element {
   const setQuote = useTripDraftStore((s) => s.setQuote);
   const municipalityId = useTripDraftStore((s) => s.municipalityId);
 
+  const [query, setQuery] = useState('');
   const [coverageErrorId, setCoverageErrorId] = useState<string | null>(null);
+  const [quotingId, setQuotingId] = useState<string | null>(null);
   const [pinCandidate, setPinCandidate] = useState<MapLatLng | null>(null);
   const [originPinCandidate, setOriginPinCandidate] = useState<MapLatLng | null>(null);
   const [originCoverageBlocked, setOriginCoverageBlocked] = useState(false);
+  const appliedPoi = useRef(false);
 
   const isFixingOrigin = origin === null;
-
-  const { control, watch } = useForm<SearchForm>({
-    resolver: zodResolver(SearchSchema),
-    defaultValues: { query: '' },
-  });
-  const query = watch('query');
+  const offline = networkStatus === 'offline';
+  const busy = quoteFare.isPending || originQuote.isPending;
 
   const visiblePois = useMemo(() => {
     const text = query.trim().toLowerCase();
@@ -83,6 +103,7 @@ export default function DestinationScreen(): React.JSX.Element {
   const selectPlace = (place: SelectedPlace): void => {
     if (!origin) return;
     setCoverageErrorId(null);
+    setQuotingId(place.id);
     const destination: Location = { address: place.title, lat: place.lat, lng: place.lng };
     quoteFare.mutate(
       { origin, destination, municipality_id: municipalityId, service_type: 'taxi' },
@@ -97,76 +118,67 @@ export default function DestinationScreen(): React.JSX.Element {
             setCoverageErrorId(place.id);
           }
         },
+        onSettled: () => setQuotingId(null),
       },
     );
   };
 
+  const selectPoi = (poi: PoiYarumal): void => {
+    if (!poi.coord) return;
+    selectPlace({ id: poi.id, title: poi.title, lat: poi.coord.lat, lng: poi.coord.lng });
+  };
+
+  useEffect(() => {
+    if (appliedPoi.current || !params.poi || !origin) return;
+    const poi = POIS_YARUMAL.find((candidate) => candidate.id === params.poi);
+    appliedPoi.current = true;
+    if (!poi) return;
+    if (poi.coord) selectPoi(poi);
+    else setQuery(poi.title);
+  }, [params.poi, origin]);
+
   const confirmPin = (): void => {
     if (!pinCandidate) return;
     selectPlace({
-      id: 'pin-drop',
-      title: 'Punto marcado en el mapa',
+      id: PIN_DROP_ID,
+      title: copy.pinPoint,
       lat: pinCandidate.lat,
       lng: pinCandidate.lng,
     });
   };
 
-  const selectPoi = (poi: PoiYarumal): void => {
-    if (!poi.coord) return;
-    selectPlace({
-      id: poi.id,
-      title: poi.title,
-      lat: poi.coord.lat,
-      lng: poi.coord.lng,
-    });
+  const verifyOrigin = (candidate: Location): void => {
+    setOriginCoverageBlocked(false);
+    originQuote.mutate(
+      {
+        origin: candidate,
+        destination: candidate,
+        municipality_id: municipalityId,
+        service_type: 'taxi',
+      },
+      {
+        onSuccess: () => setOrigin(candidate, 'manual'),
+        onError: (error) => {
+          if (domainErrorCode(error) === 'OUT_OF_COVERAGE') {
+            setOriginCoverageBlocked(true);
+          }
+        },
+      },
+    );
   };
 
   const confirmOriginPin = (): void => {
     if (!originPinCandidate) return;
-    setOriginCoverageBlocked(false);
-    const candidate: Location = {
-      address: 'Punto marcado en el mapa',
+    verifyOrigin({
+      address: copy.pinPoint,
       lat: originPinCandidate.lat,
       lng: originPinCandidate.lng,
-    };
-    originQuote.mutate(
-      {
-        origin: candidate,
-        destination: candidate,
-        municipality_id: municipalityId,
-        service_type: 'taxi',
-      },
-      {
-        onSuccess: () => setOrigin(candidate, 'manual'),
-        onError: (error) => {
-          if (domainErrorCode(error) === 'OUT_OF_COVERAGE') {
-            setOriginCoverageBlocked(true);
-          }
-        },
-      },
-    );
+    });
   };
 
   const selectOriginPoi = (poi: PoiYarumal): void => {
     if (!poi.coord) return;
-    setOriginCoverageBlocked(false);
-    const candidate: Location = { address: poi.title, lat: poi.coord.lat, lng: poi.coord.lng };
-    originQuote.mutate(
-      {
-        origin: candidate,
-        destination: candidate,
-        municipality_id: municipalityId,
-        service_type: 'taxi',
-      },
-      {
-        onSuccess: () => setOrigin(candidate, 'manual'),
-        onError: (error) => {
-          if (domainErrorCode(error) === 'OUT_OF_COVERAGE') {
-            setOriginCoverageBlocked(true);
-          }
-        },
-      },
-    );
+    verifyOrigin({ address: poi.title, lat: poi.coord.lat, lng: poi.coord.lng });
   };
 
   const retryUseMyLocation = (): void => {
@@ -180,63 +192,50 @@ export default function DestinationScreen(): React.JSX.Element {
   const errorCode = domainErrorCode(quoteFare.error);
   const hasGenericError =
     quoteFare.isError && !isNetworkError(quoteFare.error) && errorCode !== 'OUT_OF_COVERAGE';
+  const stickyPin = isFixingOrigin ? originPinCandidate : pinCandidate;
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title="Tu viaje" onBack={() => router.back()} />
-      <View style={{ paddingHorizontal: theme.spacing.lg, gap: theme.spacing.sm }}>
-        {isFixingOrigin ? (
-          <View style={{ gap: 2 }}>
-            <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
-              Aún no tienes un punto de partida
-            </Text>
-            <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-              Márcalo en el mapa o elige un lugar conocido.
-            </Text>
-            <Text
-              accessibilityRole="link"
+  const header = (
+    <View style={{ gap: theme.spacing.md, paddingBottom: theme.spacing.md }}>
+      {isFixingOrigin ? (
+        <View style={{ gap: theme.spacing.xs }}>
+          <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
+            {copy.noOriginTitle}
+          </Text>
+          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+            {copy.noOriginBody}
+          </Text>
+          {resolveOrigin.status === 'resolving' ? (
+            <LocatingPill />
+          ) : (
+            <LinkButton
+              label={copy.useMyLocation}
               onPress={retryUseMyLocation}
-              style={{
-                ...theme.typography.small,
-                fontWeight: '700',
-                color: theme.colors.brandInk,
-                marginTop: 4,
+              testID="use-my-location-link"
+            />
+          )}
+        </View>
+      ) : (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
+          <View style={{ flex: 1 }}>
+            <PointRoute
+              origin={{ label: copy.originLabel, value: origin.address }}
+              destination={{
+                label: copy.destinationLabel,
+                value: query || copy.destinationPlaceholder,
               }}
-            >
-              Usar mi ubicación
-            </Text>
+            />
           </View>
-        ) : (
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacing.sm }}>
-            <View style={{ flex: 1 }}>
-              <PointRow marker="●" label="Origen" value={origin.address} />
-            </View>
-            {originSource === 'manual' && (
-              <Text
-                accessibilityRole="link"
-                onPress={clearOrigin}
-                style={{
-                  ...theme.typography.small,
-                  fontWeight: '700',
-                  color: theme.colors.brandInk,
-                  marginTop: theme.spacing.xs,
-                }}
-              >
-                Cambiar
-              </Text>
-            )}
-          </View>
-        )}
+          {originSource === 'manual' && (
+            <LinkButton
+              label={copy.changeOrigin}
+              onPress={clearOrigin}
+              testID="change-origin-link"
+            />
+          )}
+        </View>
+      )}
 
-        {!isFixingOrigin && (
-          <PointRow
-            marker="▼"
-            label="Destino"
-            value={query || 'Escribe tu destino…'}
-            markerColor={theme.colors.brandInk}
-          />
-        )}
-
+      {CAN_PIN_DROP && (
         <Map
           pinDrop
           center={
@@ -252,188 +251,182 @@ export default function DestinationScreen(): React.JSX.Element {
                     id: 'origin',
                     kind: 'origin',
                     coord: { lat: origin.lat, lng: origin.lng },
-                    label: `Origen: ${origin.address}`,
+                    label: origin.address,
                   },
                 ]
           }
           onPickLocation={isFixingOrigin ? setOriginPinCandidate : setPinCandidate}
-          height={200}
+          height={keyboardVisible ? MAP_HEIGHT_COLLAPSED : MAP_HEIGHT}
         />
+      )}
 
-        {isFixingOrigin && originPinCandidate && (
-          <>
-            <Button
-              label="Usar este punto como origen"
-              variant="ghost"
-              loading={originQuote.isPending}
-              loadingLabel="Verificando…"
-              disabled={networkStatus === 'offline'}
-              onPress={confirmOriginPin}
-            />
-            {originCoverageBlocked && (
-              <View accessibilityRole="alert">
-                <Text
-                  style={{
-                    ...theme.typography.small,
-                    fontWeight: '700',
-                    color: theme.colors.dangerInk,
-                  }}
-                >
-                  Fuera de cobertura
-                </Text>
-                <Text style={{ ...theme.typography.small, color: theme.colors.dangerInk }}>
-                  {coverageMessage('origen')}
-                </Text>
-              </View>
-            )}
-          </>
-        )}
+      {isFixingOrigin && originCoverageBlocked && (
+        <InlineNotice
+          tone="danger"
+          glyph="pin"
+          title={copy.outOfCoverageTitle}
+          body={copy.outOfCoverage('origin')}
+          testID="origin-out-of-coverage"
+        />
+      )}
 
-        {!isFixingOrigin && pinCandidate && (
-          <>
-            <Button
-              label="Usar este punto como destino"
-              variant="ghost"
-              loading={quoteFare.isPending}
-              loadingLabel="Cotizando…"
-              disabled={networkStatus === 'offline'}
-              onPress={confirmPin}
-            />
-            {coverageErrorId === 'pin-drop' && (
-              <View accessibilityRole="alert">
-                <Text
-                  style={{
-                    ...theme.typography.small,
-                    fontWeight: '700',
-                    color: theme.colors.dangerInk,
-                  }}
-                >
-                  Fuera de cobertura
-                </Text>
-                <Text style={{ ...theme.typography.small, color: theme.colors.dangerInk }}>
-                  {coverageMessage('destino')}
-                </Text>
-              </View>
-            )}
-          </>
-        )}
+      {!isFixingOrigin && coverageErrorId === PIN_DROP_ID && (
+        <InlineNotice
+          tone="danger"
+          glyph="pin"
+          title={copy.outOfCoverageTitle}
+          body={copy.outOfCoverage('destination')}
+          testID="pin-out-of-coverage"
+        />
+      )}
 
-        {!isFixingOrigin && (
-          <Controller
-            control={control}
-            name="query"
-            render={({ field: { onChange, value } }) => (
-              <TextInput
-                value={value}
-                onChangeText={onChange}
-                placeholder="Buscar dirección, sitio o referencia"
-                placeholderTextColor={theme.colors.textMuted}
-                autoFocus
-                accessibilityLabel="Buscar destino"
-                style={{
-                  minHeight: theme.touch.min,
-                  borderWidth: 1,
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radius.field,
-                  paddingHorizontal: theme.spacing.md,
-                  color: theme.colors.text,
-                  backgroundColor: theme.colors.surface,
-                }}
-              />
-            )}
-          />
-        )}
-        {!isFixingOrigin && networkStatus === 'offline' && (
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-            Sin conexión · no se puede cotizar un destino ahora.
-          </Text>
-        )}
-      </View>
+      {!isFixingOrigin && (
+        <TextField
+          label={copy.searchLabel}
+          value={query}
+          onChangeText={setQuery}
+          placeholder={copy.searchPlaceholder}
+          returnKeyType="search"
+          testID="destination-search"
+        />
+      )}
 
+      {offline && (
+        <InlineNotice
+          tone="info"
+          glyph="offline"
+          title={copy.offlineQuote}
+          testID="destination-offline"
+        />
+      )}
+
+      {hasGenericError && (
+        <InlineNotice
+          tone="danger"
+          glyph="error"
+          title={copy.quoteErrorTitle}
+          body={copy.quoteErrorBody}
+          actionLabel={copy.retry}
+          onAction={() => quoteFare.reset()}
+          testID="destination-quote-error"
+        />
+      )}
+
+      <Text style={{ ...theme.typography.smallStrong, color: theme.colors.textMuted }}>
+        {copy.placesTitle}
+      </Text>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+      <ScreenHeader title={copy.header} onBack={() => router.back()} />
       <FlatList
-        contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.sm }}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ padding: theme.spacing.lg }}
         data={visiblePois}
         keyExtractor={(poi) => poi.id}
-        ListHeaderComponent={
-          <Text
-            style={{
-              ...theme.typography.small,
-              color: theme.colors.textMuted,
-              marginBottom: theme.spacing.xs,
-            }}
-          >
-            LUGARES DE YARUMAL
-          </Text>
-        }
+        ListHeaderComponent={header}
+        ItemSeparatorComponent={() => <View style={{ height: theme.spacing.sm }} />}
         ListEmptyComponent={
-          <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
-            No encontramos ese lugar. Márcalo en el mapa.
-          </Text>
-        }
-        renderItem={({ item: poi }) => (
-          <View style={{ marginBottom: theme.spacing.sm }}>
-            <Pressable
-              disabled={
-                !poi.coord ||
-                networkStatus === 'offline' ||
-                quoteFare.isPending ||
-                originQuote.isPending
-              }
-              onPress={() => (isFixingOrigin ? selectOriginPoi(poi) : selectPoi(poi))}
-              accessibilityRole="button"
-              accessibilityLabel={
-                poi.coord
-                  ? poi.title
-                  : `${poi.title}, ubicación pendiente de confirmar, márcalo en el mapa`
-              }
+          <View style={{ alignItems: 'center', gap: theme.spacing.sm, padding: theme.spacing.xl }}>
+            <MarkGlyph glyph="search" size={64} />
+            <Text
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                minHeight: theme.touch.min,
-                gap: theme.spacing.sm,
-                padding: theme.spacing.sm,
-                borderRadius: theme.radius.field,
-                borderWidth: 1,
-                borderColor: coverageErrorId === poi.id ? theme.colors.danger : theme.colors.border,
-                opacity: poi.coord ? 1 : 0.6,
+                ...theme.typography.bodyStrong,
+                color: theme.colors.text,
+                textAlign: 'center',
               }}
             >
-              <Text style={{ fontSize: 20 }}>{poi.icon}</Text>
+              {copy.emptyTitle}
+            </Text>
+            <Text
+              style={{
+                ...theme.typography.body,
+                color: theme.colors.textMuted,
+                textAlign: 'center',
+              }}
+            >
+              {copy.emptyBody}
+            </Text>
+          </View>
+        }
+        renderItem={({ item: poi }) => (
+          <View>
+            <Pressable
+              disabled={!poi.coord || offline || busy}
+              onPress={() => (isFixingOrigin ? selectOriginPoi(poi) : selectPoi(poi))}
+              accessibilityRole="button"
+              accessibilityLabel={poi.coord ? poi.title : copy.pendingLabel(poi.title)}
+              accessibilityState={{
+                disabled: !poi.coord || offline || busy,
+                busy: quotingId === poi.id,
+              }}
+              testID={`poi-row-${poi.id}`}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                minHeight: ROW_MIN_HEIGHT,
+                gap: theme.spacing.md,
+                padding: theme.spacing.sm,
+                borderRadius: theme.radius.card,
+                borderWidth: coverageErrorId === poi.id ? 2 : 1,
+                borderColor: coverageErrorId === poi.id ? theme.colors.danger : theme.colors.border,
+                backgroundColor: pressed ? theme.colors.brandTint : theme.colors.surface,
+                opacity: poi.coord ? 1 : 0.7,
+              })}
+            >
+              <PlaceIcon category={poi.category} />
               <View style={{ flex: 1 }}>
-                <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
+                <Text style={{ ...theme.typography.bodyStrong, color: theme.colors.text }}>
                   {poi.title}
                 </Text>
                 {!poi.coord && (
                   <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-                    Ubicación pendiente de confirmar · márcalo en el mapa
+                    {copy.pendingLocation}
                   </Text>
                 )}
               </View>
-              {!poi.coord && <StatusBadge label="Pendiente" tone="warn" />}
+              {quotingId === poi.id ? (
+                <BrandSpinner size={24} />
+              ) : !poi.coord ? (
+                <StatusBadge label={copy.pendingBadge} tone="warn" />
+              ) : (
+                <Chevron color={theme.colors.textMuted} />
+              )}
             </Pressable>
             {coverageErrorId === poi.id && (
-              <View accessibilityRole="alert" style={{ marginTop: 4 }}>
-                <Text
-                  style={{
-                    ...theme.typography.small,
-                    fontWeight: '700',
-                    color: theme.colors.dangerInk,
-                  }}
-                >
-                  Fuera de cobertura
-                </Text>
-                <Text style={{ ...theme.typography.small, color: theme.colors.dangerInk }}>
-                  {coverageMessage('destino')}
-                </Text>
+              <View style={{ marginTop: theme.spacing.sm }}>
+                <InlineNotice
+                  tone="danger"
+                  glyph="pin"
+                  title={copy.outOfCoverageTitle}
+                  body={copy.outOfCoverage('destination')}
+                />
               </View>
             )}
           </View>
         )}
       />
 
-      {hasGenericError && (
-        <View style={{ padding: theme.spacing.lg }}>
-          <ErrorState title="No pudimos cotizar tu viaje" onRetry={() => quoteFare.reset()} />
+      {stickyPin && (
+        <View
+          style={{
+            padding: theme.spacing.lg,
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.border,
+            backgroundColor: theme.colors.bg,
+          }}
+        >
+          <Button
+            label={isFixingOrigin ? copy.useAsOrigin : copy.useAsDestination}
+            size="lg"
+            loading={isFixingOrigin ? originQuote.isPending : quoteFare.isPending}
+            loadingLabel={isFixingOrigin ? copy.verifying : copy.quoting}
+            disabled={offline}
+            onPress={isFixingOrigin ? confirmOriginPin : confirmPin}
+            testID="use-pin-button"
+          />
         </View>
       )}
     </SafeAreaView>

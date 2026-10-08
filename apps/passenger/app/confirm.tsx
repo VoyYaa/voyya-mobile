@@ -1,31 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  BrandSpinner,
   Button,
   Card,
-  ErrorState,
+  LinkButton,
   Map,
-  PointRow,
+  PointRoute,
   PriceTag,
   ScreenHeader,
-  Skeleton,
+  uiCopy,
   useTheme,
 } from '@voyyaa/ui-mobile';
 import type { PaymentMethod } from '@voyyaa/shared';
 import { domainErrorCode, useNetworkStatus } from '@voyyaa/app-runtime';
+import { InlineNotice } from '../src/components/InlineNotice';
 import { LocationReferenceField } from '../src/components/LocationReferenceField';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useCreateTripRequest } from '../src/hooks/useCreateTripRequest';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { composeAddress } from '../src/lib/address';
+import { passengerCopy } from '../src/copy/passenger-copy';
 
 const PAYMENT_METHOD: PaymentMethod = 'cash';
+const MAP_HEIGHT = 120;
+const copy = passengerCopy.confirm;
 
 export default function ConfirmScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const networkStatus = useNetworkStatus();
 
   const origin = useTripDraftStore((s) => s.origin);
@@ -34,10 +40,12 @@ export default function ConfirmScreen(): React.JSX.Element {
   const serviceType = useTripDraftStore((s) => s.serviceType);
   const quote = useTripDraftStore((s) => s.quote);
   const setQuote = useTripDraftStore((s) => s.setQuote);
+  const activeTripRequestId = useTripDraftStore((s) => s.activeTripRequestId);
+  const setActiveTripRequestId = useTripDraftStore((s) => s.setActiveTripRequestId);
 
   const [pickupReference, setPickupReference] = useState('');
   const [dropoffReference, setDropoffReference] = useState('');
-  const [dropoffReferenceExpanded, setDropoffReferenceExpanded] = useState(false);
+  const [referencesExpanded, setReferencesExpanded] = useState(false);
   const quoteFare = useQuoteFare();
   const createTripRequest = useCreateTripRequest();
 
@@ -66,6 +74,7 @@ export default function ConfirmScreen(): React.JSX.Element {
       },
       {
         onSuccess: (tripRequest) => {
+          setActiveTripRequestId(tripRequest.trip_request_id);
           router.replace({
             pathname: '/searching',
             params: { id: String(tripRequest.trip_request_id) },
@@ -89,147 +98,158 @@ export default function ConfirmScreen(): React.JSX.Element {
     errorCode !== 'QUOTE_EXPIRED' &&
     errorCode !== 'ACTIVE_TRIP_REQUEST_EXISTS';
   const currentFare = quoteFare.data ?? quote;
-  const requestDisabled =
-    networkStatus === 'offline' || createTripRequest.isPending || quoteFare.isPending;
+  const offline = networkStatus === 'offline';
+  const requestDisabled = offline || createTripRequest.isPending || quoteFare.isPending;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title="Confirmar viaje" onBack={() => router.back()} />
-      <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
-        <View style={{ gap: theme.spacing.sm }}>
-          <PointRow marker="●" label="Origen" value={origin.address} />
-          <PointRow
-            marker="▼"
-            label="Destino"
-            value={destination.address}
-            markerColor={theme.colors.brandInk}
-          />
-        </View>
-
-        <LocationReferenceField
-          label="¿Alguna referencia para que te encuentren?"
-          value={pickupReference}
-          onChangeText={setPickupReference}
-          accessibilityLabel="Referencia para tu punto de recogida, opcional"
-        />
-
-        {dropoffReferenceExpanded ? (
-          <LocationReferenceField
-            label="Referencia del destino"
-            value={dropoffReference}
-            onChangeText={setDropoffReference}
-            accessibilityLabel="Referencia para tu destino, opcional"
-          />
-        ) : (
-          <Text
-            accessibilityRole="link"
-            onPress={() => setDropoffReferenceExpanded(true)}
-            style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.brandInk }}
-          >
-            + Agregar una referencia del destino
-          </Text>
-        )}
-
-        <Map
-          center={{
-            lat: (origin.lat + destination.lat) / 2,
-            lng: (origin.lng + destination.lng) / 2,
-          }}
-          markers={[
-            { id: 'origin', kind: 'origin', coord: origin, label: `Origen: ${origin.address}` },
-            {
-              id: 'destination',
-              kind: 'destination',
-              coord: destination,
-              label: `Destino: ${destination.address}`,
-            },
-          ]}
-          route={{ points: [origin, destination] }}
-          interactive={false}
-          height={180}
-        />
-
-        <Card tone="alt">
-          {quoteFare.isPending ? (
-            <Skeleton height={32} width="60%" />
-          ) : (
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-              }}
-            >
-              <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>Tarifa</Text>
-              <PriceTag amountCOP={currentFare.fare.total} size="lg" />
-            </View>
-          )}
-          <Text
-            style={{
-              ...theme.typography.small,
-              color: theme.colors.textMuted,
-              marginTop: theme.spacing.xs,
-            }}
-          >
-            Tarifa fija · visible antes de confirmar. Cancelación gratis hasta 2 min después de
-            asignar.
-          </Text>
-        </Card>
-
-        <Card>
-          <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
-            Servicio: <Text style={{ fontWeight: '700' }}>Taxi</Text>
-          </Text>
-          <Text
-            style={{
-              ...theme.typography.body,
-              color: theme.colors.text,
-              marginTop: theme.spacing.xs,
-            }}
-          >
-            Pago: <Text style={{ fontWeight: '700' }}>Efectivo</Text>
-          </Text>
-          <Text
-            style={{
-              ...theme.typography.small,
-              color: theme.colors.textMuted,
-              marginTop: theme.spacing.xs,
-            }}
-          >
-            Pagas al conductor al terminar el viaje.
-          </Text>
-        </Card>
-
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={['top']}>
+      <ScreenHeader title={copy.header} onBack={() => router.back()} />
+      <ScrollView
+        style={{ flex: 1 }}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md }}
+      >
         {errorCode === 'QUOTE_EXPIRED' && (
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-            La tarifa cambió, recotizando…
-          </Text>
+          <InlineNotice tone="info" glyph="clock" title={copy.requote} testID="confirm-requote" />
         )}
         {errorCode === 'ACTIVE_TRIP_REQUEST_EXISTS' && (
-          <Text style={{ ...theme.typography.small, color: theme.colors.dangerInk }}>
-            Ya tienes un viaje activo. Revisa la pestaña Viajes.
-          </Text>
+          <InlineNotice
+            tone="brand"
+            glyph="clock"
+            title={copy.activeTripTitle}
+            body={copy.activeTripBody}
+            actionLabel={activeTripRequestId !== null ? copy.activeTripAction : undefined}
+            onAction={
+              activeTripRequestId !== null
+                ? () =>
+                    router.replace({
+                      pathname: '/searching',
+                      params: { id: String(activeTripRequestId) },
+                    })
+                : undefined
+            }
+            testID="confirm-active-trip"
+          />
         )}
         {showGenericError && (
-          <ErrorState title="No pudimos crear tu solicitud" onRetry={requestTrip} />
+          <InlineNotice
+            tone="danger"
+            glyph="error"
+            title={copy.createErrorTitle}
+            body={copy.createErrorBody}
+            actionLabel={uiCopy.retry}
+            onAction={requestTrip}
+            testID="confirm-create-error"
+          />
         )}
-        {networkStatus === 'offline' && (
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-            Sin conexión · no se puede solicitar el viaje ahora.
-          </Text>
+        {offline && (
+          <InlineNotice
+            tone="info"
+            glyph="offline"
+            title={copy.offlineRequest}
+            testID="confirm-offline"
+          />
         )}
+        <Card testID="confirm-ticket" style={{ gap: theme.spacing.md }}>
+          <PointRoute
+            origin={{ label: copy.origin, value: origin.address }}
+            destination={{ label: copy.destination, value: destination.address }}
+          />
+          <Map
+            center={{
+              lat: (origin.lat + destination.lat) / 2,
+              lng: (origin.lng + destination.lng) / 2,
+            }}
+            markers={[
+              {
+                id: 'origin',
+                kind: 'origin',
+                coord: origin,
+                label: origin.address,
+              },
+              {
+                id: 'destination',
+                kind: 'destination',
+                coord: destination,
+                label: destination.address,
+              },
+            ]}
+            route={{ points: [origin, destination] }}
+            interactive={false}
+            height={MAP_HEIGHT}
+          />
+        </Card>
 
+        <View style={{ paddingHorizontal: theme.spacing.xs, gap: theme.spacing.xs }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              minHeight: 44,
+            }}
+          >
+            <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
+              {copy.fareTitle}
+            </Text>
+            {quoteFare.isPending ? (
+              <BrandSpinner size={24} />
+            ) : (
+              <PriceTag amountCOP={currentFare.fare.total} size="xl" testID="confirm-fare" />
+            )}
+          </View>
+          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+            {copy.fareClosed}
+          </Text>
+          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+            {copy.freeCancellation}
+          </Text>
+        </View>
+
+        {referencesExpanded ? (
+          <View style={{ gap: theme.spacing.md }}>
+            <LocationReferenceField
+              label={copy.pickupReferenceLabel}
+              value={pickupReference}
+              onChangeText={setPickupReference}
+              accessibilityLabel={copy.pickupReferenceAccessibility}
+            />
+            <LocationReferenceField
+              label={copy.dropoffReferenceLabel}
+              value={dropoffReference}
+              onChangeText={setDropoffReference}
+              accessibilityLabel={copy.dropoffReferenceAccessibility}
+            />
+          </View>
+        ) : (
+          <LinkButton
+            label={copy.references}
+            onPress={() => setReferencesExpanded(true)}
+            testID="references-toggle"
+          />
+        )}
+      </ScrollView>
+
+      <View
+        style={{
+          padding: theme.spacing.lg,
+          paddingBottom: theme.spacing.lg + insets.bottom,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border,
+          backgroundColor: theme.colors.bg,
+        }}
+      >
         <Button
-          label="Solicitar viaje"
+          label={copy.requestTrip(currentFare.fare.total)}
+          size="lg"
           loading={createTripRequest.isPending}
-          loadingLabel="Solicitando…"
+          loadingLabel={copy.requesting}
           disabled={requestDisabled}
           onPress={requestTrip}
-          accessibilityHint={
-            networkStatus === 'offline' ? 'Sin conexión, no se puede solicitar ahora' : undefined
-          }
+          accessibilityHint={offline ? copy.offlineRequestHint : undefined}
+          testID="request-trip-button"
         />
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider, useTheme } from '@voyyaa/ui-mobile';
+import { BRAND_FONT_ASSETS, BootScreen, ThemeProvider, useTheme } from '@voyyaa/ui-mobile';
 import { LOCATION_NOTICE_VERSION, TripError } from '@voyyaa/shared';
 import {
   configureApiClient,
@@ -20,11 +22,17 @@ import { API_BASE_URL } from '../src/constants/env';
 
 configureApiClient({ baseUrl: API_BASE_URL, defaultErrorSchema: TripError });
 silenceKnownWebWarnings();
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
-function RootStack(): React.JSX.Element {
+interface RootStackProps {
+  fontsSettled: boolean;
+}
+
+function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
   const theme = useTheme();
   const status = useSessionStore((s) => s.status);
   const hydrate = useSessionStore((s) => s.hydrate);
+  const [booting, setBooting] = useState(true);
 
   useEffect(() => {
     void hydrate();
@@ -39,29 +47,54 @@ function RootStack(): React.JSX.Element {
   useRouteGuard();
   useProactiveRefresh();
 
-  if (status === 'hydrating') {
-    return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
-  }
+  const hideSplash = useCallback((): void => {
+    SplashScreen.hideAsync().catch(() => undefined);
+  }, []);
+
+  const hydrating = status === 'hydrating';
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
-      <ConnectivityBanner />
-      <Stack
-        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.bg } }}
-      />
-    </>
+      {!hydrating && (
+        <>
+          <ConnectivityBanner />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: theme.colors.bg },
+            }}
+          >
+            <Stack.Screen name="index" options={{ animation: 'fade' }} />
+            <Stack.Screen name="searching" options={{ animation: 'fade', gestureEnabled: false }} />
+            <Stack.Screen
+              name="driver-assigned"
+              options={{ animation: 'fade', gestureEnabled: false }}
+            />
+          </Stack>
+        </>
+      )}
+      {booting && (
+        <BootScreen
+          target="person"
+          ready={fontsSettled && !hydrating}
+          onFirstFrame={hideSplash}
+          onDone={() => setBooting(false)}
+        />
+      )}
+    </View>
   );
 }
 
 export default function RootLayout(): React.JSX.Element {
   const [queryClient] = useState(createQueryClient);
+  const [fontsLoaded, fontsError] = useFonts(BRAND_FONT_ASSETS);
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
+      <ThemeProvider fontsReady={fontsLoaded}>
         <QueryClientProvider client={queryClient}>
-          <RootStack />
+          <RootStack fontsSettled={fontsLoaded || fontsError !== null} />
         </QueryClientProvider>
       </ThemeProvider>
     </SafeAreaProvider>

@@ -1,30 +1,49 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  Button,
-  Chip,
-  EmptyState,
+  BrandLoader,
   ErrorState,
-  LastUpdatedHint,
-  Map,
-  PriceTag,
+  OfflineState,
   ScreenHeader,
-  Skeleton,
   Toast,
-  formatCOP,
-  formatMMSS,
   useCountdown,
+  useDelayedLoading,
   useTheme,
 } from '@voyyaa/ui-mobile';
+import type { PassengerUiState } from '@voyyaa/shared';
 import { useNetworkStatus } from '@voyyaa/app-runtime';
-import { DriverCard } from '../src/components/DriverCard';
+import { ActiveTripView } from '../src/components/ActiveTripView';
+import { BranchFade } from '../src/components/BranchFade';
 import { CancelConfirmSheet } from '../src/components/CancelConfirmSheet';
+import { TripOutcomeView, type TripOutcomeKind } from '../src/components/TripOutcomeView';
+import type { TripStep } from '../src/components/TripStepRail';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { FREE_CANCELLATION_WINDOW_MIN } from '../src/constants/parameters';
+import { passengerCopy } from '../src/copy/passenger-copy';
+
+const copy = passengerCopy.trip;
+
+const SEARCH_UI: readonly PassengerUiState[] = ['searching', 'calculating_fare', 'no_driver'];
+
+const STEP_BY_UI: Partial<Record<PassengerUiState, TripStep>> = {
+  driver_assigned: 0,
+  driver_en_route: 1,
+  driver_waiting: 2,
+  trip_in_progress: 3,
+};
+
+function outcomeKindOf(ui: PassengerUiState, status: string): TripOutcomeKind | null {
+  if (ui === 'trip_completed') return 'completed';
+  if (ui === 'trip_no_show') return 'no_show';
+  if (ui === 'trip_cancelled') {
+    return status === 'cancelled_by_driver' ? 'cancelled_by_driver' : 'cancelled_by_you';
+  }
+  return null;
+}
 
 export default function DriverAssignedScreen(): React.JSX.Element {
   const theme = useTheme();
@@ -34,6 +53,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
   const networkStatus = useNetworkStatus();
 
   const { data, isLoading, isError, dataUpdatedAt, refetch } = useTripRequestStatus(tripRequestId);
+  const showLoader = useDelayedLoading(isLoading);
 
   const origin = useTripDraftStore((s) => s.origin);
   const destination = useTripDraftStore((s) => s.destination);
@@ -51,6 +71,12 @@ export default function DriverAssignedScreen(): React.JSX.Element {
     }
   }, [data, markAssignedLocal]);
 
+  useEffect(() => {
+    if (data && tripRequestId && SEARCH_UI.includes(data.ui)) {
+      router.replace({ pathname: '/searching', params: { id: String(tripRequestId) } });
+    }
+  }, [data?.ui, tripRequestId, router]);
+
   const deadlineIso = assignedAtLocal
     ? new Date(
         new Date(assignedAtLocal).getTime() + FREE_CANCELLATION_WINDOW_MIN * 60_000,
@@ -64,48 +90,12 @@ export default function DriverAssignedScreen(): React.JSX.Element {
     router.replace('/');
   };
 
-  if (!tripRequestId) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ErrorState
-          title="No encontramos tu viaje"
-          onRetry={() => router.replace('/')}
-          retryLabel="Volver al inicio"
-        />
-      </SafeAreaView>
-    );
-  }
-
-  if (isError && !data) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Tu viaje" />
-        <ErrorState title="No pudimos ver el estado de tu viaje" onRetry={() => refetch()} />
-      </SafeAreaView>
-    );
-  }
-
-  if (isLoading || !data) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Tu viaje" />
-        <View style={{ padding: theme.spacing.lg, gap: theme.spacing.md }}>
-          <Skeleton height={28} width="70%" />
-          <Skeleton height={160} radius={theme.radius.card} />
-          <Skeleton height={96} radius={theme.radius.card} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   const confirmCancellation = (): void => {
     cancelTripRequest.mutate(undefined, {
       onSuccess: (result) => {
         setSheetVisible(false);
         setToast({
-          message: result.free_of_charge
-            ? 'Cancelaste sin costo.'
-            : 'Viaje cancelado · quedó registrado.',
+          message: result.free_of_charge ? copy.cancelledFree : copy.cancelledRecorded,
           tone: result.free_of_charge ? 'success' : 'neutral',
         });
         resetDraft();
@@ -114,146 +104,65 @@ export default function DriverAssignedScreen(): React.JSX.Element {
     });
   };
 
-  if (data.ui === 'trip_completed') {
+  const offline = networkStatus === 'offline';
+
+  if (!tripRequestId) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Tu viaje" />
-        <EmptyState
-          icon="✅"
-          title="¡Viaje completado!"
-          body={`Pagaste en efectivo · ${formatCOP(data.fare.total)}`}
-          primaryAction={{ label: 'Volver al inicio', onPress: goHome }}
+        <ErrorState
+          title={copy.notFoundTitle}
+          onRetry={() => router.replace('/')}
+          retryLabel={copy.backHome}
         />
       </SafeAreaView>
     );
   }
 
-  if (data.ui === 'trip_no_show') {
+  if (!data && (isError || offline)) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Tu viaje" />
-        <EmptyState
-          title="No pudimos completar tu viaje"
-          body="El conductor no te encontró en el punto de encuentro. Puedes solicitar un nuevo viaje cuando quieras."
-          primaryAction={{ label: 'Pedir un nuevo viaje', onPress: goHome }}
-        />
+        <ScreenHeader title={copy.header} />
+        {offline ? (
+          <OfflineState onRetry={() => refetch()} />
+        ) : (
+          <ErrorState title={copy.statusErrorTitle} onRetry={() => refetch()} />
+        )}
       </SafeAreaView>
     );
   }
 
-  if (data.ui === 'trip_cancelled') {
-    const cancelledByDriver = data.status === 'cancelled_by_driver';
+  if (isLoading || !data) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <ScreenHeader title="Tu viaje" />
-        <EmptyState
-          title={cancelledByDriver ? 'El conductor canceló este viaje' : 'Cancelaste este viaje'}
-          body={
-            cancelledByDriver
-              ? 'Puedes solicitar uno nuevo; te asignaremos otro conductor disponible.'
-              : 'Viaje cancelado · quedó registrado.'
-          }
-          primaryAction={{
-            label: cancelledByDriver ? 'Pedir un nuevo viaje' : 'Volver al inicio',
-            onPress: goHome,
-          }}
-        />
-      </SafeAreaView>
+      <View style={{ flex: 1, backgroundColor: showLoader ? theme.colors.stage : theme.colors.bg }}>
+        {showLoader && <BrandLoader variant="screen" label={copy.loading} />}
+      </View>
     );
   }
 
-  const isWaiting = data.ui === 'driver_waiting';
-  const isInProgress = data.ui === 'trip_in_progress';
-  const title = isInProgress
-    ? 'Tu viaje está en curso'
-    : isWaiting
-      ? 'Tu conductor te está esperando en el punto de encuentro'
-      : 'Tu conductor va en camino';
+  const outcome = outcomeKindOf(data.ui, data.status);
+  const step: TripStep = STEP_BY_UI[data.ui] ?? 1;
+  const branch = outcome ?? 'active';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title="Tu viaje" />
-      <View style={{ flex: 1, padding: theme.spacing.lg, gap: theme.spacing.md }}>
-        <View>
-          <Text style={{ ...theme.typography.title, color: theme.colors.text }}>{title}</Text>
-          <View style={{ marginTop: theme.spacing.xs }}>
-            <LastUpdatedHint updatedAtMs={dataUpdatedAt} isStale={isError} />
-          </View>
-          {!isInProgress && withinWindow && (
-            <View style={{ marginTop: theme.spacing.sm, alignSelf: 'flex-start' }}>
-              <Chip tone="success" label={`Cancelación gratis · ${formatMMSS(remainingSec)}`} />
-            </View>
-          )}
-        </View>
-
-        {!isInProgress && origin && destination && (
-          <Map
-            center={{
-              lat: (origin.lat + destination.lat) / 2,
-              lng: (origin.lng + destination.lng) / 2,
-            }}
-            markers={[
-              {
-                id: 'origin',
-                kind: 'origin',
-                coord: origin,
-                label: `Origen: ${origin.address}`,
-              },
-              {
-                id: 'destination',
-                kind: 'destination',
-                coord: destination,
-                label: `Destino: ${destination.address}`,
-              },
-            ]}
-            route={{ points: [origin, destination] }}
-            interactive={false}
-            height={160}
+    <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+      <BranchFade branchKey={branch}>
+        {outcome ? (
+          <TripOutcomeView kind={outcome} total={data.fare.total} onHome={goHome} />
+        ) : (
+          <ActiveTripView
+            data={data}
+            step={step}
+            origin={origin}
+            destination={destination}
+            withinWindow={withinWindow}
+            remainingSec={remainingSec}
+            dataUpdatedAt={dataUpdatedAt}
+            isStale={isError}
+            offline={offline}
+            onCancel={() => setSheetVisible(true)}
           />
         )}
-
-        {isInProgress && origin && destination && (
-          <View
-            style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-          >
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{ ...theme.typography.body, color: theme.colors.text }}
-                numberOfLines={1}
-              >
-                {origin.address}
-              </Text>
-              <Text
-                style={{ ...theme.typography.small, color: theme.colors.textMuted }}
-                numberOfLines={1}
-              >
-                → {destination.address}
-              </Text>
-            </View>
-            <PriceTag amountCOP={data.fare.total} />
-          </View>
-        )}
-
-        {data.driver ? (
-          <DriverCard driver={data.driver} />
-        ) : (
-          <Skeleton height={96} radius={theme.radius.card} />
-        )}
-
-        {!isInProgress && (
-          <View style={{ marginTop: 'auto' }}>
-            <Button
-              label="Cancelar viaje"
-              variant="ghost"
-              disabled={networkStatus === 'offline'}
-              accessibilityHint={
-                networkStatus === 'offline' ? 'Sin conexión, no se puede cancelar ahora' : undefined
-              }
-              onPress={() => setSheetVisible(true)}
-            />
-          </View>
-        )}
-      </View>
+      </BranchFade>
 
       <CancelConfirmSheet
         visible={sheetVisible}
@@ -269,6 +178,6 @@ export default function DriverAssignedScreen(): React.JSX.Element {
         visible={toast !== null}
         onHide={() => setToast(null)}
       />
-    </SafeAreaView>
+    </View>
   );
 }
