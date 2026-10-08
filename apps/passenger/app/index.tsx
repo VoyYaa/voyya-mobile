@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card, Chip, ErrorState, Map, useTheme } from '@voyyaa/ui-mobile';
+import { Card, ErrorState, Map, useTheme } from '@voyyaa/ui-mobile';
 import { LOCATION_NOTICE_VERSION } from '@voyyaa/shared';
 import { confirmConsent, hasSeenLocalConsent, useLogout } from '@voyyaa/app-runtime';
 import { CoverageBlockedPanel } from '../src/components/CoverageBlockedPanel';
@@ -14,7 +14,7 @@ import {
 import { useCoverageGate } from '../src/hooks/useCoverageGate';
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
-import { SAVED_PLACES, YARUMAL_CENTER } from '../src/constants/demo-places';
+import { YARUMAL_CENTER } from '../src/constants/demo-places';
 
 export default function HomeScreen(): React.JSX.Element {
   const theme = useTheme();
@@ -62,14 +62,6 @@ export default function HomeScreen(): React.JSX.Element {
   const handleReviewPrivacy = (): void => {
     setConsentMode('review');
     setConsentVisible(true);
-  };
-
-  const goToDestination = (presetId?: string): void => {
-    if (presetId) {
-      router.push({ pathname: '/destination', params: { preset: presetId } });
-    } else {
-      router.push('/destination');
-    }
   };
 
   if (coverage.status === 'outside') {
@@ -144,7 +136,7 @@ export default function HomeScreen(): React.JSX.Element {
 
         <Card>
           <Pressable
-            onPress={() => goToDestination()}
+            onPress={() => router.push('/destination')}
             accessibilityRole="button"
             accessibilityLabel="¿A dónde vas? Toca para escribir tu destino"
             style={{ minHeight: theme.touch.min, justifyContent: 'center' }}
@@ -158,23 +150,6 @@ export default function HomeScreen(): React.JSX.Element {
               Toca para escribir tu destino
             </Text>
           </Pressable>
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              gap: theme.spacing.sm,
-              marginTop: theme.spacing.md,
-            }}
-          >
-            {SAVED_PLACES.map((place) => (
-              <Chip
-                key={place.id}
-                leading={place.icon}
-                label={place.title}
-                onPress={() => goToDestination(place.id)}
-              />
-            ))}
-          </View>
         </Card>
 
         {coverage.status === 'error' && (

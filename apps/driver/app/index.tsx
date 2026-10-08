@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card, ErrorState, Skeleton, useTheme } from '@voyyaa/ui-mobile';
+import { ErrorState, Skeleton, useTheme } from '@voyyaa/ui-mobile';
 import { LOCATION_NOTICE_VERSION } from '@voyyaa/shared';
 import { confirmConsent, hasSeenLocalConsent, useLogout } from '@voyyaa/app-runtime';
 import { ShiftToggle } from '../src/components/ShiftToggle';
@@ -219,35 +219,6 @@ export default function HomeScreen(): React.JSX.Element {
           count={pendingCash.data?.length ?? 0}
           onPress={() => router.push('/cash-pending')}
         />
-
-        <Card>
-          <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
-            Resumen de hoy
-          </Text>
-          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted, marginTop: 2 }}>
-            Placeholder · aún no hay un endpoint de resumen de viajes/ingresos del conductor.
-          </Text>
-          <View
-            style={{ flexDirection: 'row', gap: theme.spacing.xl, marginTop: theme.spacing.sm }}
-          >
-            <View>
-              <Text style={{ ...theme.typography.numeric, fontSize: 20, color: theme.colors.text }}>
-                0
-              </Text>
-              <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-                Viajes
-              </Text>
-            </View>
-            <View>
-              <Text style={{ ...theme.typography.numeric, fontSize: 20, color: theme.colors.text }}>
-                $0
-              </Text>
-              <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-                Recaudo
-              </Text>
-            </View>
-          </View>
-        </Card>
 
         <View style={{ gap: theme.spacing.sm as number }}>
           <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>

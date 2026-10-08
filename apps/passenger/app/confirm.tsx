@@ -13,29 +13,15 @@ import {
   Skeleton,
   useTheme,
 } from '@voyyaa/ui-mobile';
-import type { PaymentMethod, ServiceType } from '@voyyaa/shared';
+import type { PaymentMethod } from '@voyyaa/shared';
 import { domainErrorCode, useNetworkStatus } from '@voyyaa/app-runtime';
-import { ServiceTypeSelector, type ServiceTypeOption } from '../src/components/ServiceTypeSelector';
-import { PaymentMethodList, type PaymentMethodOption } from '../src/components/PaymentMethodList';
 import { LocationReferenceField } from '../src/components/LocationReferenceField';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useCreateTripRequest } from '../src/hooks/useCreateTripRequest';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { composeAddress } from '../src/lib/address';
 
-const SERVICE_OPTIONS: readonly ServiceTypeOption[] = [
-  { type: 'taxi', label: 'Estándar', icon: '🚗', enabled: true },
-  { type: 'motorcycle', label: 'Moto', icon: '🛵', enabled: false },
-  { type: 'comfort', label: 'Confort', icon: '🚙', enabled: false },
-  { type: 'delivery', label: 'Envío', icon: '📦', enabled: false },
-];
-
-const PAYMENT_OPTIONS: readonly PaymentMethodOption[] = [
-  { method: 'cash', label: 'Efectivo', sublabel: 'Pagas al conductor', enabled: true },
-  { method: 'nequi', label: 'Nequi', sublabel: 'Próximamente', enabled: false },
-  { method: 'daviplata', label: 'Daviplata', sublabel: 'Próximamente', enabled: false },
-  { method: 'card', label: 'Tarjeta', sublabel: 'Próximamente', enabled: false },
-];
+const PAYMENT_METHOD: PaymentMethod = 'cash';
 
 export default function ConfirmScreen(): React.JSX.Element {
   const theme = useTheme();
@@ -47,10 +33,8 @@ export default function ConfirmScreen(): React.JSX.Element {
   const municipalityId = useTripDraftStore((s) => s.municipalityId);
   const serviceType = useTripDraftStore((s) => s.serviceType);
   const quote = useTripDraftStore((s) => s.quote);
-  const setServiceType = useTripDraftStore((s) => s.setServiceType);
   const setQuote = useTripDraftStore((s) => s.setQuote);
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [pickupReference, setPickupReference] = useState('');
   const [dropoffReference, setDropoffReference] = useState('');
   const [dropoffReferenceExpanded, setDropoffReferenceExpanded] = useState(false);
@@ -67,15 +51,6 @@ export default function ConfirmScreen(): React.JSX.Element {
     return <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
   }
 
-  const changeServiceType = (type: ServiceType): void => {
-    if (type === serviceType) return;
-    setServiceType(type);
-    quoteFare.mutate(
-      { origin, destination, municipality_id: municipalityId, service_type: type },
-      { onSuccess: setQuote },
-    );
-  };
-
   const requestTrip = (): void => {
     createTripRequest.mutate(
       {
@@ -86,7 +61,7 @@ export default function ConfirmScreen(): React.JSX.Element {
         },
         municipality_id: municipalityId,
         service_type: serviceType,
-        payment_method: paymentMethod,
+        payment_method: PAYMENT_METHOD,
         quote_token: quote.quote_token,
       },
       {
@@ -174,23 +149,6 @@ export default function ConfirmScreen(): React.JSX.Element {
           height={180}
         />
 
-        <View>
-          <Text
-            style={{
-              ...theme.typography.small,
-              color: theme.colors.textMuted,
-              marginBottom: theme.spacing.xs,
-            }}
-          >
-            TIPO DE SERVICIO
-          </Text>
-          <ServiceTypeSelector
-            options={SERVICE_OPTIONS}
-            selected={serviceType}
-            onSelect={changeServiceType}
-          />
-        </View>
-
         <Card tone="alt">
           {quoteFare.isPending ? (
             <Skeleton height={32} width="60%" />
@@ -218,22 +176,29 @@ export default function ConfirmScreen(): React.JSX.Element {
           </Text>
         </Card>
 
-        <View>
+        <Card>
+          <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
+            Servicio: <Text style={{ fontWeight: '700' }}>Taxi</Text>
+          </Text>
+          <Text
+            style={{
+              ...theme.typography.body,
+              color: theme.colors.text,
+              marginTop: theme.spacing.xs,
+            }}
+          >
+            Pago: <Text style={{ fontWeight: '700' }}>Efectivo</Text>
+          </Text>
           <Text
             style={{
               ...theme.typography.small,
               color: theme.colors.textMuted,
-              marginBottom: theme.spacing.xs,
+              marginTop: theme.spacing.xs,
             }}
           >
-            MÉTODO DE PAGO
+            Pagas al conductor al terminar el viaje.
           </Text>
-          <PaymentMethodList
-            options={PAYMENT_OPTIONS}
-            selected={paymentMethod}
-            onSelect={setPaymentMethod}
-          />
-        </View>
+        </Card>
 
         {errorCode === 'QUOTE_EXPIRED' && (
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>

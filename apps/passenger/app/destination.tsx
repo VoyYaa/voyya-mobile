@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Linking, Pressable, Text, TextInput, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,12 +20,15 @@ import { domainErrorCode, isNetworkError, useNetworkStatus } from '@voyyaa/app-r
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
-import {
-  DESTINATION_SUGGESTIONS,
-  YARUMAL_CENTER,
-  type SuggestedPlace,
-} from '../src/constants/demo-places';
+import { YARUMAL_CENTER } from '../src/constants/demo-places';
 import { POIS_YARUMAL, type PoiYarumal } from '../src/constants/pois-yarumal';
+
+interface SelectedPlace {
+  id: string;
+  title: string;
+  lat: number;
+  lng: number;
+}
 
 const SearchSchema = z.object({ query: z.string() });
 type SearchForm = z.infer<typeof SearchSchema>;
@@ -39,7 +42,6 @@ function coverageMessage(target: 'origen' | 'destino'): string {
 export default function DestinationScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
-  const params = useLocalSearchParams<{ preset?: string }>();
   const networkStatus = useNetworkStatus();
   const quoteFare = useQuoteFare();
   const originQuote = useQuoteFare();
@@ -66,10 +68,10 @@ export default function DestinationScreen(): React.JSX.Element {
   });
   const query = watch('query');
 
-  const suggestions = useMemo(() => {
+  const visiblePois = useMemo(() => {
     const text = query.trim().toLowerCase();
-    if (!text) return DESTINATION_SUGGESTIONS;
-    return DESTINATION_SUGGESTIONS.filter((place) => place.title.toLowerCase().includes(text));
+    if (!text) return POIS_YARUMAL;
+    return POIS_YARUMAL.filter((poi) => poi.title.toLowerCase().includes(text));
   }, [query]);
 
   useEffect(() => {
@@ -78,7 +80,7 @@ export default function DestinationScreen(): React.JSX.Element {
     }
   }, [resolveOrigin.status, resolveOrigin.origin, setOrigin]);
 
-  const selectPlace = (place: SuggestedPlace): void => {
+  const selectPlace = (place: SelectedPlace): void => {
     if (!origin) return;
     setCoverageErrorId(null);
     const destination: Location = { address: place.title, lat: place.lat, lng: place.lng };
@@ -103,9 +105,7 @@ export default function DestinationScreen(): React.JSX.Element {
     if (!pinCandidate) return;
     selectPlace({
       id: 'pin-drop',
-      icon: '📍',
       title: 'Punto marcado en el mapa',
-      subtitle: 'Yarumal',
       lat: pinCandidate.lat,
       lng: pinCandidate.lng,
     });
@@ -115,9 +115,7 @@ export default function DestinationScreen(): React.JSX.Element {
     if (!poi.coord) return;
     selectPlace({
       id: poi.id,
-      icon: poi.icon,
       title: poi.title,
-      subtitle: 'Yarumal',
       lat: poi.coord.lat,
       lng: poi.coord.lng,
     });
@@ -178,12 +176,6 @@ export default function DestinationScreen(): React.JSX.Element {
     }
     resolveOrigin.resolve();
   };
-
-  useEffect(() => {
-    if (!params.preset) return;
-    const preset = DESTINATION_SUGGESTIONS.find((place) => place.id === params.preset);
-    if (preset) selectPlace(preset);
-  }, [params.preset]);
 
   const errorCode = domainErrorCode(quoteFare.error);
   const hasGenericError =
@@ -360,83 +352,40 @@ export default function DestinationScreen(): React.JSX.Element {
 
       <FlatList
         contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.sm }}
-        data={isFixingOrigin ? [] : suggestions}
-        keyExtractor={(item) => item.id}
+        data={visiblePois}
+        keyExtractor={(poi) => poi.id}
         ListHeaderComponent={
-          <View>
-            <Text
-              style={{
-                ...theme.typography.small,
-                color: theme.colors.textMuted,
-                marginBottom: theme.spacing.xs,
-              }}
-            >
-              LUGARES DE YARUMAL
-            </Text>
-            {POIS_YARUMAL.map((poi) => (
-              <View key={poi.id} style={{ marginBottom: theme.spacing.sm }}>
-                <Pressable
-                  disabled={
-                    !poi.coord ||
-                    networkStatus === 'offline' ||
-                    quoteFare.isPending ||
-                    originQuote.isPending
-                  }
-                  onPress={() => (isFixingOrigin ? selectOriginPoi(poi) : selectPoi(poi))}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    poi.coord
-                      ? poi.title
-                      : `${poi.title}, ubicación pendiente de confirmar, márcalo en el mapa`
-                  }
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    minHeight: theme.touch.min,
-                    gap: theme.spacing.sm,
-                    padding: theme.spacing.sm,
-                    borderRadius: theme.radius.field,
-                    borderWidth: 1,
-                    borderColor: theme.colors.border,
-                    opacity: poi.coord ? 1 : 0.6,
-                  }}
-                >
-                  <Text style={{ fontSize: 20 }}>{poi.icon}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
-                      {poi.title}
-                    </Text>
-                    {!poi.coord && (
-                      <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-                        Ubicación pendiente de confirmar · márcalo en el mapa
-                      </Text>
-                    )}
-                  </View>
-                  {!poi.coord && <StatusBadge label="Pendiente" tone="warn" />}
-                </Pressable>
-              </View>
-            ))}
-            {!isFixingOrigin && (
-              <Text
-                style={{
-                  ...theme.typography.small,
-                  color: theme.colors.textMuted,
-                  marginTop: theme.spacing.sm,
-                  marginBottom: theme.spacing.xs,
-                }}
-              >
-                SUGERENCIAS
-              </Text>
-            )}
-          </View>
+          <Text
+            style={{
+              ...theme.typography.small,
+              color: theme.colors.textMuted,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            LUGARES DE YARUMAL
+          </Text>
         }
-        renderItem={({ item }) => (
+        ListEmptyComponent={
+          <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
+            No encontramos ese lugar. Márcalo en el mapa.
+          </Text>
+        }
+        renderItem={({ item: poi }) => (
           <View style={{ marginBottom: theme.spacing.sm }}>
             <Pressable
-              disabled={networkStatus === 'offline' || quoteFare.isPending}
-              onPress={() => selectPlace(item)}
+              disabled={
+                !poi.coord ||
+                networkStatus === 'offline' ||
+                quoteFare.isPending ||
+                originQuote.isPending
+              }
+              onPress={() => (isFixingOrigin ? selectOriginPoi(poi) : selectPoi(poi))}
               accessibilityRole="button"
-              accessibilityLabel={`${item.title}, ${item.subtitle}`}
+              accessibilityLabel={
+                poi.coord
+                  ? poi.title
+                  : `${poi.title}, ubicación pendiente de confirmar, márcalo en el mapa`
+              }
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -445,22 +394,24 @@ export default function DestinationScreen(): React.JSX.Element {
                 padding: theme.spacing.sm,
                 borderRadius: theme.radius.field,
                 borderWidth: 1,
-                borderColor:
-                  coverageErrorId === item.id ? theme.colors.danger : theme.colors.border,
-                opacity: networkStatus === 'offline' ? 0.5 : 1,
+                borderColor: coverageErrorId === poi.id ? theme.colors.danger : theme.colors.border,
+                opacity: poi.coord ? 1 : 0.6,
               }}
             >
-              <Text style={{ fontSize: 20 }}>{item.icon}</Text>
+              <Text style={{ fontSize: 20 }}>{poi.icon}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
-                  {item.title}
+                  {poi.title}
                 </Text>
-                <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-                  {item.subtitle}
-                </Text>
+                {!poi.coord && (
+                  <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+                    Ubicación pendiente de confirmar · márcalo en el mapa
+                  </Text>
+                )}
               </View>
+              {!poi.coord && <StatusBadge label="Pendiente" tone="warn" />}
             </Pressable>
-            {coverageErrorId === item.id && (
+            {coverageErrorId === poi.id && (
               <View accessibilityRole="alert" style={{ marginTop: 4 }}>
                 <Text
                   style={{

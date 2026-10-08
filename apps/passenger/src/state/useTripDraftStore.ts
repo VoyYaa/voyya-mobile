@@ -15,7 +15,6 @@ interface TripDraftState {
   setOrigin: (origin: Location, source: OriginSource) => void;
   clearOrigin: () => void;
   setOriginDestination: (origin: Location, destination: Location) => void;
-  setServiceType: (serviceType: ServiceType) => void;
   setQuote: (quote: QuoteResponse) => void;
   markAssignedLocal: () => void;
   reset: () => void;
@@ -35,7 +34,6 @@ export const useTripDraftStore = create<TripDraftState>((set, get) => ({
   setOrigin: (origin, originSource) => set({ origin, originSource }),
   clearOrigin: () => set({ origin: null, originSource: null }),
   setOriginDestination: (origin, destination) => set({ origin, destination }),
-  setServiceType: (serviceType) => set({ serviceType }),
   setQuote: (quote) => set({ quote }),
   markAssignedLocal: () => {
     if (!get().assignedAtLocal) {
