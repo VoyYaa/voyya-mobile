@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Location, QuoteResponse, ServiceType } from '@voyyaa/shared';
+import type { Location, QuoteResponse, ActivatableServiceType } from '@voyyaa/shared';
 
 export type OriginSource = 'gps' | 'manual';
 
@@ -7,7 +7,7 @@ interface TripDraftState {
   origin: Location | null;
   originSource: OriginSource | null;
   destination: Location | null;
-  serviceType: ServiceType;
+  serviceType: ActivatableServiceType;
   municipalityId: number;
   quote: QuoteResponse | null;
 
