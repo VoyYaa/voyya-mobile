@@ -5,7 +5,7 @@ import { motion } from '../tokens';
 import { useFocusState } from '../hooks/useFocusState';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
-export type CardTone = 'surface' | 'alt' | 'sunken' | 'tint' | 'stage' | 'raised';
+export type CardTone = 'surface' | 'alt' | 'sunken' | 'tint' | 'stage' | 'raised' | 'danger';
 
 export interface CardProps {
   children: React.ReactNode;
@@ -40,6 +40,7 @@ export function Card({
     sunken: { bg: colors.surfaceSunken, border: 'transparent' },
     stage: { bg: colors.stageRaised, border: 'transparent' },
     raised: { bg: colors.surfaceRaised, border: 'transparent' },
+    danger: { bg: colors.dangerTint, border: 'transparent' },
   };
   const surface = surfaces[tone];
 

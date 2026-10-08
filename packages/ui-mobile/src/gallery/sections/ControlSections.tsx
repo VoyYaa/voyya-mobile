@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { useTheme } from '../../theme';
+import type { ColorTokens } from '../../palette';
 import { Button, type ButtonSize, type ButtonVariant } from '../../components/Button';
 import { LinkButton } from '../../components/LinkButton';
 import { Chip } from '../../components/Chip';
@@ -26,7 +27,16 @@ const BUTTON_VARIANTS: readonly ButtonVariant[] = [
   'ghostOnStage',
 ];
 const BUTTON_SIZES: readonly ButtonSize[] = ['sm', 'md', 'lg'];
-const CARD_TONES: readonly CardTone[] = ['surface', 'sunken', 'tint', 'stage', 'raised'];
+const CARD_TEXT_COLOR: Record<CardTone, (colors: ColorTokens) => string> = {
+  surface: (colors) => colors.text,
+  alt: (colors) => colors.text,
+  sunken: (colors) => colors.text,
+  tint: (colors) => colors.text,
+  raised: (colors) => colors.text,
+  stage: (colors) => colors.onStage,
+  danger: (colors) => colors.dangerInk,
+};
+const CARD_TONES: readonly CardTone[] = ['surface', 'sunken', 'tint', 'stage', 'raised', 'danger'];
 const TRIP_STATUSES: readonly TripStatusValue[] = [
   'pending_assignment',
   'assigned',
@@ -126,7 +136,7 @@ export function CardSection(): React.JSX.Element {
           <Text
             style={{
               ...theme.typography.bodyStrong,
-              color: tone === 'stage' ? theme.colors.onStage : theme.colors.text,
+              color: CARD_TEXT_COLOR[tone](theme.colors),
             }}
           >
             {tone}

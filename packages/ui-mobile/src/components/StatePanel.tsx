@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { useTheme } from '../theme';
+import type { ColorTokens } from '../palette';
 import { Button, type ButtonProps } from './Button';
 import { LinkButton } from './LinkButton';
 import { MarkGlyph, type MarkGlyphName } from './brand/MarkGlyph';
@@ -24,6 +25,21 @@ export interface StatePanelProps {
   tone?: StatePanelTone;
   animateGlyph?: boolean;
   testID?: string;
+}
+
+const OFFLINE_ON_STAGE = '#7DB8D8';
+
+function stageGlyphColor(glyph: MarkGlyphName, colors: ColorTokens): string {
+  const byGlyph: Record<MarkGlyphName, string> = {
+    empty: colors.onStage,
+    clock: colors.brand,
+    error: colors.danger,
+    offline: OFFLINE_ON_STAGE,
+    success: colors.success,
+    pin: colors.brand,
+    search: colors.brand,
+  };
+  return byGlyph[glyph];
 }
 
 let iconDeprecationWarned = false;
@@ -61,7 +77,12 @@ export function StatePanel({
     >
       {glyph && (
         <View style={{ marginBottom: theme.spacing.sm }}>
-          <MarkGlyph glyph={glyph} size={72} animate={animateGlyph} />
+          <MarkGlyph
+            glyph={glyph}
+            size={72}
+            animate={animateGlyph}
+            color={onStage ? stageGlyphColor(glyph, theme.colors) : undefined}
+          />
         </View>
       )}
       {!glyph && icon && (
@@ -101,14 +122,14 @@ export function StatePanel({
               size="lg"
             />
           )}
-          {secondaryAction && secondaryAction.variant !== undefined && (
+          {secondaryAction && (secondaryAction.variant !== undefined || onStage) && (
             <Button
               label={secondaryAction.label}
               onPress={secondaryAction.onPress}
-              variant={secondaryAction.variant}
+              variant={secondaryAction.variant ?? 'ghostOnStage'}
             />
           )}
-          {secondaryAction && secondaryAction.variant === undefined && (
+          {secondaryAction && secondaryAction.variant === undefined && !onStage && (
             <View style={{ alignItems: 'center' }}>
               <LinkButton
                 label={secondaryAction.label}

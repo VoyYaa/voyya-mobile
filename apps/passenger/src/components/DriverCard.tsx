@@ -3,6 +3,7 @@ import { Linking, Text, View } from 'react-native';
 import { Button, Card, useTheme } from '@voyyaa/ui-mobile';
 import type { AssignedDriverSummary } from '@voyyaa/shared';
 import { passengerCopy } from '../copy/passenger-copy';
+import { PhoneIcon } from './PhoneIcon';
 import { PlateTag } from './PlateTag';
 
 export interface DriverCardProps {
@@ -57,6 +58,7 @@ export function DriverCard({ driver }: DriverCardProps): React.JSX.Element {
       <View style={{ marginTop: theme.spacing.lg }}>
         <Button
           label={passengerCopy.trip.callDriver}
+          leading={(color) => <PhoneIcon color={color} />}
           variant={theme.mode === 'dark' ? 'ghost' : 'secondary'}
           disabled={!canCall}
           accessibilityHint={canCall ? undefined : passengerCopy.trip.callUnavailable}

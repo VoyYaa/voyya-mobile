@@ -130,6 +130,10 @@ const DARK_PAIRS: readonly ContrastPair[] = [
   { foreground: 'borderStrong', background: 'surface', minimum: GRAPHIC },
   { foreground: 'borderStrong', background: 'surfaceRaised', minimum: GRAPHIC },
   { foreground: 'focusRing', background: 'surface', minimum: GRAPHIC },
+  { foreground: 'onStage', background: 'stage', minimum: TEXT },
+  { foreground: 'brand', background: 'stage', minimum: GRAPHIC },
+  { foreground: 'success', background: 'stage', minimum: GRAPHIC },
+  { foreground: 'danger', background: 'stage', minimum: GRAPHIC },
 ];
 
 const EXPECTED_BRAND_HEX: Record<string, string> = {

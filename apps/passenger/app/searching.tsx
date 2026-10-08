@@ -7,6 +7,7 @@ import {
   Button,
   Reveal,
   Stage,
+  StatePanel,
   Toast,
   formatMMSS,
   uiCopy,
@@ -17,7 +18,6 @@ import type { PassengerUiState } from '@voyyaa/shared';
 import { useNetworkStatus } from '@voyyaa/app-runtime';
 import { CrossFadeText } from '../src/components/CrossFadeText';
 import { SearchRadar } from '../src/components/SearchRadar';
-import { StageStatePanel } from '../src/components/StageStatePanel';
 import { StageTicket } from '../src/components/StageTicket';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
@@ -140,9 +140,10 @@ export default function SearchingScreen(): React.JSX.Element {
     return (
       <Stage style={{ flex: 1 }} topInset={insets.top}>
         <View style={{ flex: 1, justifyContent: 'center' }}>
-          <StageStatePanel
+          <StatePanel
+            tone="onStage"
             glyph="error"
-            role="alert"
+            accessibilityRole="alert"
             title={copy.notFoundTitle}
             primaryAction={{ label: copy.backHome, onPress: () => router.replace('/') }}
           />
@@ -208,9 +209,10 @@ export default function SearchingScreen(): React.JSX.Element {
     return (
       <Stage style={{ flex: 1 }} topInset={insets.top}>
         <View style={{ flex: 1, justifyContent: 'center' }}>
-          <StageStatePanel
+          <StatePanel
+            tone="onStage"
             glyph={offline ? 'offline' : 'error'}
-            role="alert"
+            accessibilityRole="alert"
             title={offline ? uiCopy.offlineTitle : copy.statusErrorTitle}
             body={offline ? uiCopy.offlineBody : undefined}
             primaryAction={{ label: uiCopy.retry, onPress: () => refetch() }}
@@ -226,16 +228,18 @@ export default function SearchingScreen(): React.JSX.Element {
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Reveal>
             {retryFailed && !retrying ? (
-              <StageStatePanel
+              <StatePanel
+                tone="onStage"
                 glyph="error"
-                role="alert"
+                accessibilityRole="alert"
                 title={copy.retryFailedTitle}
                 body={copy.retryFailedBody}
                 primaryAction={{ label: uiCopy.retry, onPress: retrySearch }}
                 secondaryAction={{ label: copy.backHome, onPress: goBackHome }}
               />
             ) : (
-              <StageStatePanel
+              <StatePanel
+                tone="onStage"
                 glyph="clock"
                 title={copy.noDriverTitle}
                 body={copy.noDriverBody}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { Button, MarkGlyph, useTheme } from '@voyyaa/ui-mobile';
+import { Button, Card, MarkGlyph, useTheme } from '@voyyaa/ui-mobile';
 import { driverCopy } from '../copy/driver-copy';
 
 export type ShiftIssueKind =
@@ -30,25 +30,18 @@ export function ShiftIssuePanel({ kind, onAction }: ShiftIssuePanelProps): React
   const copy = ISSUE_COPY[kind];
 
   return (
-    <View
-      accessibilityRole="alert"
-      testID="shift-issue-panel"
-      style={{
-        backgroundColor: theme.colors.dangerTint,
-        borderRadius: theme.radius.card,
-        padding: theme.spacing.lg,
-        gap: theme.spacing.md,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
-        <MarkGlyph glyph="error" size={40} />
-        <Text style={{ ...theme.typography.body, color: theme.colors.dangerInk, flex: 1 }}>
-          {copy.message}
-        </Text>
-      </View>
-      {copy.actionLabel && onAction && (
-        <Button label={copy.actionLabel} variant="secondary" size="sm" onPress={onAction} />
-      )}
+    <View accessibilityRole="alert" testID="shift-issue-panel">
+      <Card tone="danger" style={{ gap: theme.spacing.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
+          <MarkGlyph glyph="error" size={40} />
+          <Text style={{ ...theme.typography.body, color: theme.colors.dangerInk, flex: 1 }}>
+            {copy.message}
+          </Text>
+        </View>
+        {copy.actionLabel && onAction && (
+          <Button label={copy.actionLabel} variant="secondary" size="sm" onPress={onAction} />
+        )}
+      </Card>
     </View>
   );
 }

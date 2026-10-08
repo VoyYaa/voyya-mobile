@@ -16,8 +16,11 @@ import { BrandSpinner } from './brand/BrandSpinner';
 export type ButtonVariant = 'primary' | 'secondary' | 'go' | 'ghost' | 'danger' | 'ghostOnStage';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
+export type ButtonLeading = React.ReactNode | ((color: string) => React.ReactNode);
+
 export interface ButtonProps {
   label: string;
+  leading?: ButtonLeading;
   onPress: (event: GestureResponderEvent) => void;
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -44,6 +47,7 @@ const PRESSED_LEDGE_WIDTH = 1;
 
 export function Button({
   label,
+  leading,
   onPress,
   variant = 'primary',
   size = 'md',
@@ -149,6 +153,15 @@ export function Button({
       {loading && (
         <View style={{ marginRight: theme.spacing.sm }}>
           <BrandSpinner size={20} color={palette.fg} />
+        </View>
+      )}
+      {!loading && leading != null && (
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={{ marginRight: theme.spacing.sm }}
+        >
+          {typeof leading === 'function' ? leading(palette.fg) : leading}
         </View>
       )}
       <Text
