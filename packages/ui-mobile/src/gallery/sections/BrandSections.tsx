@@ -3,6 +3,7 @@ import { Animated, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
 import { BootScreen } from '../../components/brand/BootScreen';
 import { BrandLoader } from '../../components/brand/BrandLoader';
+import { BrandHop } from '../../components/brand/BrandHop';
 import { BrandMark } from '../../components/brand/BrandMark';
 import { BrandMorph, type BrandMorphTarget } from '../../components/brand/BrandMorph';
 import { BrandSpinner, type BrandSpinnerSize } from '../../components/brand/BrandSpinner';
@@ -208,6 +209,14 @@ export function MotionSection(): React.JSX.Element {
       {MORPH_TARGETS.map((target) => (
         <MorphRow key={target} target={target} />
       ))}
+      <GalleryCaption label="BrandHop: ciclo salto, aterrizaje y figura (pasajero, conductor, neutro)" />
+      <Stage>
+        <GalleryRow>
+          <BrandHop size={144} target="person" testID="gallery-hop-person" />
+          <BrandHop size={144} target="car" ringColor={theme.colors.success} testID="gallery-hop-car" />
+          <BrandHop size={96} testID="gallery-hop-neutral" />
+        </GalleryRow>
+      </Stage>
       <GalleryCaption label="BootScreen" />
       <BootDemo />
       <GalleryCaption label="AccentText y Reveal" />

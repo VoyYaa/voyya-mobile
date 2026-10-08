@@ -16,6 +16,7 @@ export * from './components/brand/BrandSpinner';
 export * from './components/brand/BrandLoader';
 export * from './components/brand/RadarPulse';
 export * from './components/brand/BrandMorph';
+export * from './components/brand/BrandHop';
 export * from './components/brand/BootScreen';
 export * from './components/brand/MarkGlyph';
 
