@@ -38,9 +38,7 @@ export function LocationConsentSheet({
       <View style={{ gap: theme.spacing.md }}>
         {rows.map((row) => (
           <View key={row.label}>
-            <Text
-              style={{ ...theme.typography.small, fontWeight: '700', color: theme.colors.text }}
-            >
+            <Text style={{ ...theme.typography.smallStrong, color: theme.colors.text }}>
               {row.label}
             </Text>
             <Text style={{ ...theme.typography.body, color: theme.colors.textMuted, marginTop: 2 }}>

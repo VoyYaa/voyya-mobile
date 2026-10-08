@@ -7,12 +7,17 @@ const ThemeContext = createContext<Theme | null>(null);
 export interface ThemeProviderProps {
   children: React.ReactNode;
   overrideMode?: ThemeMode;
+  fontsReady?: boolean;
 }
 
-export function ThemeProvider({ children, overrideMode }: ThemeProviderProps): React.JSX.Element {
+export function ThemeProvider({
+  children,
+  overrideMode,
+  fontsReady = false,
+}: ThemeProviderProps): React.JSX.Element {
   const systemScheme = useColorScheme();
   const mode: ThemeMode = overrideMode ?? (systemScheme === 'dark' ? 'dark' : 'light');
-  const theme = useMemo(() => buildTheme(mode), [mode]);
+  const theme = useMemo(() => buildTheme(mode, fontsReady), [mode, fontsReady]);
 
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }

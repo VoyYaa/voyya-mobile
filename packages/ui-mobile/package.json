@@ -12,14 +12,15 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "assets"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "test": "echo \"(ui-mobile) sin tests unitarios propios aún\" && exit 0",
+    "test": "node --test src/palette.spec.ts src/utils/color.spec.ts src/utils/trip-status-tone.spec.ts src/motion/ref-counted-loop.spec.ts",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "peerDependencies": {

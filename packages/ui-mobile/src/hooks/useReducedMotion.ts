@@ -1,8 +1,23 @@
-import { useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
+
+const ReducedMotionOverrideContext = createContext<boolean | null>(null);
+
+export interface ReducedMotionProviderProps {
+  value: boolean;
+  children: React.ReactNode;
+}
+
+export function ReducedMotionProvider({
+  value,
+  children,
+}: ReducedMotionProviderProps): React.ReactElement {
+  return React.createElement(ReducedMotionOverrideContext.Provider, { value }, children);
+}
 
 export function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
+  const override = useContext(ReducedMotionOverrideContext);
 
   useEffect(() => {
     let mounted = true;
@@ -16,5 +31,5 @@ export function useReducedMotion(): boolean {
     };
   }, []);
 
-  return reduced;
+  return override ?? reduced;
 }

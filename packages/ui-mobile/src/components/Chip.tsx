@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../theme';
+import { useFocusState } from '../hooks/useFocusState';
 
 export type ChipTone = 'neutral' | 'brand' | 'brandTint' | 'success' | 'danger';
 
@@ -12,7 +13,10 @@ export interface ChipProps {
   leading?: string;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  testID?: string;
 }
+
+const VISUAL_MIN_HEIGHT = 32;
 
 export function Chip({
   label,
@@ -22,43 +26,64 @@ export function Chip({
   leading,
   style,
   accessibilityLabel,
+  testID,
 }: ChipProps): React.JSX.Element {
   const theme = useTheme();
+  const { focused, onFocus, onBlur } = useFocusState();
+  const { colors } = theme;
 
   const toneColors: Record<ChipTone, { bg: string; fg: string }> = {
-    neutral: { bg: theme.colors.surfaceAlt, fg: theme.colors.text },
-    brand: { bg: theme.colors.brand, fg: theme.colors.onBrand },
-    brandTint: { bg: theme.colors.surfaceAlt, fg: theme.colors.brandInk },
-    success: { bg: theme.colors.success, fg: theme.colors.onSuccess },
-    danger: { bg: theme.colors.dangerTint, fg: theme.colors.dangerInk },
+    neutral: { bg: colors.surfaceSunken, fg: colors.text },
+    brand: { bg: colors.brand, fg: colors.onBrand },
+    brandTint: { bg: colors.brandTint, fg: colors.brandInk },
+    success: { bg: colors.successTint, fg: colors.successInk },
+    danger: { bg: colors.dangerTint, fg: colors.dangerInk },
   };
   const palette = toneColors[selected ? 'brand' : tone];
 
-  const Container = onPress ? Pressable : View;
-
-  return (
-    <Container
-      accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={onPress ? { selected } : undefined}
-      onPress={onPress}
-      hitSlop={onPress ? { top: 6, bottom: 6, left: 6, right: 6 } : undefined}
-      style={[
-        {
-          flexDirection: 'row',
-          alignItems: 'center',
-          minHeight: 32,
-          paddingHorizontal: theme.spacing.md,
-          paddingVertical: theme.spacing.xs,
-          borderRadius: theme.radius.pill,
-          backgroundColor: palette.bg,
-        },
-        style,
-      ]}
+  const pill = (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        minHeight: VISUAL_MIN_HEIGHT,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
+        borderRadius: theme.radius.pill,
+        borderWidth: 2,
+        borderColor: onPress && focused ? colors.focusRing : 'transparent',
+        backgroundColor: palette.bg,
+      }}
     >
-      <Text style={{ ...theme.typography.small, color: palette.fg, fontWeight: '600' }}>
+      <Text
+        maxFontSizeMultiplier={1.3}
+        style={{ ...theme.typography.smallStrong, color: palette.fg }}
+      >
         {leading ? `${leading} ${label}` : label}
       </Text>
-    </Container>
+    </View>
+  );
+
+  if (!onPress) {
+    return (
+      <View testID={testID} accessibilityLabel={accessibilityLabel ?? label} style={style}>
+        {pill}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      testID={testID}
+      style={[{ minHeight: theme.touch.min, justifyContent: 'center' }, style]}
+    >
+      {pill}
+    </Pressable>
   );
 }

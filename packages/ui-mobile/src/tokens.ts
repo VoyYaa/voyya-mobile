@@ -1,94 +1,32 @@
-import { Platform, type TextStyle, type ViewStyle } from 'react-native';
+import { Easing, Platform, type TextStyle, type ViewStyle } from 'react-native';
+import { BRAND_COLORS, darkColors, lightColors, type ColorTokens } from './palette';
+import { BRAND_FONT_FAMILY, type BrandFontWeight } from './fonts/brand-font-families';
 
-export const BRAND_COLORS = {
-  amber: '#F4A21A',
-  amberDeep: '#E0850A',
-  espresso: '#2A2018',
-  crema: '#FBF6ED',
-  go: '#12A46A',
-  danger: '#D6503F',
+export { BRAND_COLORS, type ColorTokens };
+
+export const spacing = {
+  xxs: 2,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+  x3l: 40,
+  x4l: 56,
+  gutter: 20,
 } as const;
 
-export interface ColorTokens {
-  bg: string;
-  surface: string;
-  surfaceAlt: string;
-  text: string;
-  textMuted: string;
-  border: string;
-  brand: string;
-  brandPressed: string;
-  brandInk: string;
-  onBrand: string;
-  success: string;
-  successInk: string;
-  onSuccess: string;
-  danger: string;
-  dangerTint: string;
-  dangerInk: string;
-  dangerSolid: string;
-  onDanger: string;
-  focusRing: string;
-  focusHalo: string;
-}
-
-const lightColors: ColorTokens = {
-  bg: BRAND_COLORS.crema,
-  surface: '#FFFFFF',
-  surfaceAlt: '#FCE9C6',
-  text: BRAND_COLORS.espresso,
-  textMuted: 'rgba(42, 32, 24, 0.7)',
-  border: '#EADFC9',
-  brand: BRAND_COLORS.amber,
-  brandPressed: BRAND_COLORS.amberDeep,
-  brandInk: '#6B4505',
-  onBrand: BRAND_COLORS.espresso,
-  success: BRAND_COLORS.go,
-  successInk: '#0D774D',
-  onSuccess: BRAND_COLORS.espresso,
-  danger: BRAND_COLORS.danger,
-  dangerTint: '#F6DED4',
-  dangerInk: '#B23A2C',
-  dangerSolid: '#B23A2C',
-  onDanger: '#FFFFFF',
-  focusRing: BRAND_COLORS.espresso,
-  focusHalo: 'rgba(244, 162, 26, 0.35)',
-};
-
-const darkColors: ColorTokens = {
-  bg: '#1C140D',
-  surface: BRAND_COLORS.espresso,
-  surfaceAlt: 'rgba(244, 162, 26, 0.14)',
-  text: BRAND_COLORS.crema,
-  textMuted: 'rgba(251, 246, 237, 0.7)',
-  border: 'rgba(234, 223, 201, 0.16)',
-  brand: BRAND_COLORS.amber,
-  brandPressed: BRAND_COLORS.amberDeep,
-  brandInk: BRAND_COLORS.amberDeep,
-  onBrand: BRAND_COLORS.espresso,
-  success: BRAND_COLORS.go,
-  successInk: '#22C285',
-  onSuccess: BRAND_COLORS.espresso,
-  danger: BRAND_COLORS.danger,
-  dangerTint: '#3A211B',
-  dangerInk: '#E8705C',
-  dangerSolid: '#B23A2C',
-  onDanger: '#FFFFFF',
-  focusRing: BRAND_COLORS.crema,
-  focusHalo: 'rgba(244, 162, 26, 0.35)',
-};
-
-export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
-
 export const radius = {
-  field: 12,
-  button: 14,
-  card: 16,
-  sheet: 22,
+  field: 14,
+  button: 16,
+  card: 20,
+  sheet: 28,
+  chip: 12,
   pill: 999,
 } as const;
 
-export const touch = { min: 44 } as const;
+export const touch = { min: 44, comfortable: 52, primary: 60 } as const;
 
 export const shadow = {
   sm: {
@@ -114,71 +52,144 @@ export const shadow = {
   } satisfies ViewStyle,
 } as const;
 
-const displayFamily = Platform.select({
-  ios: 'System',
-  android: 'sans-serif-rounded',
-  default: 'System',
-});
-const bodyFamily = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
+export const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
-export const typography = {
-  title: {
-    fontFamily: displayFamily,
-    fontWeight: '700',
-    fontSize: 22,
-    lineHeight: 28,
-  } satisfies TextStyle,
-  subtitle: {
-    fontFamily: displayFamily,
-    fontWeight: '600',
-    fontSize: 17,
-    lineHeight: 22,
-  } satisfies TextStyle,
-  body: {
-    fontFamily: bodyFamily,
-    fontWeight: '400',
-    fontSize: 15,
-    lineHeight: 21,
-  } satisfies TextStyle,
-  small: {
-    fontFamily: bodyFamily,
-    fontWeight: '400',
-    fontSize: 13,
-    lineHeight: 18,
-  } satisfies TextStyle,
-  button: {
-    fontFamily: displayFamily,
-    fontWeight: '600',
-    fontSize: 16,
-    lineHeight: 20,
-  } satisfies TextStyle,
-  numeric: {
-    fontFamily: bodyFamily,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
-  } satisfies TextStyle,
+export const motion = {
+  dur: {
+    instant: 0,
+    fast: 120,
+    base: 200,
+    enter: 320,
+    hero: 420,
+    draw: 600,
+    pulse: 2400,
+    sweep: 2600,
+    spin: 900,
+    tick: 1000,
+  },
+  ease: {
+    out: Easing.bezier(0.22, 1, 0.36, 1),
+    inOut: Easing.bezier(0.65, 0, 0.35, 1),
+    linear: Easing.linear,
+  },
+  stagger: 60,
+  staggerMax: 4,
+  pressScale: 0.97,
+  reducedFadeMs: 150,
 } as const;
+
+const WEIGHT_VALUE: Record<BrandFontWeight, NonNullable<TextStyle['fontWeight']>> = {
+  400: '400',
+  700: '700',
+  800: '800',
+  900: '900',
+};
+
+function fontStyle(
+  weight: BrandFontWeight,
+  fontsReady: boolean,
+): Pick<TextStyle, 'fontFamily' | 'fontWeight'> {
+  if (fontsReady) return { fontFamily: BRAND_FONT_FAMILY[weight] };
+  if (Platform.OS === 'android') {
+    if (weight === 900) return { fontFamily: 'sans-serif-black' };
+    return { fontFamily: 'sans-serif', fontWeight: WEIGHT_VALUE[weight] };
+  }
+  return { fontFamily: 'System', fontWeight: WEIGHT_VALUE[weight] };
+}
+
+export interface TypographyTokens {
+  display: TextStyle;
+  headline: TextStyle;
+  title: TextStyle;
+  subtitle: TextStyle;
+  body: TextStyle;
+  bodyStrong: TextStyle;
+  small: TextStyle;
+  smallStrong: TextStyle;
+  eyebrow: TextStyle;
+  button: TextStyle;
+  numeric: TextStyle;
+  numericXL: TextStyle;
+  timer: TextStyle;
+}
+
+export function buildTypography(fontsReady: boolean): TypographyTokens {
+  return {
+    display: {
+      ...fontStyle(900, fontsReady),
+      fontSize: 34,
+      lineHeight: 36,
+      letterSpacing: -0.85,
+    },
+    headline: {
+      ...fontStyle(800, fontsReady),
+      fontSize: 26,
+      lineHeight: 30,
+      letterSpacing: -0.52,
+    },
+    title: {
+      ...fontStyle(800, fontsReady),
+      fontSize: 22,
+      lineHeight: 28,
+      letterSpacing: -0.33,
+    },
+    subtitle: { ...fontStyle(700, fontsReady), fontSize: 17, lineHeight: 22 },
+    body: { ...fontStyle(400, fontsReady), fontSize: 16, lineHeight: 23 },
+    bodyStrong: { ...fontStyle(700, fontsReady), fontSize: 16, lineHeight: 23 },
+    small: { ...fontStyle(400, fontsReady), fontSize: 14, lineHeight: 19 },
+    smallStrong: { ...fontStyle(700, fontsReady), fontSize: 14, lineHeight: 19 },
+    eyebrow: {
+      ...fontStyle(800, fontsReady),
+      fontSize: 12,
+      lineHeight: 16,
+      letterSpacing: 1.44,
+      textTransform: 'uppercase',
+    },
+    button: { ...fontStyle(800, fontsReady), fontSize: 17, lineHeight: 20 },
+    numeric: { ...fontStyle(900, fontsReady), fontVariant: ['tabular-nums'] },
+    numericXL: {
+      ...fontStyle(900, fontsReady),
+      fontSize: 40,
+      lineHeight: 44,
+      letterSpacing: -0.8,
+      fontVariant: ['tabular-nums'],
+    },
+    timer: {
+      ...fontStyle(900, fontsReady),
+      fontSize: 64,
+      lineHeight: 64,
+      letterSpacing: -1.92,
+      fontVariant: ['tabular-nums'],
+    },
+  };
+}
+
+export const typography: TypographyTokens = buildTypography(false);
 
 export type ThemeMode = 'light' | 'dark';
 
 export interface Theme {
   mode: ThemeMode;
+  fontsReady: boolean;
   colors: ColorTokens;
   spacing: typeof spacing;
   radius: typeof radius;
   shadow: typeof shadow;
-  typography: typeof typography;
+  typography: TypographyTokens;
   touch: typeof touch;
+  motion: typeof motion;
 }
 
-export function buildTheme(mode: ThemeMode): Theme {
+export function buildTheme(mode: ThemeMode, fontsReady = false): Theme {
   return {
     mode,
+    fontsReady,
     colors: mode === 'dark' ? darkColors : lightColors,
     spacing,
     radius,
     shadow,
-    typography,
+    typography: buildTypography(fontsReady),
     touch,
+    motion,
   };
 }

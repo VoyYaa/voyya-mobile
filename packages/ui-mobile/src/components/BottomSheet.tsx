@@ -1,6 +1,18 @@
-import React, { useEffect, useRef } from 'react';
-import { AccessibilityInfo, Modal, Pressable, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  Animated,
+  Modal,
+  PanResponder,
+  Pressable,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useTheme } from '../theme';
+import { USE_NATIVE_DRIVER, motion } from '../tokens';
+import { uiCopy } from '../copy';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 export interface BottomSheetProps {
   visible: boolean;
@@ -10,6 +22,12 @@ export interface BottomSheetProps {
   testID?: string;
 }
 
+const VELO_MAX_OPACITY = 0.45;
+const DRAG_CLOSE_DISTANCE_DP = 80;
+const DRAG_START_DISTANCE_DP = 6;
+const HANDLE_WIDTH = 40;
+const HANDLE_HEIGHT = 4;
+
 export function BottomSheet({
   visible,
   onClose,
@@ -18,7 +36,16 @@ export function BottomSheet({
   testID,
 }: BottomSheetProps): React.JSX.Element {
   const theme = useTheme();
+  const reduced = useReducedMotion();
+  const { height: windowHeight } = useWindowDimensions();
   const announcedTitle = useRef<string | undefined>(undefined);
+  const [rendered, setRendered] = useState(visible);
+  const enter = useRef(new Animated.Value(0)).current;
+  const drag = useRef(new Animated.Value(0)).current;
+  const still = useRef(new Animated.Value(0)).current;
+
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (visible && title && announcedTitle.current !== title) {
@@ -30,65 +57,136 @@ export function BottomSheet({
     }
   }, [visible, title]);
 
+  useEffect(() => {
+    if (visible) {
+      setRendered(true);
+      drag.setValue(0);
+      const opening = Animated.timing(enter, {
+        toValue: 1,
+        duration: reduced ? motion.reducedFadeMs : motion.dur.enter,
+        easing: motion.ease.out,
+        useNativeDriver: USE_NATIVE_DRIVER,
+      });
+      opening.start();
+      return () => opening.stop();
+    }
+    const closing = Animated.timing(enter, {
+      toValue: 0,
+      duration: reduced ? motion.reducedFadeMs : motion.dur.base,
+      easing: motion.ease.out,
+      useNativeDriver: USE_NATIVE_DRIVER,
+    });
+    closing.start(({ finished }) => {
+      if (finished) setRendered(false);
+    });
+    return () => closing.stop();
+  }, [visible, reduced, enter, drag]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          gesture.dy > DRAG_START_DISTANCE_DP && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+        onPanResponderMove: (_, gesture) => {
+          if (gesture.dy > 0) drag.setValue(gesture.dy);
+        },
+        onPanResponderRelease: (_, gesture) => {
+          if (gesture.dy > DRAG_CLOSE_DISTANCE_DP) {
+            onCloseRef.current();
+            return;
+          }
+          Animated.timing(drag, {
+            toValue: 0,
+            duration: motion.dur.base,
+            easing: motion.ease.out,
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }).start();
+        },
+        onPanResponderTerminate: () => {
+          Animated.timing(drag, {
+            toValue: 0,
+            duration: motion.dur.base,
+            easing: motion.ease.out,
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }).start();
+        },
+      }),
+    [drag],
+  );
+
+  const slide = reduced
+    ? still
+    : enter.interpolate({ inputRange: [0, 1], outputRange: [windowHeight, 0] });
+  const veloOpacity = enter.interpolate({ inputRange: [0, 1], outputRange: [0, VELO_MAX_OPACITY] });
+
   return (
     <Modal
-      visible={visible}
+      visible={rendered}
       transparent
-      animationType="slide"
+      animationType="none"
+      statusBarTranslucent
       onRequestClose={onClose}
       testID={testID}
     >
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-        <Pressable
-          accessibilityLabel="Cerrar"
-          accessibilityRole="button"
-          onPress={onClose}
+        <Animated.View
           style={{
             position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.4)',
+            backgroundColor: theme.colors.stage,
+            opacity: veloOpacity,
           }}
-        />
-        <View
+        >
+          <Pressable
+            accessibilityLabel={uiCopy.close}
+            accessibilityRole="button"
+            onPress={onClose}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+        <Animated.View
           accessibilityViewIsModal
           style={{
-            backgroundColor: theme.colors.surface,
+            backgroundColor: theme.colors.surfaceRaised,
             borderTopLeftRadius: theme.radius.sheet,
             borderTopRightRadius: theme.radius.sheet,
-            padding: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.xl,
             paddingBottom: theme.spacing.xxl,
+            opacity: reduced ? enter : 1,
+            transform: [{ translateY: Animated.add(slide, drag) }],
             ...theme.shadow.lg,
           }}
         >
           <View
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            style={{
-              alignSelf: 'center',
-              width: 40,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: theme.colors.border,
-              marginBottom: theme.spacing.md,
-            }}
-          />
-          {title && (
-            <Text
-              accessibilityRole="header"
+            {...panResponder.panHandlers}
+            style={{ paddingTop: theme.spacing.md, paddingBottom: theme.spacing.sm }}
+          >
+            <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
               style={{
-                ...theme.typography.title,
-                color: theme.colors.text,
+                alignSelf: 'center',
+                width: HANDLE_WIDTH,
+                height: HANDLE_HEIGHT,
+                borderRadius: HANDLE_HEIGHT / 2,
+                backgroundColor: theme.colors.borderStrong,
                 marginBottom: theme.spacing.sm,
               }}
-            >
-              {title}
-            </Text>
-          )}
+            />
+            {title && (
+              <Text
+                accessibilityRole="header"
+                style={{ ...theme.typography.title, color: theme.colors.text }}
+              >
+                {title}
+              </Text>
+            )}
+          </View>
           {children}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
