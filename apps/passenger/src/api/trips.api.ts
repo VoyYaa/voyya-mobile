@@ -7,6 +7,7 @@ import {
   TripRequestCancelled,
   TripRequestCreated,
   TripRequestStatus,
+  TripServiceOptionsResponse,
 } from '@voyyaa/shared';
 import { apiRequest } from '@voyyaa/app-runtime';
 
@@ -37,4 +38,15 @@ export function cancelTripRequest(
 
 export function getActiveTrip(): Promise<ActiveTripResponse> {
   return apiRequest({ method: 'GET', path: '/trips/active' }, ActiveTripResponse);
+}
+
+export function getServiceOptions(coordinate: {
+  lat: number;
+  lng: number;
+}): Promise<TripServiceOptionsResponse> {
+  const query = `lat=${coordinate.lat}&lng=${coordinate.lng}`;
+  return apiRequest(
+    { method: 'GET', path: `/trips/service-options?${query}` },
+    TripServiceOptionsResponse,
+  );
 }

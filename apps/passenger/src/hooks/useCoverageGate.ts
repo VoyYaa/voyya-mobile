@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
-import type { Location } from '@voyyaa/shared';
-import { quoteFare } from '../api/trips.api';
-import { domainErrorCode, isNetworkError } from '@voyyaa/app-runtime';
+import { isNetworkError } from '@voyyaa/app-runtime';
+import { usePickupServiceOptions } from './useServiceOptions';
 
 export type CoverageGateStatus = 'idle' | 'checking' | 'within' | 'outside' | 'error';
 
@@ -10,41 +8,20 @@ export interface CoverageGate {
   retry: () => void;
 }
 
-export function useCoverageGate(origin: Location | null, municipalityId: number): CoverageGate {
-  const [status, setStatus] = useState<CoverageGateStatus>('idle');
-  const [attempt, setAttempt] = useState(0);
+export function useCoverageGate(): CoverageGate {
+  const { query } = usePickupServiceOptions();
+  const retry = (): void => {
+    void query.refetch();
+  };
 
-  useEffect(() => {
-    if (!origin) {
-      setStatus('idle');
-      return;
-    }
-
-    let current = true;
-    setStatus('checking');
-
-    quoteFare({
-      origin,
-      destination: origin,
-      municipality_id: municipalityId,
-      service_type: 'taxi',
-    })
-      .then(() => {
-        if (current) setStatus('within');
-      })
-      .catch((error: unknown) => {
-        if (!current) return;
-        if (isNetworkError(error)) {
-          setStatus('within');
-          return;
-        }
-        setStatus(domainErrorCode(error) === 'OUT_OF_COVERAGE' ? 'outside' : 'error');
-      });
-
-    return () => {
-      current = false;
-    };
-  }, [origin?.lat, origin?.lng, municipalityId, attempt]);
-
-  return { status, retry: () => setAttempt((n) => n + 1) };
+  if (query.fetchStatus === 'idle' && query.data === undefined && !query.isError) {
+    return { status: 'idle', retry };
+  }
+  if (query.data) {
+    return { status: query.data.municipality === null ? 'outside' : 'within', retry };
+  }
+  if (query.isError) {
+    return { status: isNetworkError(query.error) ? 'within' : 'error', retry };
+  }
+  return { status: 'checking', retry };
 }

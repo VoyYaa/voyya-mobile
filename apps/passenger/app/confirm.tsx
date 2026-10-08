@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BrandSpinner,
@@ -21,16 +21,25 @@ import {
   type ActiveTripConflictFailure,
 } from '../src/components/ActiveTripConflictSheet';
 import { InlineNotice } from '../src/components/InlineNotice';
+import { ServiceCompanyBlock } from '../src/components/ServiceCompanyBlock';
 import { LocationReferenceField } from '../src/components/LocationReferenceField';
 import { useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useCreateTripRequest } from '../src/hooks/useCreateTripRequest';
+import { usePickupServiceOptions } from '../src/hooks/useServiceOptions';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { composeAddress } from '../src/lib/address';
 import { activeTripRoute } from '../src/lib/active-trip-route';
+import {
+  findServiceOption,
+  isPreferenceListed,
+  requestedCompanyId,
+  serviceOptionsStatus,
+} from '../src/lib/company-selection';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
 import { TRIP_ENDED_NOTICE } from '../src/constants/notices';
+import { CHOOSE_COMPANY_PARAM, FARE_CHANGED_PARAM } from '../src/constants/route-params';
 
 const PAYMENT_METHOD: PaymentMethod = 'cash';
 const MAP_HEIGHT = 120;
@@ -44,12 +53,17 @@ export default function ConfirmScreen(): React.JSX.Element {
 
   const origin = useTripDraftStore((s) => s.origin);
   const destination = useTripDraftStore((s) => s.destination);
-  const municipalityId = useTripDraftStore((s) => s.municipalityId);
+  const companyPreference = useTripDraftStore((s) => s.companyPreference);
+  const unavailableCompanyName = useTripDraftStore((s) => s.unavailableCompanyName);
+  const setCompanyPreference = useTripDraftStore((s) => s.setCompanyPreference);
+  const markCompanyUnavailable = useTripDraftStore((s) => s.markCompanyUnavailable);
   const serviceType = useTripDraftStore((s) => s.serviceType);
   const quote = useTripDraftStore((s) => s.quote);
   const setQuote = useTripDraftStore((s) => s.setQuote);
   const resetDraft = useTripDraftStore((s) => s.reset);
   const activeTripCache = useActiveTripCache();
+  const params = useLocalSearchParams<{ fareChanged?: string; chooseCompany?: string }>();
+  const { query: serviceOptions, municipalityId } = usePickupServiceOptions();
 
   const [pickupReference, setPickupReference] = useState('');
   const [dropoffReference, setDropoffReference] = useState('');
@@ -60,17 +74,50 @@ export default function ConfirmScreen(): React.JSX.Element {
   const quoteFare = useQuoteFare();
   const createTripRequest = useCreateTripRequest();
 
+  const serviceOption = serviceOptions.data
+    ? findServiceOption(serviceOptions.data.services, serviceType)
+    : null;
+  const optionsStatus = serviceOptionsStatus({
+    hasData: serviceOptions.data !== undefined,
+    isError: serviceOptions.isError,
+    offline: networkStatus === 'offline',
+  });
+  const selectionRequired = serviceOption?.selection_required ?? false;
+  const noService = optionsStatus === 'ready' && serviceOption === null;
+  const preferenceUnset = selectionRequired && companyPreference === null;
+  const refetchServiceOptions = serviceOptions.refetch;
+
   useEffect(() => {
     if (!origin || !destination || !quote) {
       router.replace('/');
     }
   }, []);
 
+  useEffect(() => {
+    if (
+      serviceOption?.selection_required &&
+      companyPreference?.kind === 'company' &&
+      !isPreferenceListed(companyPreference, serviceOption.companies)
+    ) {
+      markCompanyUnavailable(companyPreference.companyName);
+    }
+  }, [serviceOption, companyPreference, markCompanyUnavailable]);
+
+  useEffect(() => {
+    if (unavailableCompanyName) void refetchServiceOptions();
+  }, [unavailableCompanyName, refetchServiceOptions]);
+
   if (!origin || !destination || !quote) {
     return <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
   }
 
+  const goHome = (): void => {
+    resetDraft();
+    router.replace('/');
+  };
+
   const requestTrip = (): void => {
+    if (municipalityId === null) return;
     createTripRequest.mutate(
       {
         origin: { ...origin, address: composeAddress(origin.address, pickupReference) },
@@ -82,6 +129,7 @@ export default function ConfirmScreen(): React.JSX.Element {
         service_type: serviceType,
         payment_method: PAYMENT_METHOD,
         quote_token: quote.quote_token,
+        requested_company_id: requestedCompanyId(companyPreference, selectionRequired),
       },
       {
         onSuccess: (tripRequest) => {
@@ -95,6 +143,13 @@ export default function ConfirmScreen(): React.JSX.Element {
           if (domainErrorCode(error) === 'ACTIVE_TRIP_REQUEST_EXISTS') {
             setConflictFailure(null);
             setConflictOpen(true);
+            return;
+          }
+          if (domainErrorCode(error) === 'COMPANY_NOT_AVAILABLE') {
+            if (companyPreference?.kind === 'company') {
+              markCompanyUnavailable(companyPreference.companyName);
+            }
+            void refetchServiceOptions();
             return;
           }
           if (domainErrorCode(error) === 'QUOTE_EXPIRED') {
@@ -137,11 +192,25 @@ export default function ConfirmScreen(): React.JSX.Element {
   const showGenericError =
     createTripRequest.isError &&
     errorCode !== 'QUOTE_EXPIRED' &&
-    errorCode !== 'ACTIVE_TRIP_REQUEST_EXISTS';
+    errorCode !== 'ACTIVE_TRIP_REQUEST_EXISTS' &&
+    errorCode !== 'COMPANY_NOT_AVAILABLE';
   const currentFare = quoteFare.data ?? quote;
   const offline = networkStatus === 'offline';
+  const requestHint = offline
+    ? copy.offlineRequestHint
+    : noService
+      ? copy.noServiceHint
+      : preferenceUnset
+        ? copy.chooseCompanyHint
+        : undefined;
   const requestDisabled =
-    offline || createTripRequest.isPending || quoteFare.isPending || conflictOpen;
+    offline ||
+    createTripRequest.isPending ||
+    quoteFare.isPending ||
+    conflictOpen ||
+    municipalityId === null ||
+    noService ||
+    preferenceUnset;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={['top']}>
@@ -151,6 +220,14 @@ export default function ConfirmScreen(): React.JSX.Element {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md }}
       >
+        {params[FARE_CHANGED_PARAM] === '1' && (
+          <InlineNotice
+            tone="info"
+            glyph="clock"
+            title={copy.fareChanged}
+            testID="confirm-fare-changed"
+          />
+        )}
         {errorCode === 'QUOTE_EXPIRED' && (
           <InlineNotice tone="info" glyph="clock" title={copy.requote} testID="confirm-requote" />
         )}
@@ -202,6 +279,21 @@ export default function ConfirmScreen(): React.JSX.Element {
             height={MAP_HEIGHT}
           />
         </Card>
+
+        <ServiceCompanyBlock
+          status={optionsStatus}
+          option={serviceOption}
+          preference={companyPreference}
+          unavailableCompanyName={unavailableCompanyName}
+          openSheetOnMount={params[CHOOSE_COMPANY_PARAM] === '1'}
+          refreshing={serviceOptions.isFetching}
+          refreshFailed={serviceOptions.isError && serviceOptions.data !== undefined}
+          disabled={createTripRequest.isPending}
+          onChangePreference={setCompanyPreference}
+          onSheetOpen={() => void refetchServiceOptions()}
+          onRetry={() => void refetchServiceOptions()}
+          onBackHome={goHome}
+        />
 
         <View style={{ paddingHorizontal: theme.spacing.xs, gap: theme.spacing.xs }}>
           <View
@@ -269,7 +361,7 @@ export default function ConfirmScreen(): React.JSX.Element {
           loadingLabel={copy.requesting}
           disabled={requestDisabled}
           onPress={requestTrip}
-          accessibilityHint={offline ? copy.offlineRequestHint : undefined}
+          accessibilityHint={requestHint}
           testID="request-trip-button"
         />
       </View>

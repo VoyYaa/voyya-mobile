@@ -15,6 +15,7 @@ const AVATAR_SIZE = 52;
 export function DriverCard({ driver }: DriverCardProps): React.JSX.Element {
   const theme = useTheme();
   const canCall = Boolean(driver.contact_phone);
+  const model = driver.model ?? passengerCopy.trip.vehicleFallback;
 
   return (
     <Card testID="driver-card">
@@ -37,7 +38,16 @@ export function DriverCard({ driver }: DriverCardProps): React.JSX.Element {
             {driver.name.charAt(0).toUpperCase()}
           </Text>
         </View>
-        <View style={{ flex: 1 }}>
+        <View
+          accessible
+          accessibilityLabel={passengerCopy.trip.driverAccessibility(
+            driver.name,
+            driver.company.display_name,
+            model,
+          )}
+          style={{ flex: 1 }}
+          testID="driver-card-summary"
+        >
           <Text
             style={{ ...theme.typography.subtitle, color: theme.colors.text }}
             numberOfLines={1}
@@ -48,7 +58,13 @@ export function DriverCard({ driver }: DriverCardProps): React.JSX.Element {
             style={{ ...theme.typography.small, color: theme.colors.textMuted }}
             numberOfLines={1}
           >
-            {driver.model ?? passengerCopy.trip.vehicleFallback}
+            {model}
+          </Text>
+          <Text
+            style={{ ...theme.typography.smallStrong, color: theme.colors.textMuted }}
+            testID="driver-card-company"
+          >
+            {passengerCopy.trip.companyLine(driver.company.display_name)}
           </Text>
         </View>
       </View>

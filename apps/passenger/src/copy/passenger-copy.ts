@@ -74,7 +74,7 @@ export const passengerCopy = {
     destinationPlaceholder: 'Escribe tu destino…',
     searchLabel: 'Buscar destino',
     searchPlaceholder: 'Buscar dirección, sitio o referencia',
-    placesTitle: 'Lugares de Yarumal',
+    placesTitle: 'Lugares conocidos',
     emptyTitle: 'No encontramos ese lugar',
     emptyBody: CAN_PIN_DROP ? 'Márcalo en el mapa.' : 'Prueba con otro nombre.',
     pendingLocation: CAN_PIN_DROP
@@ -93,12 +93,14 @@ export const passengerCopy = {
     outOfCoverageTitle: 'Fuera de cobertura',
     outOfCoverage: (target: 'origin' | 'destination'): string =>
       target === 'origin'
-        ? 'Ese punto de partida está fuera de la zona donde operamos en Yarumal por ahora.'
-        : 'Ese destino está fuera de la zona donde operamos en Yarumal por ahora.',
+        ? 'Ese punto de partida está fuera de la zona donde operamos por ahora.'
+        : 'Ese destino está fuera de la zona donde operamos por ahora.',
     offlineQuote: 'Sin conexión · no se puede cotizar un destino ahora.',
     quoteErrorTitle: 'No pudimos cotizar tu viaje',
     quoteErrorBody: 'Inténtalo de nuevo en un momento.',
     retry: 'Reintentar',
+    serviceOptionsErrorTitle: 'No pudimos verificar tu zona',
+    serviceOptionsErrorBody: 'Revisa tu conexión e inténtalo de nuevo.',
   },
   confirm: {
     header: 'Confirmar viaje',
@@ -119,6 +121,49 @@ export const passengerCopy = {
     createErrorBody: 'Inténtalo de nuevo en un momento.',
     offlineRequest: 'Sin conexión · no se puede solicitar el viaje ahora.',
     offlineRequestHint: 'Sin conexión, no se puede solicitar ahora',
+    fareChanged: 'La tarifa cambió. Revisa el total antes de pedir.',
+    chooseCompanyHint: 'Elige una empresa para continuar',
+    noServiceHint: 'Aún no hay taxis en tu municipio',
+  },
+  company: {
+    serviceLabel: 'Servicio',
+    serviceChip: 'Taxi',
+    serviceChipAccessibility: 'Servicio: Taxi',
+    single: (name: string): string => `Servicio de ${name}`,
+    rowEyebrow: 'Empresa',
+    change: 'Cambiar',
+    rowHint: 'Abre la lista de empresas',
+    rowAccessibility: (value: string, detail?: string): string =>
+      detail ? `Empresa: ${value}. ${detail}.` : `Empresa: ${value}.`,
+    any: 'Cualquiera',
+    anyDetail: 'Te asigna el conductor más cercano',
+    anyDetailLong: 'El conductor más cercano, de cualquier empresa',
+    sameFare: 'La tarifa es la misma con cualquier empresa.',
+    unset: 'Elige una empresa',
+    unsetAccessibility: 'Empresa: sin elegir. Elige una empresa para continuar.',
+    sheetTitle: 'Elige una empresa',
+    groupLabel: 'Empresas',
+    done: 'Listo',
+    noDrivers: 'Sin conductores ahora',
+    noDriversTitle: (name: string): string => `${name} no tiene conductores ahora`,
+    noDriversBody:
+      'Puedes pedir igual, o elegir Cualquiera para que te atienda la primera empresa con un conductor libre.',
+    useAny: 'Elegir Cualquiera',
+    useAnyLink: 'Usar Cualquiera',
+    selected: (name: string): string => `${name} seleccionada.`,
+    optionAccessibility: (name: string, detail: string | null): string =>
+      detail ? `${name}. ${detail}.` : `${name}.`,
+    loading: 'Cargando empresas…',
+    loadErrorTitle: 'No pudimos cargar las empresas.',
+    loadErrorBody: 'Puedes pedir igual: buscaremos en cualquier empresa.',
+    offline: 'Sin conexión · no pudimos cargar las empresas.',
+    refreshFailed: 'No pudimos actualizar la disponibilidad.',
+    unavailableTitle: (name: string): string => `${name} ya no está disponible.`,
+    unavailableBody: 'Elige otra empresa o pide con cualquiera.',
+    chooseAction: 'Elegir empresa',
+    noneTitle: 'Por ahora no hay taxis en tu municipio.',
+    noneBody: 'Vuelve a intentarlo más tarde.',
+    backHome: 'Volver al inicio',
   },
   searching: {
     eyebrow: 'Tu viaje',
@@ -142,6 +187,20 @@ export const passengerCopy = {
     retry: 'Reintentar',
     retryFailedTitle: 'No pudimos volver a buscar',
     retryFailedBody: 'Revisa tu conexión e inténtalo de nuevo.',
+    bodyCompany: (name: string): string => `Estamos contactando a los conductores de ${name}.`,
+    prolongedBodyCompany: (name: string): string => `Seguimos buscando un conductor de ${name}…`,
+    bodyAny: 'Estamos buscando entre todas las empresas de tu municipio.',
+    noDriverCompanyTitle: (name: string): string =>
+      `${name} no tiene conductores disponibles ahora`,
+    noDriverCompanyBody:
+      'Puedes buscar en cualquier empresa de tu municipio. La tarifa es la misma.',
+    searchAny: 'Buscar en cualquier empresa',
+    retryWithCompany: (name: string): string => `Intentar de nuevo con ${name}`,
+    noDriverAnyTitle: 'No hay conductores disponibles en este momento',
+    noDriverAnyBody:
+      'Ninguna empresa de tu municipio tiene conductores libres cerca de ti. Inténtalo de nuevo en unos minutos.',
+    retryAny: 'Intentar de nuevo',
+    chooseOther: 'Elegir otra empresa',
   },
   trip: {
     header: 'Tu viaje',
@@ -187,6 +246,11 @@ export const passengerCopy = {
     cancelledByYouTitle: 'Cancelaste este viaje',
     cancelledByYouBody: 'Viaje cancelado · quedó registrado.',
     cancelledByYouAction: 'Volver al inicio',
+    companyLine: (name: string): string => `Empresa ${name}`,
+    driverAccessibility: (driver: string, company: string, model: string): string =>
+      `${driver}, de la empresa ${company}. ${model}.`,
+    driverChanged: (driver: string, company: string): string =>
+      `Tu conductor cambió. Ahora te atiende ${driver}, de la empresa ${company}.`,
   },
   cancelSheet: {
     title: '¿Cancelar viaje?',

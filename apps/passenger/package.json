@@ -11,7 +11,7 @@
     "ios": "expo start --dev-client --ios",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
-    "test": "node --test src/lib/consent-phase.spec.ts src/lib/active-trip-route.spec.ts src/lib/format-date.spec.ts src/lib/free-cancellation.spec.ts",
+    "test": "node --test src/lib/consent-phase.spec.ts src/lib/active-trip-route.spec.ts src/lib/format-date.spec.ts src/lib/free-cancellation.spec.ts src/lib/company-selection.spec.ts src/lib/no-driver-decision.spec.ts src/lib/driver-change.spec.ts",
     "eas-build-post-install": "cd ../.. && pnpm run build",
     "web": "expo start --web"
   },

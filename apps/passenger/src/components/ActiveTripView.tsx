@@ -11,9 +11,11 @@ import {
   ScreenHeader,
   Skeleton,
   Stage,
+  Toast,
   useTheme,
 } from '@voyyaa/ui-mobile';
 import type { Location, TripRequestStatus } from '@voyyaa/shared';
+import { useDriverChangeNotice } from '../hooks/useDriverChangeNotice';
 import { formatEta } from '../lib/eta';
 import { passengerCopy } from '../copy/passenger-copy';
 import { DriverCard } from './DriverCard';
@@ -123,6 +125,7 @@ export function ActiveTripView({
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const inProgress = step === 3;
+  const driverChange = useDriverChangeNotice(data.trip_request_id, data.driver);
 
   return (
     <View style={{ flex: 1 }}>
@@ -181,6 +184,13 @@ export function ActiveTripView({
           </View>
         )}
       </ScrollView>
+
+      <Toast
+        message={driverChange.message ?? ''}
+        tone="neutral"
+        visible={driverChange.message !== null}
+        onHide={driverChange.dismiss}
+      />
     </View>
   );
 }
