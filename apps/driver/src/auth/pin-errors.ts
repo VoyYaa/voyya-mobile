@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { AuthError, AuthErrorCode, type ValidationIssue } from '@voyyaa/shared';
 
 export type ChangePinFailure =
   | { kind: 'offline' }
@@ -19,17 +19,14 @@ interface ErrorShape {
   body?: unknown;
 }
 
-const InvalidDataBody = z.object({
-  details: z.array(z.object({ field: z.string(), error: z.string() })),
-});
-
-const INVALID_DATA_CODE = 'INVALID_DATA';
+const INVALID_DATA_CODE = AuthErrorCode.enum.INVALID_DATA;
 
 function classifyInvalidData(body: unknown): ChangePinFailure {
-  const parsed = InvalidDataBody.safeParse(body);
-  if (!parsed.success) return { kind: 'server' };
+  const parsed = AuthError.safeParse(body);
+  if (!parsed.success || parsed.data.details === undefined) return { kind: 'server' };
+  const details: readonly ValidationIssue[] = parsed.data.details;
   const messageOf = (field: string): string | undefined =>
-    parsed.data.details.find((detail) => detail.field === field)?.error;
+    details.find((detail) => detail.field === field)?.error;
   const next = messageOf('new_pin');
   const current = messageOf('current_pin');
   if (next === undefined && current === undefined) return { kind: 'server' };

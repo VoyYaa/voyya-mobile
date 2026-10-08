@@ -71,6 +71,36 @@ describe('classifyChangePinError with INVALID_DATA', () => {
     );
   });
 
+  it('ignores root-level issues with an empty field and keeps the field ones', () => {
+    assert.deepEqual(
+      classifyChangePinError(
+        invalid([
+          { field: '', error: 'Revisa los datos' },
+          { field: 'new_pin', error: 'El PIN debe tener 6 dígitos' },
+        ]),
+      ),
+      { kind: 'invalid_data', next: 'El PIN debe tener 6 dígitos', current: undefined },
+    );
+  });
+
+  it('rejects a body that is not an AuthError of the contract', () => {
+    const body = { code: 'NOT_A_CODE', message: 'x', details: [{ field: 'new_pin', error: 'x' }] };
+    assert.deepEqual(
+      classifyChangePinError({ kind: 'http', status: 400, code: 'INVALID_DATA', body }),
+      { kind: 'server' },
+    );
+    const missingMessage = { code: 'INVALID_DATA', details: [{ field: 'new_pin', error: 'x' }] };
+    assert.deepEqual(
+      classifyChangePinError({
+        kind: 'http',
+        status: 400,
+        code: 'INVALID_DATA',
+        body: missingMessage,
+      }),
+      { kind: 'server' },
+    );
+  });
+
   it('falls back to a server failure for unknown fields or malformed bodies', () => {
     assert.deepEqual(classifyChangePinError(invalid([{ field: 'other', error: 'x' }])), {
       kind: 'server',

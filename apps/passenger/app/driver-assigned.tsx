@@ -8,7 +8,6 @@ import {
   OfflineState,
   ScreenHeader,
   Toast,
-  useCountdown,
   useDelayedLoading,
   useTheme,
 } from '@voyyaa/ui-mobile';
@@ -22,8 +21,8 @@ import type { TripStep } from '../src/components/TripStepRail';
 import { useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
+import { useFreeCancellation } from '../src/hooks/useFreeCancellation';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
-import { FREE_CANCELLATION_WINDOW_MIN } from '../src/constants/parameters';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
 const copy = passengerCopy.trip;
@@ -58,8 +57,6 @@ export default function DriverAssignedScreen(): React.JSX.Element {
 
   const origin = useTripDraftStore((s) => s.origin);
   const destination = useTripDraftStore((s) => s.destination);
-  const assignedAtLocal = useTripDraftStore((s) => s.assignedAtLocal);
-  const markAssignedLocal = useTripDraftStore((s) => s.markAssignedLocal);
   const resetDraft = useTripDraftStore((s) => s.reset);
   const activeTripCache = useActiveTripCache();
   const cancelTripRequest = useCancelTripRequest(tripRequestId);
@@ -68,24 +65,12 @@ export default function DriverAssignedScreen(): React.JSX.Element {
   const [toast, setToast] = useState<{ message: string; tone: 'success' | 'neutral' } | null>(null);
 
   useEffect(() => {
-    if (data && (data.status === 'assigned' || data.status === 'driver_en_route')) {
-      markAssignedLocal();
-    }
-  }, [data, markAssignedLocal]);
-
-  useEffect(() => {
     if (data && tripRequestId && SEARCH_UI.includes(data.ui)) {
       router.replace({ pathname: '/searching', params: { id: String(tripRequestId) } });
     }
   }, [data?.ui, tripRequestId, router]);
 
-  const deadlineIso = assignedAtLocal
-    ? new Date(
-        new Date(assignedAtLocal).getTime() + FREE_CANCELLATION_WINDOW_MIN * 60_000,
-      ).toISOString()
-    : null;
-  const remainingSec = useCountdown(deadlineIso);
-  const withinWindow = deadlineIso !== null && remainingSec > 0;
+  const { remainingSec, withinWindow } = useFreeCancellation(data, dataUpdatedAt);
 
   const goHome = (): void => {
     activeTripCache.clear();

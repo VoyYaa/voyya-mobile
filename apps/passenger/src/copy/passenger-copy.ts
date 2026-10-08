@@ -191,8 +191,8 @@ export const passengerCopy = {
   cancelSheet: {
     title: '¿Cancelar viaje?',
     free: 'Gratis',
-    freeBody: `· aún estás dentro de los ${FREE_CANCELLATION_WINDOW_MIN} minutos.`,
-    lateBodyPrefix: `Pasaron más de ${FREE_CANCELLATION_WINDOW_MIN} minutos desde la asignación. Quedará`,
+    freeBody: '· aún estás dentro del tiempo de cancelación gratuita.',
+    lateBodyPrefix: 'Ya pasó el tiempo de cancelación gratuita. Quedará',
     lateEmphasis: 'registrada como cancelación tardía',
     confirm: 'Sí, cancelar',
     cancelling: 'Cancelando…',
