@@ -1,6 +1,8 @@
 import * as Location from 'expo-location';
 import { Coordinate } from '@voyyaa/shared';
-import { LOCATION_MAX_AGE_MS, LOCATION_REQUIRED_ACCURACY_M } from './device-location';
+
+export const LOCATION_MAX_AGE_MS = 60_000;
+export const LOCATION_REQUIRED_ACCURACY_M = 100;
 
 export type DeviceLocationUnavailableReason =
   'services_disabled' | 'timeout' | 'position_unavailable';

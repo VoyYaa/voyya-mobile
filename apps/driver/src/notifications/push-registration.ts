@@ -37,6 +37,7 @@ async function hasNotificationPermission(): Promise<boolean> {
 }
 
 export async function registerForPushNotifications(): Promise<void> {
+  if (Platform.OS === 'web') return;
   try {
     await ensureAssignmentNotificationChannel();
 
@@ -53,6 +54,7 @@ export async function registerForPushNotifications(): Promise<void> {
 }
 
 export async function revokeCurrentPushToken(): Promise<void> {
+  if (Platform.OS === 'web') return;
   try {
     const permissions = await Notifications.getPermissionsAsync();
     if (permissions.status !== 'granted') return;

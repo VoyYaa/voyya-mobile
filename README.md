@@ -184,48 +184,36 @@ solo registra un aviso: no impide probar el resto.
 - Con `--tunnel` el host no es una IP de LAN y la derivación no sirve: define `EXPO_PUBLIC_API_URL`.
 - Fuera de desarrollo (`preview`, `production`) no se deriva nada: la URL viene de `eas.json`.
 
-## Probar en navegador (web) — solo para desarrollo, nunca se publica
+## Probar en el navegador (web de desarrollo)
 
-En esta máquina el registro de npm corporativo bloquea instalar `eas-cli`, nunca se corrió
-`eas build`, y un build de iOS para dispositivo físico exige Apple Developer Program (cuenta de
-pago). **Web es la única vía disponible para probar los flujos sin EAS, sin QR y sin
-dispositivo.** Ninguna de las dos apps se va a publicar en web — es exclusivamente un entorno de
-prueba local.
+Atajo para recorrer los flujos sin development build, sin QR y sin dispositivo. **Solo desarrollo:**
+ninguna de las dos apps se publica en web.
 
 ```bash
-pnpm add -D react-dom react-native-web --filter @voyya/passenger --filter @voyya/driver
-pnpm --filter @voyya/passenger start -- --web   # o: cd apps/passenger && pnpm exec expo start --web
+cd apps/passenger && pnpm web   # o: pnpm exec expo start --web   (también: pulsa `w` con Metro corriendo)
+cd apps/driver    && pnpm web   # usa otro puerto si el 8081 está ocupado: --port 8082
 ```
 
-**El mapa no funciona en web y no se espera que funcione:** `isNativeMapAvailable()`
-(`packages/ui-mobile/src/map/mapbox-env.ts`) detecta `Platform.OS === 'web'` y degrada siempre a
-`MapFallback`, igual que ya hacía en Expo Go. Además, `packages/ui-mobile/src/map/NativeMap.web.tsx`
-reemplaza en el bundle web a `NativeMap.tsx` (que importa `@rnmapbox/maps` de forma estática) — sin
-ese archivo hermano, Metro intenta resolver `@rnmapbox/maps` para la plataforma web, que a su vez
-importa `mapbox-gl` (peer dependency opcional, no instalada) y **rompe el bundle antes de llegar a
-ejecutar nada** (confirmado: no es solo una sospecha de un ciclo anterior, se probó en esta tarea).
-Un `require`/`import()` diferido dentro de `Map.tsx` **no habría bastado**: Metro resuelve el grafo
-de módulos de forma estática en tiempo de bundling, independientemente de si el `require` está
-detrás de una condición o se ejecuta más tarde — solo la resolución **por plataforma** de Metro
-(sufijo `.web.tsx` / `.native.tsx`, el mismo mecanismo que usa `@rnmapbox/maps` internamente) evita
-que el árbol de `@rnmapbox/maps` se toque siquiera al empaquetar para web.
+La URL de la API sale de `resolveApiBaseUrl` como en nativo: en el navegador deriva `http://localhost:3000`.
+Para otra API define `EXPO_PUBLIC_API_URL` (ver "Variables de entorno móvil").
 
-**La sesión NO se persiste entre recargas en web — es una decisión deliberada, no un bug.**
-`expo-secure-store` no tiene almacenamiento seguro real en web (su build web es un stub vacío que
-revienta al llamar `getItemAsync`/`setItemAsync`). En vez de caer en el patrón común de "guardar el
-refresh token en `localStorage`", `packages/app-runtime/src/session/dev-only/web-secure-storage.adapter.ts`
-(nombre y carpeta `dev-only/` explícitos a propósito) **no persiste nada**: `getItem` siempre
-devuelve `null`, `setItem`/`deleteItem` son no-op. La sesión vive únicamente en memoria (el store de
-Zustand) mientras la pestaña sigue abierta — funciona igual durante toda la navegación, incluido el
-refresco silencioso del token — pero **recargar la página equivale a cerrar sesión**. Se eligió
-esto en vez de usar `sessionStorage`/`localStorage` con el refresh token (u otro subconjunto de la
-sesión) porque cualquier dato de sesión escrito en Web Storage es legible por un XSS; no persistir
-nada reduce esa superficie a cero al costo de comodidad (relogin en cada F5), aceptable porque web
-aquí es solo un arnés de pruebas, no un canal de distribución. El adaptador nativo
-(`expo-secure-store`, keychain/keystore) sigue siendo el default en iOS/Android — no cambió.
-El puerto se resuelve automáticamente por `Platform.OS`
-(`packages/app-runtime/src/session/secure-storage-port.ts`); `setSecureStoragePort()` queda
-disponible para forzar un adaptador distinto (tests, por ejemplo).
+**CORS.** A diferencia de la app nativa, el navegador sí aplica CORS. La API local debe incluir los
+orígenes de Metro en `CORS_ORIGINS` (en el `.env` de la API), p. ej.
+`CORS_ORIGINS=http://localhost:8081,http://localhost:8082`, y reiniciarse. Si usas otros puertos, añádelos.
+
+**Qué NO es real en web:**
+
+| Capacidad             | En web                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mapa                  | No hay Mapbox (`@rnmapbox/maps` no tiene soporte web). Se muestra "Mapa no disponible en la versión web de desarrollo" con las coordenadas de origen/destino. El pasajero elige origen y destino desde la lista de lugares de Yarumal; no hay pin-drop.                                                                                                                                                                                                          |
+| GPS                   | Usa la geolocalización del navegador (`expo-location` en web), no la del teléfono. En `http://localhost` funciona; en otro origen exige HTTPS. Para simular otra posición usa los sensores de DevTools.                                                                                                                                                                                                                                                          |
+| Notificaciones push   | No se registra token ni se escuchan notificaciones. Las ofertas del conductor llegan solo por el sondeo de la app.                                                                                                                                                                                                                                                                                                                                               |
+| Almacenamiento seguro | `expo-secure-store` no existe en web. Un adaptador exclusivo del target web (`packages/app-runtime/src/session/dev-only/web-secure-storage.adapter.ts`) guarda la sesión en `sessionStorage`: sobrevive a recargar la pestaña y se borra al cerrarla. **Trade-off:** los tokens quedan legibles por cualquier JS de la página (un XSS los robaría). Aceptable solo para desarrollo local con datos de prueba; nativo sigue usando Keychain/Keystore sin cambios. |
+
+Detalles de implementación: `packages/ui-mobile/src/map/NativeMap.web.tsx` reemplaza en el bundle web a
+`NativeMap.tsx` (Metro resuelve el grafo de forma estática; solo la resolución por plataforma evita que
+entre `@rnmapbox/maps`). Cada app guarda su caché de Metro en `.expo/metro-cache` porque, con el
+`node_modules` hoisted, ambas comparten `expo-router/entry` y la caché global mezclaba los bundles.
 
 ## Variables de entorno móvil
 

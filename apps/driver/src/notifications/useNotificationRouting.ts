@@ -1,17 +1,22 @@
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useRouter, type Router } from 'expo-router';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { PushNotificationData } from '@voyyaa/shared';
 import { NEARBY_OFFERS_QUERY_KEY } from '../hooks/useNearbyOffers';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+const IS_WEB = Platform.OS === 'web';
+
+if (!IS_WEB) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 function routeToOffer(router: Router, rawData: unknown): void {
   const parsed = PushNotificationData.safeParse(rawData);
@@ -36,6 +41,7 @@ export function useNotificationRouting(): void {
   const queryClient: QueryClient = useQueryClient();
 
   useEffect(() => {
+    if (IS_WEB) return;
     void Notifications.getLastNotificationResponseAsync().then((response) => {
       if (!response) return;
       routeToOffer(router, response.notification.request.content.data);
@@ -43,6 +49,7 @@ export function useNotificationRouting(): void {
   }, []);
 
   useEffect(() => {
+    if (IS_WEB) return undefined;
     const receivedSub = Notifications.addNotificationReceivedListener(() => {
       void queryClient.invalidateQueries({ queryKey: NEARBY_OFFERS_QUERY_KEY });
     });

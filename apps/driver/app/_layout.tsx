@@ -12,6 +12,7 @@ import {
   ConnectivityBanner,
   retryPendingConsentSync,
   useSessionStore,
+  silenceKnownWebWarnings,
   useProactiveRefresh,
 } from '@voyyaa/app-runtime';
 import { useRouteGuard } from '../src/hooks/useRouteGuard';
@@ -20,6 +21,7 @@ import { registerForPushNotifications } from '../src/notifications/push-registra
 import { useNotificationRouting } from '../src/notifications/useNotificationRouting';
 
 configureApiClient({ baseUrl: API_BASE_URL, defaultErrorSchema: AssignmentError });
+silenceKnownWebWarnings();
 
 function RootStack(): React.JSX.Element {
   const theme = useTheme();

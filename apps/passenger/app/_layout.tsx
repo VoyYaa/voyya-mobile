@@ -12,12 +12,14 @@ import {
   ConnectivityBanner,
   retryPendingConsentSync,
   useSessionStore,
+  silenceKnownWebWarnings,
   useProactiveRefresh,
 } from '@voyyaa/app-runtime';
 import { useRouteGuard } from '../src/hooks/useRouteGuard';
 import { API_BASE_URL } from '../src/constants/env';
 
 configureApiClient({ baseUrl: API_BASE_URL, defaultErrorSchema: TripError });
+silenceKnownWebWarnings();
 
 function RootStack(): React.JSX.Element {
   const theme = useTheme();
