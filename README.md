@@ -158,9 +158,10 @@ solo registra un aviso: no impide probar el resto.
 
 ### 3. Arrancar Metro y escanear
 
-1. En VS Code, tarea **"4c · Pasajero: Expo forzando IP de LAN"** (o **4d** para el conductor). Detecta sola
+1. En VS Code, tarea **"4a · Pasajero: Metro (:8081, IP de LAN)"** (o **4b** para el conductor). Detecta sola
    la IP de tu interfaz física (Ethernet o Wi-Fi), la usa para el QR y arranca `expo start --dev-client`.
-   A mano: `cd apps/passenger && pnpm start`.
+   A mano, desde la raíz: `powershell -File infra/scripts/start-dev-client.ps1 -App passenger -Port 8081`.
+   Si el QR dice `127.0.0.1`, Metro arrancó sin la IP de LAN y el teléfono no lo alcanzará.
 2. **El teléfono y el PC deben estar en la misma red**, sin "aislamiento de clientes" en el router. El
    firewall de Windows debe permitir Node de entrada (puertos 8081 y 8082).
 3. Abre la app **VoyYa de desarrollo ya instalada** (no Expo Go) y usa **Scan QR code**, o toca la URL que
