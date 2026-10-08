@@ -1,5 +1,6 @@
 export * from './api/errors';
 export * from './api/http-client';
+export * from './api/resolve-api-base-url';
 export * from './api/session.api';
 export * from './session/secure-storage';
 export * from './session/secure-storage-port';

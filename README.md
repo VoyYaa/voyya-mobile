@@ -53,18 +53,16 @@ pnpm install
 
 ```bash
 # Pasajero
-cp apps/passenger/.env.example apps/passenger/.env   # ajusta las variables (ver abajo)
-pnpm --filter @voyya/passenger start                  # o: cd apps/passenger && pnpm start
+pnpm --filter @voyyaa/passenger start                  # o: cd apps/passenger && pnpm start
 
 # Conductor
-cp apps/driver/.env.example apps/driver/.env
-pnpm --filter @voyya/driver start
+pnpm --filter @voyyaa/driver start
 ```
 
-Esto levanta el bundler de Expo (Metro) con un QR para abrir en **Expo Go** (funcionalidad
-limitada: el mapa nativo `@rnmapbox/maps` NO funciona en Expo Go, ver `packages/ui-mobile`
-`map/mapbox-env.ts` — se degrada a `MapFallback` automáticamente) o en un **dev client**
-generado por EAS (`--profile development`, mapa nativo completo).
+Esto levanta Metro con `expo start --dev-client` y un QR para abrir en la **development build** de VoyYa
+(ver "Probar en un teléfono físico"). **Expo Go ya no es una vía soportada**: `@rnmapbox/maps` es un
+módulo nativo que Expo Go no trae, y el Expo Go de la App Store de iOS solo abre el SDK más reciente
+(estas apps son SDK 51).
 
 Antes de correr `start`, si tocaste `packages/shared` o `packages/ui-mobile`, constrúyelos
 primero (los apps consumen su `dist/` compilado, no el código fuente directamente):
@@ -72,6 +70,118 @@ primero (los apps consumen su `dist/` compilado, no el código fuente directamen
 ```bash
 pnpm --filter @voyya/shared --filter @voyya/ui-mobile build
 ```
+
+## Probar en un teléfono físico
+
+Las apps usan módulos nativos (Mapbox, ubicación, notificaciones), así que corren en una
+**development build**: un APK (Android) o IPA (iPhone) con `expo-dev-client` que, en vez de traer el
+JavaScript adentro, lo descarga de Metro en tu PC. La build se instala **una sola vez**; el código del
+día a día se recarga desde Metro sin recompilar. Solo hay que recompilar si cambian dependencias
+nativas, plugins de `app.json` o el SDK.
+
+Son **dos apps y dos proyectos EAS** (`apps/passenger`, `apps/driver`): repite cada paso para la que
+vayas a probar. Puertos de Metro: pasajero 8081, conductor 8082.
+
+### 0. Una sola vez
+
+1. Cuenta Expo con acceso al owner `voyya` (el `owner` de ambos `app.json`): `npx eas-cli login`.
+   Comprueba con `npx eas-cli whoami`. Los dos proyectos EAS ya tienen `projectId` en `app.json`.
+2. Secretos en EAS (nombres; los valores los pones tú, **nunca** en el repo):
+
+   | Nombre                         | Tipo                             | Para qué                                                                                                                            |
+   | ------------------------------ | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+   | `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` | secreto `sk.` (`DOWNLOADS:READ`) | Descarga del SDK nativo de Mapbox al compilar. Obligatorio en **iOS** (CocoaPods); opcional en Android. Sin él, la build iOS falla. |
+   | `EXPO_PUBLIC_MAPBOX_TOKEN`     | texto plano `pk.`                | Token público del mapa. En una dev build lo lee **Metro** (paso 3.4), no la build; en `preview`/`production` sí viene de EAS.       |
+
+   Desde `apps/passenger` y luego desde `apps/driver` (sin `--value` el CLI pregunta el valor y no queda en
+   el historial de la terminal):
+
+   ```bash
+   npx eas-cli env:create --scope project --name RNMAPBOX_MAPS_DOWNLOAD_TOKEN --environment development,preview,production --visibility secret
+   npx eas-cli env:create --scope project --name EXPO_PUBLIC_MAPBOX_TOKEN --environment development,preview,production --visibility plaintext
+   ```
+
+   El plugin de `@rnmapbox/maps` 10.2.10 lee `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` del entorno de la build en iOS
+   (podspec) y en Android (Gradle): no hay que tocar `app.json`.
+
+`EXPO_PUBLIC_API_URL` **no** va en EAS para desarrollo: el perfil `development` no la define a propósito.
+
+### 1. Android
+
+1. Compila la development build en la nube (no necesita Android Studio):
+
+   ```bash
+   cd apps/passenger
+   npx eas-cli build --platform android --profile development
+   ```
+
+2. Al terminar, EAS imprime un enlace y un QR. Ábrelo **en el teléfono**, descarga el `.apk` e instálalo
+   (Android pedirá permitir "instalar apps desconocidas" para el navegador).
+3. Repite en `apps/driver` si vas a probar el conductor. Cada app se instala por separado.
+
+Build local (opcional): requiere JDK 17, Android SDK con `ANDROID_HOME` y `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` en
+el entorno, y **Linux, macOS o WSL** (`eas build --local` no corre en Windows nativo). El PC de desarrollo
+actual no tiene JDK ni Android SDK: usa la nube.
+
+### 2. iPhone
+
+Requisitos: **Apple Developer Program** (99 USD/año) y el iPhone con **Modo de desarrollador** activado
+(Ajustes > Privacidad y seguridad > Modo de desarrollador; el iPhone se reinicia).
+
+1. Registra el iPhone en el perfil ad hoc. El comando da un enlace y un QR que se abren **en el iPhone**,
+   instalan un perfil de configuración y registran su UDID:
+
+   ```bash
+   npx eas-cli device:create
+   ```
+
+2. Compila para dispositivo (el perfil `development` tiene `ios.simulator: false` y distribución interna):
+
+   ```bash
+   cd apps/passenger
+   npx eas-cli build --platform ios --profile development
+   ```
+
+   La primera vez pide el login de Apple y deja que EAS administre certificados y perfil de provisión. Si
+   registras otro iPhone **después** de una build, hay que recompilar: el perfil ad hoc lista los UDID que
+   existían al compilar.
+
+3. Instala desde el enlace o QR que imprime EAS, abierto en el iPhone. Si iOS dice "desarrollador no
+   confiable": Ajustes > General > VPN y administración de dispositivos > confiar.
+4. Repite en `apps/driver` para el conductor.
+
+`development-simulator` (simulador de iOS) existe, pero necesita un Mac; no sirve para tu iPhone.
+
+Notificaciones push del conductor: en iOS el entitlement de APNs lo gestiona EAS con tu cuenta Apple; en
+Android hacen falta credenciales FCM (`google-services.json` y clave FCM v1 en EAS). Sin eso la app corre y
+solo registra un aviso: no impide probar el resto.
+
+### 3. Arrancar Metro y escanear
+
+1. En VS Code, tarea **"4c · Pasajero: Expo forzando IP de LAN"** (o **4d** para el conductor). Detecta sola
+   la IP de tu interfaz física (Ethernet o Wi-Fi), la usa para el QR y arranca `expo start --dev-client`.
+   A mano: `cd apps/passenger && pnpm start`.
+2. **El teléfono y el PC deben estar en la misma red**, sin "aislamiento de clientes" en el router. El
+   firewall de Windows debe permitir Node de entrada (puertos 8081 y 8082).
+3. Abre la app **VoyYa de desarrollo ya instalada** (no Expo Go) y usa **Scan QR code**, o toca la URL que
+   aparece en "Development servers". En Android también sirve escanear el QR con la cámara. Si no conecta,
+   ejecuta la tarea **"Diagnostico: mi IP de LAN y puertos de Metro"**.
+4. Para el mapa, pon `EXPO_PUBLIC_MAPBOX_TOKEN=pk....` en `apps/<app>/.env` antes de arrancar Metro (Metro
+   lee el `.env` de la carpeta de la app que arranca) y reinicia Metro si lo cambias.
+
+### 4. API local accesible desde el teléfono
+
+- La API corre en el PC en el puerto **3000** (tarea "2 · API: dev (:3000)"; escucha en todas las
+  interfaces).
+- **No hay IP que configurar.** En desarrollo, si `EXPO_PUBLIC_API_URL` no está definida, la app toma el host
+  desde el que Metro la sirvió y usa `http://<esa IP>:3000` (`resolveApiBaseUrl`, `packages/app-runtime`). Si
+  cambias de red, reinicia Metro: la IP se recalcula sola.
+- Para apuntar a otra API (p. ej. Railway), define `EXPO_PUBLIC_API_URL` en `apps/<app>/.env` y reinicia
+  Metro. Una variable definida siempre gana a la derivada.
+- Prueba desde el navegador del teléfono: `http://<IP del PC>:3000/health/db` debe responder. Si no, es red
+  o firewall (puerto 3000), no la app.
+- Con `--tunnel` el host no es una IP de LAN y la derivación no sirve: define `EXPO_PUBLIC_API_URL`.
+- Fuera de desarrollo (`preview`, `production`) no se deriva nada: la URL viene de `eas.json`.
 
 ## Probar en navegador (web) — solo para desarrollo, nunca se publica
 
@@ -122,18 +232,16 @@ Cada app trae su `.env.example`. Expo solo expone al bundle del cliente las vari
 prefijo `EXPO_PUBLIC_*` (inyectadas en **build-time**, no en runtime — cualquier cambio exige
 reiniciar el bundler / rehacer el build).
 
-| Variable                   | App               | Descripción                                                               |
-| -------------------------- | ----------------- | ------------------------------------------------------------------------- |
-| `EXPO_PUBLIC_API_URL`      | passenger, driver | URL base del backend NestJS (`http://localhost:3000` en local).           |
-| `EXPO_PUBLIC_MAPBOX_TOKEN` | passenger, driver | Token **público** de Mapbox (prefijo `pk.`) para `@rnmapbox/maps` 10.2.x. |
+| Variable                   | App               | Descripción                                                                   |
+| -------------------------- | ----------------- | ----------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_API_URL`      | passenger, driver | URL base del backend. En desarrollo es opcional: se deriva del host de Metro. |
+| `EXPO_PUBLIC_MAPBOX_TOKEN` | passenger, driver | Token **público** de Mapbox (prefijo `pk.`) para `@rnmapbox/maps` 10.2.x.     |
 
-**Nota importante sobre Mapbox:** con `@rnmapbox/maps` 10.2.x **no hace falta** el "download
-token" (`sk.…`, scope `DOWNLOADS:READ`) para las variables de entorno de la app — ese es un
-secreto de **build**, no de runtime: se configura una sola vez a nivel de cuenta EAS/CI (o en
-`~/.netrc` / credenciales de Gradle en local) para poder **descargar el SDK nativo** de Mapbox
-durante `eas build`/`gradle`, y **nunca** debe versionarse ni ir en `.env` del proyecto. El
-único token que consume la app en tiempo de ejecución es el público `pk.…`, vía
-`EXPO_PUBLIC_MAPBOX_TOKEN` (ver `packages/ui-mobile/src/map/mapbox-env.ts`).
+**Nota importante sobre Mapbox:** el "download token" (`sk.…`, scope `DOWNLOADS:READ`) es un secreto de
+**build**, no de runtime: `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` en el entorno de la build lo recogen solos el podspec
+de iOS (obligatorio para descargar el SDK nativo) y el Gradle de Android (opcional). Va como secreto de EAS
+y **nunca** en el repo ni en `.env`. El único token que consume la app en tiempo de ejecución es el público
+`pk.…`, vía `EXPO_PUBLIC_MAPBOX_TOKEN` (ver `packages/ui-mobile/src/map/mapbox-env.ts`).
 
 ## EAS — Development Build (Android e iOS)
 

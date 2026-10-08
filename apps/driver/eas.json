@@ -11,8 +11,8 @@
       "android": {
         "buildType": "apk"
       },
-      "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.1.53:3000"
+      "ios": {
+        "simulator": false
       }
     },
     "development-simulator": {

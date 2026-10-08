@@ -23,7 +23,9 @@
         {
           "locationWhenInUsePermission": "VoyYa usa tu ubicación aproximada mientras estás en turno para asignarte los viajes más cercanos a ti.",
           "isIosBackgroundLocationEnabled": false,
-          "isAndroidBackgroundLocationEnabled": false
+          "isAndroidBackgroundLocationEnabled": false,
+          "locationAlwaysAndWhenInUsePermission": "VoyYa usa tu ubicación aproximada mientras estás en turno para asignarte los viajes más cercanos a ti.",
+          "locationAlwaysPermission": "VoyYa usa tu ubicación aproximada mientras estás en turno para asignarte los viajes más cercanos a ti."
         }
       ],
       [
@@ -44,7 +46,10 @@
     },
     "ios": {
       "bundleIdentifier": "co.voyya.driver",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "VoyYa usa la red local para conectarse al servidor de pruebas durante el desarrollo."
+      }
     },
     "extra": {
       "eas": {

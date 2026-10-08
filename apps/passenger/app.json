@@ -23,7 +23,9 @@
         {
           "locationWhenInUsePermission": "VoyYa usa tu ubicación aproximada al abrir la app para confirmar que estás en zona de cobertura y ubicarte en el mapa al pedir tu taxi.",
           "isIosBackgroundLocationEnabled": false,
-          "isAndroidBackgroundLocationEnabled": false
+          "isAndroidBackgroundLocationEnabled": false,
+          "locationAlwaysAndWhenInUsePermission": "VoyYa usa tu ubicación aproximada al abrir la app para confirmar que estás en zona de cobertura y ubicarte en el mapa al pedir tu taxi.",
+          "locationAlwaysPermission": "VoyYa usa tu ubicación aproximada al abrir la app para confirmar que estás en zona de cobertura y ubicarte en el mapa al pedir tu taxi."
         }
       ]
     ],
@@ -37,7 +39,10 @@
     },
     "ios": {
       "bundleIdentifier": "co.voyya.passenger",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "VoyYa usa la red local para conectarse al servidor de pruebas durante el desarrollo."
+      }
     },
     "extra": {
       "eas": {
