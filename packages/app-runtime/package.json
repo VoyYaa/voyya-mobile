@@ -19,7 +19,7 @@
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "test": "node --test src/api/resolve-api-base-url.spec.ts src/session/dev-only/web-secure-storage.adapter.spec.ts",
+    "test": "node --test src/api/resolve-api-base-url.spec.ts src/session/dev-only/web-secure-storage.adapter.spec.ts src/consent/consent-service.spec.ts src/consent/consent-errors.spec.ts",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "dependencies": {

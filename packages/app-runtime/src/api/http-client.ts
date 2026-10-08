@@ -56,7 +56,7 @@ const RetryInSecShape = z.object({ retry_in_sec: z.number().int().positive().opt
 
 export function apiRequest<TResponse>(
   options: ApiRequestOptions,
-  responseSchema: z.ZodType<TResponse>,
+  responseSchema: z.ZodType<TResponse, z.ZodTypeDef, unknown>,
   errorSchema?: z.ZodType<ApiErrorPayload>,
 ): Promise<TResponse> {
   return performRequest(
@@ -69,7 +69,7 @@ export function apiRequest<TResponse>(
 
 async function performRequest<TResponse>(
   options: ApiRequestOptions,
-  responseSchema: z.ZodType<TResponse>,
+  responseSchema: z.ZodType<TResponse, z.ZodTypeDef, unknown>,
   errorSchema: z.ZodType<ApiErrorPayload>,
   isRetry: boolean,
 ): Promise<TResponse> {

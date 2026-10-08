@@ -10,6 +10,7 @@ export type DeviceLocationUnavailableReason =
 export type DeviceLocationOutcome =
   | { kind: 'granted'; coordinate: Coordinate }
   | { kind: 'permission_denied'; canAskAgain: boolean }
+  | { kind: 'consent_required' }
   | { kind: 'unavailable'; reason: DeviceLocationUnavailableReason };
 
 export interface DeviceLocationRequestOptions {
