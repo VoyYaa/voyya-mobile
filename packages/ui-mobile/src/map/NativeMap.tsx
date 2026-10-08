@@ -18,6 +18,7 @@ let tokenAppliedTo: string | null = null;
 function ensureAccessToken(token: string): void {
   if (tokenAppliedTo === token) return;
   tokenAppliedTo = token;
+  Mapbox.setTelemetryEnabled(false);
   void Mapbox.setAccessToken(token);
 }
 
