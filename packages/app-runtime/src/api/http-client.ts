@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ApiError } from './errors';
+import { fetchWithTimeout } from './fetch-with-timeout';
 
 export type ApiErrorPayload = { code: string; message: string };
 
@@ -76,7 +77,7 @@ async function performRequest<TResponse>(
 ): Promise<TResponse> {
   let res: Response;
   try {
-    res = await fetch(`${getApiBaseUrl()}${options.path}`, {
+    res = await fetchWithTimeout(`${getApiBaseUrl()}${options.path}`, {
       method: options.method,
       headers: {
         'Content-Type': 'application/json',

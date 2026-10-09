@@ -6,6 +6,7 @@ import { driverCopy } from '../copy/driver-copy';
 export type ShiftIssueKind =
   | 'permission_denied'
   | 'gps_disabled'
+  | 'location_timeout'
   | 'offline'
   | 'server_error'
   | 'blocked_by_trip'
@@ -24,6 +25,10 @@ const ISSUE_COPY: Record<ShiftIssueKind, { message: string; actionLabel?: string
   gps_disabled: {
     message: driverCopy.issues.gpsDisabled,
     actionLabel: driverCopy.issues.gpsDisabledAction,
+  },
+  location_timeout: {
+    message: driverCopy.issues.locationTimeout,
+    actionLabel: driverCopy.issues.retry,
   },
   offline: { message: driverCopy.issues.offline, actionLabel: driverCopy.issues.retry },
   server_error: { message: driverCopy.issues.serverError, actionLabel: driverCopy.issues.retry },

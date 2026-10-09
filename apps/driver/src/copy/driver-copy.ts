@@ -260,6 +260,7 @@ export const driverCopy = {
     permissionDeniedAction: 'Cómo habilitarlo',
     gpsDisabled: 'Activa la ubicación de tu teléfono para poder recibir solicitudes.',
     gpsDisabledAction: 'Abrir ajustes',
+    locationTimeout: 'No pudimos obtener tu ubicación a tiempo. Inténtalo de nuevo.',
     offline: 'Sin conexión · no pudimos activar tu turno.',
     serverError: 'No pudimos activar tu turno.',
     retry: 'Reintentar',

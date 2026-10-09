@@ -36,7 +36,7 @@ export function useShiftActivation(): ShiftActivation {
         return;
       }
       if (outcome.kind === 'unavailable') {
-        setPhase('gps_disabled');
+        setPhase(outcome.reason === 'timeout' ? 'location_timeout' : 'gps_disabled');
         return;
       }
       if (outcome.kind === 'consent_required') {
