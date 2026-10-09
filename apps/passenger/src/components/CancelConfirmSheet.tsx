@@ -6,6 +6,7 @@ import { passengerCopy } from '../copy/passenger-copy';
 export interface CancelConfirmSheetProps {
   visible: boolean;
   withinWindow: boolean;
+  startBlocked?: boolean;
   loading: boolean;
   onConfirmCancel: () => void;
   onKeepWaiting: () => void;
@@ -14,6 +15,7 @@ export interface CancelConfirmSheetProps {
 export function CancelConfirmSheet({
   visible,
   withinWindow,
+  startBlocked = false,
   loading,
   onConfirmCancel,
   onKeepWaiting,
@@ -23,7 +25,14 @@ export function CancelConfirmSheet({
 
   return (
     <BottomSheet visible={visible} onClose={onKeepWaiting} title={copy.title}>
-      {withinWindow ? (
+      {startBlocked ? (
+        <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
+          <Text style={{ ...theme.typography.bodyStrong, color: theme.colors.successInk }}>
+            {copy.blocked}
+          </Text>{' '}
+          {copy.blockedBody}
+        </Text>
+      ) : withinWindow ? (
         <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
           <Text style={{ ...theme.typography.bodyStrong, color: theme.colors.successInk }}>
             {copy.free}

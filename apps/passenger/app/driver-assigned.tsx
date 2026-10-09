@@ -20,6 +20,9 @@ import { TripOutcomeView, type TripOutcomeKind } from '../src/components/TripOut
 import type { TripStep } from '../src/components/TripStepRail';
 import { useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
+import { usePersistStartCode, useSavedStartCode } from '../src/hooks/useStartCodePersistence';
+import { StartCodeCard } from '../src/components/StartCodeCard';
+import { startCodeCardView } from '../src/lib/start-code-view';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
 import { useFreeCancellation } from '../src/hooks/useFreeCancellation';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
@@ -54,6 +57,8 @@ export default function DriverAssignedScreen(): React.JSX.Element {
 
   const { data, isLoading, isError, dataUpdatedAt, refetch } = useTripRequestStatus(tripRequestId);
   const showLoader = useDelayedLoading(isLoading);
+  usePersistStartCode(data);
+  const savedStartCode = useSavedStartCode(tripRequestId, !data);
 
   const origin = useTripDraftStore((s) => s.origin);
   const destination = useTripDraftStore((s) => s.destination);
@@ -110,6 +115,22 @@ export default function DriverAssignedScreen(): React.JSX.Element {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
         <ScreenHeader title={copy.header} />
+        {savedStartCode !== null && (
+          <View style={{ paddingHorizontal: theme.spacing.lg }}>
+            <StartCodeCard
+              view={startCodeCardView({
+                response: null,
+                saved: savedStartCode,
+                offline,
+                refreshFailed: isError,
+              })}
+              plate={null}
+              arrived={false}
+              changed={false}
+              onRetry={() => refetch()}
+            />
+          </View>
+        )}
         {offline ? (
           <OfflineState onRetry={() => refetch()} />
         ) : (
@@ -148,6 +169,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
             isStale={isError}
             offline={offline}
             onCancel={() => setSheetVisible(true)}
+            onRefresh={() => refetch()}
           />
         )}
       </BranchFade>
@@ -155,6 +177,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
       <CancelConfirmSheet
         visible={sheetVisible}
         withinWindow={withinWindow}
+        startBlocked={data?.start_code_state === 'blocked'}
         loading={cancelTripRequest.isPending}
         onConfirmCancel={confirmCancellation}
         onKeepWaiting={() => setSheetVisible(false)}
