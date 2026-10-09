@@ -21,12 +21,14 @@ import { domainErrorCode, isNetworkError, useNetworkStatus } from '@voyyaa/app-r
 import { InlineNotice } from '../src/components/InlineNotice';
 import { LocatingPill } from '../src/components/LocatingPill';
 import { PlaceIcon } from '../src/components/PlaceIcon';
+import { useDeviceCenter } from '../src/hooks/useDeviceCenter';
+import { usePickupPlaces, usePinPlaces } from '../src/hooks/usePlacesAvailability';
 import { useKeyboardVisible } from '../src/hooks/useKeyboardVisible';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { usePickupServiceOptions, useVerifyPickup } from '../src/hooks/useServiceOptions';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
-import { YARUMAL_CENTER } from '../src/constants/demo-places';
+import { DEFAULT_MAP_CENTER } from '../src/constants/demo-places';
 import { CAN_PIN_DROP } from '../src/constants/platform';
 import { POIS_YARUMAL, type PoiYarumal } from '../src/constants/pois-yarumal';
 import { passengerCopy } from '../src/copy/passenger-copy';
@@ -88,6 +90,11 @@ export default function DestinationScreen(): React.JSX.Element {
   const isFixingOrigin = origin === null;
   const offline = networkStatus === 'offline';
   const optionsPending = !isFixingOrigin && serviceOptions.isPending && !offline;
+  const deviceCenter = useDeviceCenter(isFixingOrigin && CAN_PIN_DROP);
+  const pickupPlaces = usePickupPlaces();
+  const pinPlaces = usePinPlaces(isFixingOrigin ? originPinCandidate : null);
+  const places = isFixingOrigin ? pinPlaces : pickupPlaces;
+  const placesVerified = places.availability === 'verified';
   const busy = quoteFare.isPending || verifyPickup.isPending || optionsPending;
 
   const visiblePois = useMemo(() => {
@@ -238,7 +245,7 @@ export default function DestinationScreen(): React.JSX.Element {
           pinDrop
           center={
             isFixingOrigin
-              ? (originPinCandidate ?? YARUMAL_CENTER)
+              ? (deviceCenter ?? DEFAULT_MAP_CENTER)
               : { lat: origin.lat, lng: origin.lng }
           }
           markers={
@@ -288,7 +295,7 @@ export default function DestinationScreen(): React.JSX.Element {
         />
       )}
 
-      {!isFixingOrigin && (
+      {!isFixingOrigin && placesVerified && (
         <TextField
           label={copy.searchLabel}
           value={query}
@@ -332,9 +339,20 @@ export default function DestinationScreen(): React.JSX.Element {
         />
       )}
 
-      <Text style={{ ...theme.typography.smallStrong, color: theme.colors.textMuted }}>
-        {copy.placesTitle}
-      </Text>
+      {placesVerified && (
+        <Text style={{ ...theme.typography.smallStrong, color: theme.colors.textMuted }}>
+          {copy.placesTitle}
+        </Text>
+      )}
+
+      {places.availability === 'elsewhere' && (
+        <Text
+          style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+          testID="destination-places-elsewhere"
+        >
+          {copy.placesElsewhere(places.municipalityName)}
+        </Text>
+      )}
     </View>
   );
 
@@ -344,32 +362,36 @@ export default function DestinationScreen(): React.JSX.Element {
       <FlatList
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: theme.spacing.lg }}
-        data={visiblePois}
+        data={placesVerified ? visiblePois : []}
         keyExtractor={(poi) => poi.id}
         ListHeaderComponent={header}
         ItemSeparatorComponent={() => <View style={{ height: theme.spacing.sm }} />}
         ListEmptyComponent={
-          <View style={{ alignItems: 'center', gap: theme.spacing.sm, padding: theme.spacing.xl }}>
-            <MarkGlyph glyph="search" size={64} />
-            <Text
-              style={{
-                ...theme.typography.bodyStrong,
-                color: theme.colors.text,
-                textAlign: 'center',
-              }}
+          placesVerified ? (
+            <View
+              style={{ alignItems: 'center', gap: theme.spacing.sm, padding: theme.spacing.xl }}
             >
-              {copy.emptyTitle}
-            </Text>
-            <Text
-              style={{
-                ...theme.typography.body,
-                color: theme.colors.textMuted,
-                textAlign: 'center',
-              }}
-            >
-              {copy.emptyBody}
-            </Text>
-          </View>
+              <MarkGlyph glyph="search" size={64} />
+              <Text
+                style={{
+                  ...theme.typography.bodyStrong,
+                  color: theme.colors.text,
+                  textAlign: 'center',
+                }}
+              >
+                {copy.emptyTitle}
+              </Text>
+              <Text
+                style={{
+                  ...theme.typography.body,
+                  color: theme.colors.textMuted,
+                  textAlign: 'center',
+                }}
+              >
+                {copy.emptyBody}
+              </Text>
+            </View>
+          ) : null
         }
         renderItem={({ item: poi }) => (
           <View>

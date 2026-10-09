@@ -52,6 +52,7 @@ function issueFromPhase(phase: ShiftActivationPhase): ShiftIssueKind | null {
   switch (phase) {
     case 'permission_denied':
     case 'gps_disabled':
+    case 'location_timeout':
     case 'offline':
     case 'server_error':
     case 'blocked_by_trip':
@@ -214,7 +215,7 @@ export default function HomeScreen(): React.JSX.Element {
       setConsentVisible(true);
       return;
     }
-    if (kind === 'offline' || kind === 'server_error') {
+    if (kind === 'offline' || kind === 'server_error' || kind === 'location_timeout') {
       shiftActivation.retry();
     }
   };

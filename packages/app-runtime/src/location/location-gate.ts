@@ -1,4 +1,5 @@
 import type { DeviceLocationPort } from './device-location-port';
+import { withinDeadline } from './within-deadline';
 
 export function createConsentGatedLocationPort(
   port: DeviceLocationPort,
@@ -6,7 +7,9 @@ export function createConsentGatedLocationPort(
 ): DeviceLocationPort {
   return {
     requestLocation: async (options) => {
-      if (!(await isConsentConfirmed())) return { kind: 'consent_required' };
+      const consented = await withinDeadline(isConsentConfirmed(), options.timeoutMs, () => null);
+      if (consented === null) return { kind: 'unavailable', reason: 'timeout' };
+      if (!consented) return { kind: 'consent_required' };
       return port.requestLocation(options);
     },
   };

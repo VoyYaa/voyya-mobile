@@ -11,7 +11,7 @@
     "ios": "expo start --dev-client --ios",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
-    "test": "node --test src/lib/consent-phase.spec.ts src/lib/active-trip-route.spec.ts src/lib/format-date.spec.ts src/lib/free-cancellation.spec.ts src/lib/company-selection.spec.ts src/lib/no-driver-decision.spec.ts src/lib/driver-change.spec.ts src/lib/coarse-coordinate.spec.ts",
+    "test": "node --test src/lib/consent-phase.spec.ts src/lib/active-trip-route.spec.ts src/lib/format-date.spec.ts src/lib/free-cancellation.spec.ts src/lib/company-selection.spec.ts src/lib/no-driver-decision.spec.ts src/lib/driver-change.spec.ts src/lib/coarse-coordinate.spec.ts src/lib/verified-places.spec.ts",
     "eas-build-post-install": "cd ../.. && pnpm run build",
     "web": "expo start --web"
   },
@@ -19,7 +19,7 @@
     "@expo/metro-runtime": "~3.2.3",
     "@hookform/resolvers": "^3.9.0",
     "@react-native-community/netinfo": "11.3.1",
-    "@rnmapbox/maps": "10.2.10",
+    "@rnmapbox/maps": "10.1.36",
     "@tanstack/react-query": "^5.51.0",
     "@voyyaa/app-runtime": "workspace:*",
     "@voyyaa/shared": "workspace:*",

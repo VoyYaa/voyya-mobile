@@ -20,7 +20,7 @@
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "test": "node --test src/palette.spec.ts src/utils/color.spec.ts src/utils/trip-status-tone.spec.ts src/motion/ref-counted-loop.spec.ts src/motion/hop-timeline.spec.ts",
+    "test": "node --test src/palette.spec.ts src/utils/color.spec.ts src/utils/trip-status-tone.spec.ts src/motion/ref-counted-loop.spec.ts src/motion/hop-timeline.spec.ts src/map/mapbox-access-token.spec.ts",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "peerDependencies": {
@@ -28,7 +28,7 @@
     "react-native": ">=0.74.0",
     "react-native-svg": ">=15.0.0",
     "expo-constants": ">=16.0.0",
-    "@rnmapbox/maps": ">=10.2.0 <10.3.0"
+    "@rnmapbox/maps": ">=10.1.31 <10.2.0"
   },
   "devDependencies": {
     "@types/react": "~18.2.79",
@@ -38,7 +38,7 @@
     "react-native": "0.74.5",
     "react-native-svg": "15.3.0",
     "expo-constants": "~16.0.2",
-    "@rnmapbox/maps": "10.2.10",
+    "@rnmapbox/maps": "10.1.36",
     "typescript": "^5.5.4"
   }
 }

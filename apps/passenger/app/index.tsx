@@ -30,12 +30,13 @@ import { LocationConsentSheet } from '../src/components/LocationConsentSheet';
 import { NoOriginPanel } from '../src/components/NoOriginPanel';
 import { useActiveTrip, useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useCoverageGate } from '../src/hooks/useCoverageGate';
+import { usePickupPlaces } from '../src/hooks/usePlacesAvailability';
 import { useLocationConsentGate } from '../src/hooks/useLocationConsentGate';
 import type { LocationConsentPhase } from '../src/lib/consent-phase';
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { TRIP_ENDED_NOTICE } from '../src/constants/notices';
-import { YARUMAL_CENTER } from '../src/constants/demo-places';
+import { DEFAULT_MAP_CENTER } from '../src/constants/demo-places';
 import { POIS_YARUMAL } from '../src/constants/pois-yarumal';
 import { activeTripRoute } from '../src/lib/active-trip-route';
 import { passengerCopy } from '../src/copy/passenger-copy';
@@ -75,6 +76,7 @@ export default function HomeScreen(): React.JSX.Element {
   const setOrigin = useTripDraftStore((s) => s.setOrigin);
   const clearOrigin = useTripDraftStore((s) => s.clearOrigin);
   const coverage = useCoverageGate();
+  const places = usePickupPlaces();
   const resolveOrigin = useResolveOrigin();
   const logout = useLogout();
 
@@ -165,10 +167,15 @@ export default function HomeScreen(): React.JSX.Element {
     resolveOrigin.resolve();
   };
 
+  const handleAdjustLocation = (): void => {
+    clearOrigin();
+    router.push('/destination');
+  };
+
   if (coverage.status === 'outside') {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <CoverageBlockedPanel onAdjustLocation={coverage.retry} />
+        <CoverageBlockedPanel onAdjustLocation={handleAdjustLocation} />
       </SafeAreaView>
     );
   }
@@ -198,7 +205,7 @@ export default function HomeScreen(): React.JSX.Element {
           <Skeleton accent height={mapHeight} radius={0} testID="home-map-skeleton" />
         ) : (
           <Map
-            center={origin ? { lat: origin.lat, lng: origin.lng } : YARUMAL_CENTER}
+            center={origin ? { lat: origin.lat, lng: origin.lng } : DEFAULT_MAP_CENTER}
             markers={
               origin
                 ? [
@@ -355,7 +362,7 @@ export default function HomeScreen(): React.JSX.Element {
           />
         )}
 
-        {!trip && (
+        {!trip && places.availability === 'verified' && (
           <View style={{ gap: theme.spacing.sm }}>
             <Text style={{ ...theme.typography.smallStrong, color: theme.colors.textMuted }}>
               {copy.placesTitle}
@@ -371,6 +378,15 @@ export default function HomeScreen(): React.JSX.Element {
               ))}
             </View>
           </View>
+        )}
+
+        {!trip && places.availability === 'elsewhere' && (
+          <Text
+            style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+            testID="home-places-elsewhere"
+          >
+            {copy.placesElsewhere}
+          </Text>
         )}
 
         {networkStatus === 'offline' && (

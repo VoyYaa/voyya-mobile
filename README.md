@@ -101,8 +101,11 @@ vayas a probar. Puertos de Metro: pasajero 8081, conductor 8082.
    npx eas-cli env:create --scope project --name EXPO_PUBLIC_MAPBOX_TOKEN --environment development,preview,production --visibility plaintext
    ```
 
-   El plugin de `@rnmapbox/maps` 10.2.10 lee `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` del entorno de la build en iOS
-   (podspec) y en Android (Gradle): no hay que tocar `app.json`.
+   `@rnmapbox/maps` está fijado en **10.1.36**: es la última versión compatible con React Native 0.74 y Expo SDK 51
+   (de la 10.1.37 en adelante, el codegen de RN 0.74 no entiende el evento `onLocationUpdate` y el módulo Kotlin no
+   compila). El plugin se declara con opciones en `apps/passenger/app.json` (`RNMapboxMapsImpl: "mapbox"` y
+   `RNMapboxMapsVersion: "11.10.0"`, el SDK nativo v11, que en Android no pide token de descarga). No subas la
+   versión de `@rnmapbox/maps` sin subir antes RN y Expo.
 
 `EXPO_PUBLIC_API_URL` **no** va en EAS para desarrollo: el perfil `development` no la define a propósito.
 
@@ -122,6 +125,16 @@ vayas a probar. Puertos de Metro: pasajero 8081, conductor 8082.
 Build local (opcional): requiere JDK 17, Android SDK con `ANDROID_HOME` y `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` en
 el entorno, y **Linux, macOS o WSL** (`eas build --local` no corre en Windows nativo). El PC de desarrollo
 actual no tiene JDK ni Android SDK: usa la nube.
+
+Build local en Windows (emulador o dispositivo conectado): `npx expo run:android --no-bundler` desde `apps/passenger`
+o `apps/driver`. Requiere JDK 17 (el JDK 25 de Android Studio rompe Gradle 8.8) y compilar desde **una ruta corta**
+(CMake falla con rutas largas): por ejemplo `git clone` del repo en `%TEMP%ym`, `pnpm install --frozen-lockfile` y
+ejecutar el comando desde ahí. Con `RNMapboxMapsVersion` en 11.x no hace falta `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` en Android.
+Un cambio de dependencia nativa exige una build nueva de EAS; Metro solo no basta.
+
+Probar ubicación en el emulador: `adb emu geo fix` no llega a las apps en la imagen API 37. Usa proveedores de prueba
+(`adb shell cmd location providers add-test-provider gps|network|fused`, `set-test-provider-enabled`,
+`set-test-provider-location`) y repite la posición cada pocos segundos alternando dos puntos separados unos 40 m.
 
 ### 2. iPhone
 
@@ -224,7 +237,7 @@ reiniciar el bundler / rehacer el build).
 | Variable                   | App               | Descripción                                                                   |
 | -------------------------- | ----------------- | ----------------------------------------------------------------------------- |
 | `EXPO_PUBLIC_API_URL`      | passenger, driver | URL base del backend. En desarrollo es opcional: se deriva del host de Metro. |
-| `EXPO_PUBLIC_MAPBOX_TOKEN` | passenger, driver | Token **público** de Mapbox (prefijo `pk.`) para `@rnmapbox/maps` 10.2.x.     |
+| `EXPO_PUBLIC_MAPBOX_TOKEN` | passenger, driver | Token **público** de Mapbox (prefijo `pk.`) para `@rnmapbox/maps` 10.1.x.     |
 
 **Nota importante sobre Mapbox:** el "download token" (`sk.…`, scope `DOWNLOADS:READ`) es un secreto de
 **build**, no de runtime: `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` en el entorno de la build lo recogen solos el podspec

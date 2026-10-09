@@ -6,6 +6,7 @@ export type ShiftActivationPhase =
   | 'activating'
   | 'permission_denied'
   | 'gps_disabled'
+  | 'location_timeout'
   | 'blocked_by_trip'
   | 'consent_required'
   | 'offline'
