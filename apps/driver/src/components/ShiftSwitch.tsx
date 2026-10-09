@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Text, View, useWindowDimensions } from 'react-native';
 import {
   BrandSpinner,
   Button,
@@ -20,7 +20,7 @@ export interface ShiftSwitchProps {
 
 const SWITCH_HEIGHT = 72;
 const PULSE_SIZE = 36;
-const TEXT_MIN_BASIS = 160;
+const STACK_FONT_SCALE = 1.3;
 const PULSE_PERIOD_MS = 3200;
 
 export function ShiftSwitch({
@@ -31,6 +31,7 @@ export function ShiftSwitch({
 }: ShiftSwitchProps): React.JSX.Element {
   const theme = useTheme();
   const { colors } = theme;
+  const stacked = useWindowDimensions().fontScale > STACK_FONT_SCALE;
 
   if (disabled) {
     return (
@@ -67,10 +68,9 @@ export function ShiftSwitch({
       testID="shift-switch"
       style={{
         minHeight: SWITCH_HEIGHT,
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        gap: theme.spacing.md,
+        flexDirection: stacked ? 'column' : 'row',
+        alignItems: stacked ? 'stretch' : 'center',
+        gap: theme.spacing.sm,
         paddingHorizontal: theme.spacing.lg,
         paddingVertical: theme.spacing.sm,
         borderRadius: theme.radius.card,
@@ -79,31 +79,40 @@ export function ShiftSwitch({
         backgroundColor: colors.successTint,
       }}
     >
-      <View style={{ width: PULSE_SIZE, alignItems: 'center' }}>
-        {busy ? (
-          <BrandSpinner size={24} tone="onLight" />
-        ) : (
-          <RadarPulse
-            size={PULSE_SIZE}
-            rings={1}
-            periodMs={PULSE_PERIOD_MS}
-            color={colors.success}
-          />
-        )}
-      </View>
-      <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: TEXT_MIN_BASIS }}>
-        <Text style={{ ...theme.typography.subtitle, color: colors.successInk }}>
-          {driverCopy.home.onShiftEyebrow}
-        </Text>
-        <Text style={{ ...theme.typography.small, color: colors.text }}>
-          {busy ? driverCopy.home.shiftBusyOff : driverCopy.home.shiftOnHint}
-        </Text>
+      <View
+        style={{
+          flex: stacked ? undefined : 1,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: theme.spacing.md,
+        }}
+      >
+        <View style={{ width: PULSE_SIZE, alignItems: 'center' }}>
+          {busy ? (
+            <BrandSpinner size={24} tone="onLight" />
+          ) : (
+            <RadarPulse
+              size={PULSE_SIZE}
+              rings={1}
+              periodMs={PULSE_PERIOD_MS}
+              color={colors.success}
+            />
+          )}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ ...theme.typography.subtitle, color: colors.successInk }}>
+            {driverCopy.home.onShiftEyebrow}
+          </Text>
+          <Text style={{ ...theme.typography.small, color: colors.text }}>
+            {busy ? driverCopy.home.shiftBusyOff : driverCopy.home.shiftOnHint}
+          </Text>
+        </View>
       </View>
       <LinkButton
         label={driverCopy.home.endShift}
         disabled={busy}
         onPress={onToggle}
-        style={{ alignSelf: 'center' }}
+        style={{ alignSelf: stacked ? 'flex-end' : 'center' }}
         testID="shift-switch-end"
       />
     </View>
