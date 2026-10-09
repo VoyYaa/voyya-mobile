@@ -13,12 +13,14 @@ import { useTheme } from '../theme';
 import { USE_NATIVE_DRIVER, motion } from '../tokens';
 import { uiCopy } from '../copy';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
 
 export interface BottomSheetProps {
   visible: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+  avoidKeyboard?: boolean;
   testID?: string;
 }
 
@@ -33,10 +35,12 @@ export function BottomSheet({
   onClose,
   title,
   children,
+  avoidKeyboard = false,
   testID,
 }: BottomSheetProps): React.JSX.Element {
   const theme = useTheme();
   const reduced = useReducedMotion();
+  const keyboardHeight = useKeyboardHeight(avoidKeyboard && visible);
   const { height: windowHeight } = useWindowDimensions();
   const announcedTitle = useRef<string | undefined>(undefined);
   const [rendered, setRendered] = useState(visible);
@@ -156,6 +160,7 @@ export function BottomSheet({
             paddingHorizontal: theme.spacing.xl,
             paddingBottom: theme.spacing.xxl,
             opacity: reduced ? enter : 1,
+            marginBottom: keyboardHeight,
             transform: [{ translateY: Animated.add(slide, drag) }],
             ...theme.shadow.lg,
           }}

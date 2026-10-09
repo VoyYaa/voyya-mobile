@@ -18,6 +18,7 @@ export interface OtpInputProps {
   disabled?: boolean;
   reducedMotion?: boolean;
   autoFocus?: boolean;
+  autofill?: boolean;
   accessibilityLabel?: string;
   testID?: string;
 }
@@ -132,6 +133,7 @@ export function OtpInput({
   disabled = false,
   reducedMotion = false,
   autoFocus = false,
+  autofill = true,
   accessibilityLabel,
   testID,
 }: OtpInputProps): React.JSX.Element {
@@ -236,8 +238,9 @@ export function OtpInput({
         autoFocus={autoFocus}
         keyboardType="number-pad"
         maxLength={length}
-        textContentType="oneTimeCode"
-        autoComplete="sms-otp"
+        textContentType={autofill ? 'oneTimeCode' : 'none'}
+        autoComplete={autofill ? 'sms-otp' : 'off'}
+        importantForAutofill={autofill ? 'auto' : 'no'}
         accessibilityLabel={accessibilityLabel ?? `Código de verificación de ${length} dígitos`}
         accessibilityValue={{ text: `${value.length} de ${length} dígitos ingresados` }}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0 }}

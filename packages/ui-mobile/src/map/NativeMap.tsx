@@ -11,16 +11,20 @@ import Mapbox, {
 import type { Feature } from 'geojson';
 import { useTheme } from '../theme';
 import { createAccessTokenApplier } from './mapbox-access-token';
-import { toLatLng, toPosition, toRouteFeature } from './geo';
+import { toBounds, toLatLng, toPosition, toRouteFeature } from './geo';
+import { TaxiMarker } from './TaxiMarker';
 import type { MapLatLng, MapMarkerKind, MapProps } from './types';
 
 const ensureAccessToken = createAccessTokenApplier(Mapbox);
 
-const GLYPH_BY_KIND: Record<MapMarkerKind, string> = {
+const GLYPH_BY_KIND: Record<Exclude<MapMarkerKind, 'car'>, string> = {
   origin: '●',
   destination: '▼',
-  car: '🚗',
 };
+
+const ATTRIBUTION_MARGIN_DP = 16;
+const DEFAULT_FIT_PADDING_DP = 48;
+const DEFAULT_FIT_ZOOM = { min: 12, max: 16 } as const;
 
 export interface NativeMapProps extends MapProps {
   accessToken: string;
@@ -35,6 +39,9 @@ export function NativeMap({
   pinDrop = false,
   onPickLocation,
   interactive = true,
+  fitToMarkers = false,
+  fitPadding = DEFAULT_FIT_PADDING_DP,
+  fitZoomRange = DEFAULT_FIT_ZOOM,
   height = 200,
   style,
   testID,
@@ -49,10 +56,11 @@ export function NativeMap({
   }, [center.lat, center.lng]);
 
   function colorForKind(kind: MapMarkerKind): string {
-    if (kind === 'destination') return theme.colors.brandInk;
-    if (kind === 'car') return theme.colors.success;
-    return theme.colors.text;
+    return kind === 'destination' ? theme.colors.brandInk : theme.colors.text;
   }
+
+  const fitBounds =
+    fitToMarkers && markers.length > 1 ? toBounds(markers.map((m) => m.coord)) : null;
 
   function reportPickedLocation(next: MapLatLng | null): void {
     if (!pinDrop || !onPickLocation || !next) return;
@@ -97,16 +105,35 @@ export function NativeMap({
           compassEnabled={false}
           scaleBarEnabled={false}
           logoEnabled
+          logoPosition={{ left: ATTRIBUTION_MARGIN_DP, bottom: ATTRIBUTION_MARGIN_DP }}
           attributionEnabled
+          attributionPosition={{ right: ATTRIBUTION_MARGIN_DP, bottom: ATTRIBUTION_MARGIN_DP }}
           onPress={pinDrop ? handlePress : undefined}
           onMapIdle={pinDrop ? handleMapIdle : undefined}
         >
-          <Camera
-            centerCoordinate={toPosition(focusedCenter)}
-            zoomLevel={zoomLevel}
-            animationMode="easeTo"
-            animationDuration={300}
-          />
+          {fitBounds ? (
+            <Camera
+              bounds={{
+                ne: fitBounds.ne,
+                sw: fitBounds.sw,
+                paddingTop: fitPadding,
+                paddingBottom: fitPadding,
+                paddingLeft: fitPadding,
+                paddingRight: fitPadding,
+              }}
+              minZoomLevel={fitZoomRange.min}
+              maxZoomLevel={fitZoomRange.max}
+              animationMode="easeTo"
+              animationDuration={600}
+            />
+          ) : (
+            <Camera
+              centerCoordinate={toPosition(focusedCenter)}
+              zoomLevel={zoomLevel}
+              animationMode="easeTo"
+              animationDuration={300}
+            />
+          )}
 
           {route && route.points.length > 1 && (
             <ShapeSource id="voyya-route-source" shape={toRouteFeature(route.points)}>
@@ -123,22 +150,30 @@ export function NativeMap({
           )}
 
           {markers.map((marker) => (
-            <PointAnnotation key={marker.id} id={marker.id} coordinate={toPosition(marker.coord)}>
-              <View
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: theme.radius.pill,
-                  backgroundColor: theme.colors.surface,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  ...theme.shadow.sm,
-                }}
-              >
-                <Text style={{ fontSize: 14, color: colorForKind(marker.kind) }}>
-                  {GLYPH_BY_KIND[marker.kind]}
-                </Text>
-              </View>
+            <PointAnnotation
+              key={`${marker.id}-${marker.freshness ?? 'live'}`}
+              id={`${marker.id}-${marker.freshness ?? 'live'}`}
+              coordinate={toPosition(marker.coord)}
+            >
+              {marker.kind === 'car' ? (
+                <TaxiMarker freshness={marker.freshness ?? 'live'} />
+              ) : (
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: theme.radius.pill,
+                    backgroundColor: theme.colors.surface,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    ...theme.shadow.sm,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, color: colorForKind(marker.kind) }}>
+                    {GLYPH_BY_KIND[marker.kind]}
+                  </Text>
+                </View>
+              )}
             </PointAnnotation>
           ))}
         </MapView>
