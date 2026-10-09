@@ -10,17 +10,11 @@ import Mapbox, {
 } from '@rnmapbox/maps';
 import type { Feature } from 'geojson';
 import { useTheme } from '../theme';
+import { createAccessTokenApplier } from './mapbox-access-token';
 import { toLatLng, toPosition, toRouteFeature } from './geo';
 import type { MapLatLng, MapMarkerKind, MapProps } from './types';
 
-let tokenAppliedTo: string | null = null;
-
-function ensureAccessToken(token: string): void {
-  if (tokenAppliedTo === token) return;
-  tokenAppliedTo = token;
-  Mapbox.setTelemetryEnabled(false);
-  void Mapbox.setAccessToken(token);
-}
+const ensureAccessToken = createAccessTokenApplier(Mapbox);
 
 const GLYPH_BY_KIND: Record<MapMarkerKind, string> = {
   origin: '●',
@@ -48,9 +42,7 @@ export function NativeMap({
   const theme = useTheme();
   const [focusedCenter, setFocusedCenter] = useState<MapLatLng>(center);
 
-  useEffect(() => {
-    ensureAccessToken(accessToken);
-  }, [accessToken]);
+  ensureAccessToken(accessToken);
 
   useEffect(() => {
     setFocusedCenter(center);
