@@ -18,7 +18,7 @@ import {
   useCountdown,
   useTheme,
 } from '@voyyaa/ui-mobile';
-import { ApiError, isNetworkError } from '@voyyaa/app-runtime';
+import { ApiError, isNetworkError, useLocationConsentStatus } from '@voyyaa/app-runtime';
 import { PassengerSummaryRow } from '../../src/components/PassengerSummaryRow';
 import { DriverStepRail } from '../../src/components/DriverStepRail';
 import { NoShowWait } from '../../src/components/NoShowWait';
@@ -104,6 +104,16 @@ export default function ActiveTripScreen(): React.JSX.Element {
       router.replace('/');
     }
   }, [home.isLoading, activeTrip, closed, router]);
+
+  const consentStatus = useLocationConsentStatus();
+  const consentRequired = consentStatus.data?.requires_acceptance === true;
+  const previousConsentRequired = useRef(consentRequired);
+  useEffect(() => {
+    if (previousConsentRequired.current && !consentRequired) {
+      setToast({ message: driverCopy.sharing.consentDone, tone: 'success' });
+    }
+    previousConsentRequired.current = consentRequired;
+  }, [consentRequired]);
 
   const startBlockedNow = activeTrip?.start_blocked ?? false;
   useEffect(() => {
@@ -422,6 +432,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
         >
           <SharingStatusBadge
             sharing={activeTrip.location_sharing}
+            consentRequired={consentRequired}
             onReadConsent={() => router.push('/privacy')}
           />
 

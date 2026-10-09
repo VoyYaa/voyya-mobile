@@ -9,6 +9,7 @@ import { LocationIssueBanner } from './LocationIssueBanner';
 
 export interface SharingStatusBadgeProps {
   sharing: DriverLocationSharing | null;
+  consentRequired: boolean;
   onReadConsent: () => void;
 }
 
@@ -17,10 +18,14 @@ const SPINNER_SIZE = 16;
 
 export function SharingStatusBadge({
   sharing,
+  consentRequired,
   onReadConsent,
 }: SharingStatusBadgeProps): React.JSX.Element | null {
   const theme = useTheme();
-  const { indicator, notificationsOff, iosForegroundOnly } = useSharingIndicator(sharing);
+  const { indicator, notificationsOff, iosForegroundOnly } = useSharingIndicator(
+    sharing,
+    consentRequired,
+  );
   const resume = useResumeSharing();
 
   if (indicator.kind === 'none') return null;

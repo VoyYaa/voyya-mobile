@@ -15,7 +15,10 @@ export interface SharingIndicatorModel {
   iosForegroundOnly: boolean;
 }
 
-export function useSharingIndicator(sharing: DriverLocationSharing | null): SharingIndicatorModel {
+export function useSharingIndicator(
+  sharing: DriverLocationSharing | null,
+  consentRequired: boolean,
+): SharingIndicatorModel {
   const machine = useSharingStore((s) => s.machine);
   const lastReadingAt = useSharingStore((s) => s.lastReadingAt);
   const notificationsGranted = useSharingStore((s) => s.notificationsGranted);
@@ -34,7 +37,7 @@ export function useSharingIndicator(sharing: DriverLocationSharing | null): Shar
   const indicator = deriveSharingIndicator({
     status: machine.status,
     sharing,
-    locationIssue,
+    locationIssue: consentRequired ? 'consent_required' : locationIssue,
     silentForSec,
     offline,
   });
