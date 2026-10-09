@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import { z } from 'zod';
 import { configureApiClient, configureAuthHandlers, apiRequest } from './http-client.ts';
-import { ApiError } from './errors.ts';
+import { ApiError, isRateLimitedError, rateLimitWaitSec } from './errors.ts';
 
 const ErrorBody = z.object({ code: z.string(), message: z.string() });
 const OkBody = z.object({ ok: z.literal(true) });
@@ -90,5 +90,63 @@ describe('apiRequest 401 handling', () => {
         JSON.stringify(error.body) ===
           JSON.stringify({ code: 'ACTIVE_TRIP', message: 'Ya tienes un viaje', active_trip: 7 }),
     );
+  });
+});
+
+describe('apiRequest 429 handling', () => {
+  beforeEach(() => {
+    configureApiClient({ baseUrl: 'http://api.test', defaultErrorSchema: ErrorBody });
+    configureAuthHandlers({
+      getAccessToken: () => 'access',
+      refreshAndRetry: async () => null,
+      onSessionExpired: () => undefined,
+    });
+  });
+
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  function throttled(retryAfter: string | null): () => Promise<Response> {
+    return async () =>
+      new Response(JSON.stringify({ statusCode: 429, message: 'ThrottlerException' }), {
+        status: 429,
+        headers: retryAfter === null ? {} : { 'Retry-After': retryAfter },
+      });
+  }
+
+  it('recognises the framework 429 by status and keeps Retry-After', async () => {
+    globalThis.fetch = throttled('17');
+    await assert.rejects(apiRequest({ method: 'POST', path: '/x' }, OkBody), (error: unknown) => {
+      assert.equal(isRateLimitedError(error), true);
+      assert.equal(rateLimitWaitSec(error), 17);
+      return true;
+    });
+  });
+
+  it('waits 10 seconds when Retry-After is missing or malformed', async () => {
+    for (const header of [null, 'soon', '0', '-3', '1.5']) {
+      globalThis.fetch = throttled(header);
+      await assert.rejects(apiRequest({ method: 'POST', path: '/x' }, OkBody), (error: unknown) => {
+        assert.equal(isRateLimitedError(error), true);
+        assert.equal(rateLimitWaitSec(error), 10);
+        return true;
+      });
+    }
+  });
+
+  it('does not treat other statuses or network failures as rate limited', async () => {
+    globalThis.fetch = async () => jsonResponse(422, { code: 'X', message: 'm' });
+    await assert.rejects(apiRequest({ method: 'POST', path: '/x' }, OkBody), (error: unknown) => {
+      assert.equal(isRateLimitedError(error), false);
+      return true;
+    });
+    globalThis.fetch = async () => {
+      throw new TypeError('network down');
+    };
+    await assert.rejects(apiRequest({ method: 'POST', path: '/x' }, OkBody), (error: unknown) => {
+      assert.equal(isRateLimitedError(error), false);
+      return true;
+    });
   });
 });

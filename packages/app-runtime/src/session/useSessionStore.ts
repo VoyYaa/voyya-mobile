@@ -8,6 +8,7 @@ import {
   saveSession,
   updatePersistedTokens,
 } from './secure-storage';
+import { runSessionClearedHandlers } from './session-cleanup';
 
 export type SessionStatus = 'hydrating' | 'authenticated' | 'guest';
 
@@ -80,6 +81,7 @@ export const useSessionStore = create<SessionState>((set) => ({
 
   clearSession: async () => {
     await clearPersistedSession();
+    await runSessionClearedHandlers();
     set({
       status: 'guest',
       accessToken: null,

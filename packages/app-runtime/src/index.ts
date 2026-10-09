@@ -8,7 +8,9 @@ export * from './session/dev-only/web-secure-storage.adapter';
 export * from './session/useSessionStore';
 export * from './session/useProactiveRefresh';
 export * from './session/useLogout';
+export * from './session/session-cleanup';
 export * from './query/query-client';
+export * from './query/focus-bridge';
 export * from './connectivity/useNetworkStatus';
 export {
   CONNECTIVITY_RETRY_INTERVAL_SEC,
