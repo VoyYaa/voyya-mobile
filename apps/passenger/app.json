@@ -17,7 +17,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "@rnmapbox/maps/app.plugin.js",
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsImpl": "mapbox",
+          "RNMapboxMapsVersion": "11.10.0"
+        }
+      ],
       [
         "expo-location",
         {
