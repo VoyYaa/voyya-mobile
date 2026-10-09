@@ -8,11 +8,15 @@ import {
 } from '@voyyaa/app-runtime';
 import { reportDriverLocation } from '../api/driver.api';
 import { useLocationIssueStore } from '../state/useLocationIssueStore';
+import { dispatchSharing } from '../tracking/sharing-runtime';
 
 export function useReportLocation() {
   return useMutation({
     mutationFn: (coordinate: Coordinate) => reportDriverLocation(coordinate),
     retry: false,
+    onSuccess: (result) => {
+      dispatchSharing({ type: 'report_result', sharing: result.location_sharing });
+    },
     onError: (error) => {
       void handleLocationConsentRequired(error);
     },

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CompleteTripDTO } from '@voyyaa/shared';
+import type { CompleteTripDTO, StartTripDTO } from '@voyyaa/shared';
 import {
   completeTrip,
   declareNoShow,
@@ -36,7 +36,8 @@ export function useMarkTripArrived(tripRequestId: number | null) {
 export function useStartTrip(tripRequestId: number | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => (tripRequestId === null ? rejectNoActiveTrip() : startTrip(tripRequestId)),
+    mutationFn: (dto?: StartTripDTO) =>
+      tripRequestId === null ? rejectNoActiveTrip() : startTrip(tripRequestId, dto),
     retry: false,
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: DRIVER_HOME_QUERY_KEY }),
   });

@@ -29,6 +29,8 @@ import { PendingCashBanner } from '../src/components/PendingCashBanner';
 import { LocationIssueBanner } from '../src/components/LocationIssueBanner';
 import { OfferBanner } from '../src/components/OfferBanner';
 import { LocationConsentSheet } from '../src/components/LocationConsentSheet';
+import { SharingDisclosureSheet } from '../src/components/SharingDisclosureSheet';
+import { useSharingDisclosure } from '../src/hooks/useSharingDisclosure';
 import { useDriverHome } from '../src/hooks/useDriverHome';
 import { useIsAuthenticated } from '../src/hooks/useIsAuthenticated';
 import { useShiftActivation, type ShiftActivationPhase } from '../src/hooks/useShiftActivation';
@@ -83,6 +85,8 @@ export default function HomeScreen(): React.JSX.Element {
   const setLocationIssue = useLocationIssueStore((s) => s.setIssue);
 
   const [consentVisible, setConsentVisible] = useState(false);
+  const [readNoticeVisible, setReadNoticeVisible] = useState(false);
+  const disclosure = useSharingDisclosure();
   const [accountVisible, setAccountVisible] = useState(false);
   const [pulling, setPulling] = useState(false);
 
@@ -179,6 +183,7 @@ export default function HomeScreen(): React.JSX.Element {
 
   const handleConsentAccepted = (): void => {
     setConsentVisible(false);
+    void disclosure.showIfUnseen();
     if (isOnShift) {
       setLocationIssue(null);
       reportLocationBestEffort();
@@ -333,6 +338,20 @@ export default function HomeScreen(): React.JSX.Element {
         mode="shift"
         onAccepted={handleConsentAccepted}
         onDismiss={handleConsentDismiss}
+      />
+      <LocationConsentSheet
+        visible={readNoticeVisible}
+        mode="read"
+        onAccepted={() => setReadNoticeVisible(false)}
+        onDismiss={() => setReadNoticeVisible(false)}
+      />
+      <SharingDisclosureSheet
+        visible={disclosure.visible}
+        onDismiss={disclosure.dismiss}
+        onReadFullNotice={() => {
+          disclosure.dismiss();
+          setReadNoticeVisible(true);
+        }}
       />
       <AccountSheet
         visible={accountVisible}

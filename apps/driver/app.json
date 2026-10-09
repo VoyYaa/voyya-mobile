@@ -20,13 +20,15 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "VoyYa usa tu ubicación aproximada mientras estás en turno para asignarte los viajes más cercanos a ti.",
+          "locationWhenInUsePermission": "VoyYa usa tu ubicación mientras estás en turno para asignarte los viajes más cercanos y para que tu pasajero te vea cuando aceptas un viaje.",
           "isIosBackgroundLocationEnabled": false,
           "isAndroidBackgroundLocationEnabled": false,
-          "locationAlwaysAndWhenInUsePermission": "VoyYa usa tu ubicación aproximada mientras estás en turno para asignarte los viajes más cercanos a ti.",
-          "locationAlwaysPermission": "VoyYa usa tu ubicación aproximada mientras estás en turno para asignarte los viajes más cercanos a ti."
+          "isAndroidForegroundServiceEnabled": true,
+          "locationAlwaysAndWhenInUsePermission": "VoyYa usa tu ubicación mientras estás en turno para asignarte los viajes más cercanos y para que tu pasajero te vea cuando aceptas un viaje.",
+          "locationAlwaysPermission": "VoyYa usa tu ubicación mientras estás en turno para asignarte los viajes más cercanos y para que tu pasajero te vea cuando aceptas un viaje."
         }
       ],
+      "./plugins/with-navigation-app-queries",
       [
         "expo-notifications",
         {
@@ -37,6 +39,7 @@
     ],
     "android": {
       "package": "co.voyya.driver",
+      "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon-foreground.png",
         "monochromeImage": "./assets/adaptive-icon-monochrome.png",
@@ -47,6 +50,7 @@
       "bundleIdentifier": "co.voyya.driver",
       "supportsTablet": false,
       "infoPlist": {
+        "LSApplicationQueriesSchemes": ["comgooglemaps", "waze"],
         "NSLocalNetworkUsageDescription": "VoyYa usa la red local para conectarse al servidor de pruebas durante el desarrollo."
       }
     },

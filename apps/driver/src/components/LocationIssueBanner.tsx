@@ -4,15 +4,18 @@ import { useTheme } from '@voyyaa/ui-mobile';
 import type { LocationIssueKind } from '../state/useLocationIssueStore';
 import { driverCopy } from '../copy/driver-copy';
 
+export type LocationBannerKind = LocationIssueKind | 'precise_location_needed';
+
 export interface LocationIssueBannerProps {
-  kind: LocationIssueKind;
+  kind: LocationBannerKind;
   onPress: () => void;
 }
 
-const MESSAGE_BY_KIND: Record<LocationIssueKind, string> = {
+const MESSAGE_BY_KIND: Record<LocationBannerKind, string> = {
   permission_denied: driverCopy.issues.locationPermission,
   gps_disabled: driverCopy.issues.gpsDisabled,
   consent_required: driverCopy.issues.consentRequired,
+  precise_location_needed: driverCopy.issues.preciseLocationNeeded,
 };
 
 export function LocationIssueBanner({

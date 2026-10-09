@@ -21,6 +21,8 @@ import { useRouteGuard } from '../src/hooks/useRouteGuard';
 import { API_BASE_URL } from '../src/constants/env';
 import { registerForPushNotifications } from '../src/notifications/push-registration';
 import { useNotificationRouting } from '../src/notifications/useNotificationRouting';
+import { useTripLocationSharing } from '../src/hooks/useTripLocationSharing';
+import '../src/tracking/trip-location-task';
 
 configureApiClient({ baseUrl: API_BASE_URL, defaultErrorSchema: AssignmentError });
 silenceKnownWebWarnings();
@@ -61,6 +63,7 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
   useRouteGuard();
   useProactiveRefresh();
   useNotificationRouting();
+  useTripLocationSharing();
 
   const hideSplash = (): void => {
     void SplashScreen.hideAsync().catch(() => undefined);
