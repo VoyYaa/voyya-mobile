@@ -20,6 +20,7 @@ export interface ShiftSwitchProps {
 
 const SWITCH_HEIGHT = 72;
 const PULSE_SIZE = 36;
+const TEXT_MIN_BASIS = 160;
 const PULSE_PERIOD_MS = 3200;
 
 export function ShiftSwitch({
@@ -67,9 +68,11 @@ export function ShiftSwitch({
       style={{
         minHeight: SWITCH_HEIGHT,
         flexDirection: 'row',
+        flexWrap: 'wrap',
         alignItems: 'center',
         gap: theme.spacing.md,
         paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.sm,
         borderRadius: theme.radius.card,
         borderWidth: 2,
         borderColor: colors.success,
@@ -88,7 +91,7 @@ export function ShiftSwitch({
           />
         )}
       </View>
-      <View style={{ flex: 1 }}>
+      <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: TEXT_MIN_BASIS }}>
         <Text style={{ ...theme.typography.subtitle, color: colors.successInk }}>
           {driverCopy.home.onShiftEyebrow}
         </Text>

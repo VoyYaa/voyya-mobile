@@ -114,6 +114,7 @@ export function ShiftHero({
     <Stage
       testID="shift-hero"
       topInset={topInset}
+      growWithContent
       style={{ minHeight: HERO_MIN_HEIGHT + topInset }}
     >
       <View

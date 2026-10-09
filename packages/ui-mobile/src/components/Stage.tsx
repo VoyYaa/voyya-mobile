@@ -17,6 +17,7 @@ export interface StageProps {
   safeTop?: boolean;
   topInset?: number;
   glow?: boolean;
+  growWithContent?: boolean;
   testID?: string;
 }
 
@@ -26,12 +27,16 @@ export function Stage({
   safeTop = false,
   topInset,
   glow = true,
+  growWithContent = false,
   testID,
 }: StageProps): React.JSX.Element {
   const theme = useTheme();
   const reachesStatusBar = safeTop || topInset !== undefined;
   const useSystemInset = safeTop && topInset === undefined && Platform.OS === 'ios';
-  const contentStyle = { flex: 1, paddingTop: topInset ?? 0 } as const;
+  const contentStyle = {
+    ...(growWithContent ? { flexGrow: 1 } : { flex: 1 }),
+    paddingTop: topInset ?? 0,
+  } as const;
 
   return (
     <View
