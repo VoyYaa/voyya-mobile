@@ -105,154 +105,148 @@ export default function LoginScreen(): React.JSX.Element {
   const showSuspended = outcome === 'suspended';
 
   return (
-    <Stage safeTop topInset={insets.top} style={{ flex: 1 }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: theme.colors.stage }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <Stage style={{ flex: 1 }} topInset={insets.top} testID="login-stage">
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            paddingHorizontal: theme.spacing.gutter,
+            paddingBottom: theme.spacing.xl,
+            gap: theme.spacing.lg,
+          }}
+        >
+          <Reveal index={0}>
+            <BrandMark role="driver" size={BRAND_MARK_SIZE} wordmark />
+          </Reveal>
+          <Reveal index={1}>
+            <AccentText accent="conductor" color={theme.colors.onStage} testID="login-title">
+              {driverCopy.login.title}
+            </AccentText>
+          </Reveal>
+        </View>
+      </Stage>
+
+      <View
+        style={{
+          flexShrink: 1,
+          backgroundColor: theme.colors.bg,
+          borderTopLeftRadius: theme.radius.sheet,
+          borderTopRightRadius: theme.radius.sheet,
+        }}
       >
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + theme.spacing.lg }}
+          bounces={false}
+          contentContainerStyle={{
+            padding: theme.spacing.xl,
+            paddingBottom: theme.spacing.xl + insets.bottom,
+            gap: theme.spacing.lg,
+          }}
         >
-          <View
-            style={{
-              paddingHorizontal: theme.spacing.gutter,
-              paddingTop: theme.spacing.xl,
-              gap: theme.spacing.lg,
-            }}
-          >
-            <Reveal index={0}>
-              <BrandMark role="driver" size={BRAND_MARK_SIZE} wordmark />
-            </Reveal>
-            <Reveal index={1}>
-              <AccentText accent="conductor" color={theme.colors.onStage} testID="login-title">
-                {driverCopy.login.title}
-              </AccentText>
-            </Reveal>
-          </View>
+          <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
+            {driverCopy.login.subtitle}
+          </Text>
 
-          <Reveal index={2} style={{ marginTop: theme.spacing.xl }}>
-            <View
-              style={{
-                backgroundColor: theme.colors.bg,
-                borderRadius: theme.radius.sheet,
-                marginHorizontal: theme.spacing.sm,
-                padding: theme.spacing.lg,
-                gap: theme.spacing.lg,
-              }}
+          {showSuspended ? (
+            <AuthNoticeCard
+              glyph="error"
+              title={driverCopy.login.suspendedTitle}
+              body={suspendedMessage}
             >
-              <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
-                {driverCopy.login.subtitle}
-              </Text>
+              <LinkButton
+                label={driverCopy.login.suspendedBack}
+                onPress={handleTryAnotherAccount}
+                testID="login-try-another"
+              />
+            </AuthNoticeCard>
+          ) : (
+            <>
+              <TextField
+                label={driverCopy.login.nationalIdLabel}
+                value={nationalId}
+                onChangeText={handleNationalId}
+                placeholder={driverCopy.login.nationalIdPlaceholder}
+                keyboardType="numeric"
+                maxLength={15}
+                disabled={login.isPending || isBlocked}
+                testID="cedula-input"
+              />
+              <TextField
+                label={driverCopy.login.pinLabel}
+                value={pin}
+                onChangeText={handlePin}
+                helper={driverCopy.login.pinHelper}
+                keyboardType="numeric"
+                maxLength={DRIVER_PIN_LENGTH}
+                secureTextEntry
+                revealable
+                disabled={login.isPending || isBlocked}
+                error={outcome === 'credentials' ? credentialsMessage : undefined}
+                onSubmitEditing={handleLogin}
+                testID="pin-input"
+              />
 
-              {showSuspended ? (
+              {showBlocked ? (
                 <AuthNoticeCard
-                  glyph="error"
-                  title={driverCopy.login.suspendedTitle}
-                  body={suspendedMessage}
-                >
-                  <LinkButton
-                    label={driverCopy.login.suspendedBack}
-                    onPress={handleTryAnotherAccount}
-                    testID="login-try-another"
-                  />
-                </AuthNoticeCard>
+                  glyph="clock"
+                  title={driverCopy.login.blockedTitle}
+                  body={
+                    block.timeKnown
+                      ? driverCopy.login.blockedKnown(formatMMSS(block.remainingSec))
+                      : driverCopy.login.blockedUnknown
+                  }
+                />
               ) : (
-                <>
-                  <TextField
-                    label={driverCopy.login.nationalIdLabel}
-                    value={nationalId}
-                    onChangeText={handleNationalId}
-                    placeholder={driverCopy.login.nationalIdPlaceholder}
-                    keyboardType="numeric"
-                    maxLength={15}
-                    disabled={login.isPending || isBlocked}
-                    testID="cedula-input"
-                  />
-                  <TextField
-                    label={driverCopy.login.pinLabel}
-                    value={pin}
-                    onChangeText={handlePin}
-                    helper={driverCopy.login.pinHelper}
-                    keyboardType="numeric"
-                    maxLength={DRIVER_PIN_LENGTH}
-                    secureTextEntry
-                    revealable
-                    disabled={login.isPending || isBlocked}
-                    error={outcome === 'credentials' ? credentialsMessage : undefined}
-                    onSubmitEditing={handleLogin}
-                    testID="pin-input"
-                  />
-
-                  {showBlocked ? (
-                    <AuthNoticeCard
-                      glyph="clock"
-                      title={driverCopy.login.blockedTitle}
-                      body={
-                        block.timeKnown
-                          ? driverCopy.login.blockedKnown(formatMMSS(block.remainingSec))
-                          : driverCopy.login.blockedUnknown
-                      }
-                    />
-                  ) : (
-                    <Button
-                      label={driverCopy.login.submit}
-                      onPress={handleLogin}
-                      size="lg"
-                      disabled={!isFormatValid || offline}
-                      loading={login.isPending}
-                      loadingLabel={driverCopy.login.verifying}
-                      accessibilityHint={offline ? driverCopy.login.offlineHint : undefined}
-                      testID="iniciar-turno-button"
-                    />
-                  )}
-
-                  {offline && !showBlocked && (
-                    <View
-                      accessibilityLiveRegion="polite"
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: theme.spacing.sm,
-                      }}
-                    >
-                      <MarkGlyph glyph="offline" size={24} animate={false} />
-                      <Text
-                        style={{
-                          ...theme.typography.small,
-                          color: theme.colors.infoInk,
-                          flex: 1,
-                        }}
-                      >
-                        {driverCopy.login.offline}
-                      </Text>
-                    </View>
-                  )}
-                </>
+                <Button
+                  label={driverCopy.login.submit}
+                  onPress={handleLogin}
+                  size="lg"
+                  disabled={!isFormatValid || offline}
+                  loading={login.isPending}
+                  loadingLabel={driverCopy.login.verifying}
+                  accessibilityHint={offline ? driverCopy.login.offlineHint : undefined}
+                  testID="iniciar-turno-button"
+                />
               )}
-            </View>
-          </Reveal>
 
-          <View
+              {offline && !showBlocked && (
+                <View
+                  accessibilityLiveRegion="polite"
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: theme.spacing.sm,
+                  }}
+                >
+                  <MarkGlyph glyph="offline" size={24} animate={false} />
+                  <Text
+                    style={{
+                      ...theme.typography.small,
+                      color: theme.colors.infoInk,
+                      flex: 1,
+                    }}
+                  >
+                    {driverCopy.login.offline}
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+          <Text
             style={{
-              flexGrow: 1,
-              justifyContent: 'flex-end',
-              padding: theme.spacing.gutter,
-              minHeight: 72,
+              ...theme.typography.small,
+              color: theme.colors.textMuted,
+              textAlign: 'center',
             }}
           >
-            <Text
-              style={{
-                ...theme.typography.small,
-                color: theme.colors.onStageMuted,
-                textAlign: 'center',
-              }}
-            >
-              {driverCopy.login.footer}
-            </Text>
-          </View>
+            {driverCopy.login.footer}
+          </Text>
         </ScrollView>
-      </KeyboardAvoidingView>
-    </Stage>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
