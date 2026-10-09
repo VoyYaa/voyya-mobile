@@ -10,15 +10,19 @@ export function serviceOptionsQueryKey(coordinate: Coordinate | null): readonly 
   return ['trips', 'service-options', coordinate?.lat ?? null, coordinate?.lng ?? null];
 }
 
-export function usePickupServiceOptions() {
-  const origin = useTripDraftStore((s) => s.origin);
-  const query = useQuery({
-    queryKey: serviceOptionsQueryKey(origin),
-    queryFn: () => getServiceOptions(origin as Coordinate),
-    enabled: origin !== null,
+export function useServiceOptionsAt(coordinate: Coordinate | null) {
+  return useQuery({
+    queryKey: serviceOptionsQueryKey(coordinate),
+    queryFn: () => getServiceOptions(coordinate as Coordinate),
+    enabled: coordinate !== null,
     staleTime: SERVICE_OPTIONS_STALE_MS,
     retry: 1,
   });
+}
+
+export function usePickupServiceOptions() {
+  const origin = useTripDraftStore((s) => s.origin);
+  const query = useServiceOptionsAt(origin);
   const municipalityId = query.data?.municipality?.municipality_id ?? null;
   return { query, municipalityId };
 }

@@ -45,6 +45,9 @@ export const passengerCopy = {
     whereToHint: 'Toca para escribir tu destino',
     whereToLabel: '¿A dónde vas? Toca para escribir tu destino',
     placesTitle: 'Lugares de Yarumal',
+    placesElsewhere: CAN_PIN_DROP
+      ? 'Aún no tenemos lugares conocidos en esta zona. Marca tu destino moviendo el pin en el mapa.'
+      : 'Aún no tenemos lugares conocidos en esta zona.',
     originLabel: 'Te recogemos en',
     changeOrigin: 'Cambiar',
     locating: 'Buscando tu ubicación…',
@@ -75,6 +78,12 @@ export const passengerCopy = {
     searchLabel: 'Buscar destino',
     searchPlaceholder: 'Buscar dirección, sitio o referencia',
     placesTitle: 'Lugares conocidos',
+    placesElsewhere: (municipalityName: string | null): string => {
+      const area = municipalityName ? `en ${municipalityName}` : 'en esta zona';
+      return CAN_PIN_DROP
+        ? `Aún no tenemos lugares conocidos ${area}. Mueve el pin en el mapa para marcar tu punto.`
+        : `Aún no tenemos lugares conocidos ${area}.`;
+    },
     emptyTitle: 'No encontramos ese lugar',
     emptyBody: CAN_PIN_DROP ? 'Márcalo en el mapa.' : 'Prueba con otro nombre.',
     pendingLocation: CAN_PIN_DROP
@@ -263,7 +272,7 @@ export const passengerCopy = {
     keep: 'Seguir esperando',
   },
   coverage: {
-    title: 'Tu ubicación actual está fuera de la zona de cobertura de Yarumal.',
+    title: 'Tu ubicación actual está fuera de la zona de cobertura.',
     action: CAN_PIN_DROP ? 'Ajustar ubicación en el mapa' : 'Elegir otro punto',
   },
   locationConsent: {

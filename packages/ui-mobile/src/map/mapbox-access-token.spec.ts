@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createAccessTokenApplier } from './mapbox-access-token.ts';
 
-function recordingTarget(): { calls: string[]; target: Parameters<typeof createAccessTokenApplier>[0] } {
+function recordingTarget(): {
+  calls: string[];
+  target: Parameters<typeof createAccessTokenApplier>[0];
+} {
   const calls: string[] = [];
   return {
     calls,
