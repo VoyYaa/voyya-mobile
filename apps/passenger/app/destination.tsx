@@ -24,6 +24,7 @@ import { PlaceIcon } from '../src/components/PlaceIcon';
 import { useKeyboardVisible } from '../src/hooks/useKeyboardVisible';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
+import { usePickupServiceOptions, useVerifyPickup } from '../src/hooks/useServiceOptions';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { YARUMAL_CENTER } from '../src/constants/demo-places';
 import { CAN_PIN_DROP } from '../src/constants/platform';
@@ -65,7 +66,8 @@ export default function DestinationScreen(): React.JSX.Element {
   const networkStatus = useNetworkStatus();
   const keyboardVisible = useKeyboardVisible();
   const quoteFare = useQuoteFare();
-  const originQuote = useQuoteFare();
+  const verifyPickup = useVerifyPickup();
+  const { query: serviceOptions, municipalityId } = usePickupServiceOptions();
   const resolveOrigin = useResolveOrigin();
 
   const origin = useTripDraftStore((s) => s.origin);
@@ -74,7 +76,6 @@ export default function DestinationScreen(): React.JSX.Element {
   const clearOrigin = useTripDraftStore((s) => s.clearOrigin);
   const setOriginDestination = useTripDraftStore((s) => s.setOriginDestination);
   const setQuote = useTripDraftStore((s) => s.setQuote);
-  const municipalityId = useTripDraftStore((s) => s.municipalityId);
 
   const [query, setQuery] = useState('');
   const [coverageErrorId, setCoverageErrorId] = useState<string | null>(null);
@@ -86,7 +87,8 @@ export default function DestinationScreen(): React.JSX.Element {
 
   const isFixingOrigin = origin === null;
   const offline = networkStatus === 'offline';
-  const busy = quoteFare.isPending || originQuote.isPending;
+  const optionsPending = !isFixingOrigin && serviceOptions.isPending && !offline;
+  const busy = quoteFare.isPending || verifyPickup.isPending || optionsPending;
 
   const visiblePois = useMemo(() => {
     const text = query.trim().toLowerCase();
@@ -101,7 +103,7 @@ export default function DestinationScreen(): React.JSX.Element {
   }, [resolveOrigin.status, resolveOrigin.origin, setOrigin]);
 
   const selectPlace = (place: SelectedPlace): void => {
-    if (!origin) return;
+    if (!origin || municipalityId === null) return;
     setCoverageErrorId(null);
     setQuotingId(place.id);
     const destination: Location = { address: place.title, lat: place.lat, lng: place.lng };
@@ -149,22 +151,15 @@ export default function DestinationScreen(): React.JSX.Element {
 
   const verifyOrigin = (candidate: Location): void => {
     setOriginCoverageBlocked(false);
-    originQuote.mutate(
-      {
-        origin: candidate,
-        destination: candidate,
-        municipality_id: municipalityId,
-        service_type: 'taxi',
+    verifyPickup.mutate(candidate, {
+      onSuccess: (options) => {
+        if (options.municipality === null) {
+          setOriginCoverageBlocked(true);
+          return;
+        }
+        setOrigin(candidate, 'manual');
       },
-      {
-        onSuccess: () => setOrigin(candidate, 'manual'),
-        onError: (error) => {
-          if (domainErrorCode(error) === 'OUT_OF_COVERAGE') {
-            setOriginCoverageBlocked(true);
-          }
-        },
-      },
-    );
+    });
   };
 
   const confirmOriginPin = (): void => {
@@ -192,6 +187,9 @@ export default function DestinationScreen(): React.JSX.Element {
   const errorCode = domainErrorCode(quoteFare.error);
   const hasGenericError =
     quoteFare.isError && !isNetworkError(quoteFare.error) && errorCode !== 'OUT_OF_COVERAGE';
+  const hasVerifyError = verifyPickup.isError && !isNetworkError(verifyPickup.error);
+  const hasOptionsError = !isFixingOrigin && serviceOptions.isError && !offline;
+  const originOutOfCoverage = !isFixingOrigin && serviceOptions.data?.municipality === null;
   const stickyPin = isFixingOrigin ? originPinCandidate : pinCandidate;
 
   const header = (
@@ -260,6 +258,16 @@ export default function DestinationScreen(): React.JSX.Element {
         />
       )}
 
+      {originOutOfCoverage && (
+        <InlineNotice
+          tone="danger"
+          glyph="pin"
+          title={copy.outOfCoverageTitle}
+          body={copy.outOfCoverage('origin')}
+          testID="destination-origin-out-of-coverage"
+        />
+      )}
+
       {isFixingOrigin && originCoverageBlocked && (
         <InlineNotice
           tone="danger"
@@ -297,6 +305,18 @@ export default function DestinationScreen(): React.JSX.Element {
           glyph="offline"
           title={copy.offlineQuote}
           testID="destination-offline"
+        />
+      )}
+
+      {(hasVerifyError || hasOptionsError) && (
+        <InlineNotice
+          tone="danger"
+          glyph="error"
+          title={copy.serviceOptionsErrorTitle}
+          body={copy.serviceOptionsErrorBody}
+          actionLabel={copy.retry}
+          onAction={() => (hasVerifyError ? verifyPickup.reset() : void serviceOptions.refetch())}
+          testID="destination-options-error"
         />
       )}
 
@@ -421,7 +441,7 @@ export default function DestinationScreen(): React.JSX.Element {
           <Button
             label={isFixingOrigin ? copy.useAsOrigin : copy.useAsDestination}
             size="lg"
-            loading={isFixingOrigin ? originQuote.isPending : quoteFare.isPending}
+            loading={isFixingOrigin ? verifyPickup.isPending : quoteFare.isPending}
             loadingLabel={isFixingOrigin ? copy.verifying : copy.quoting}
             disabled={offline}
             onPress={isFixingOrigin ? confirmOriginPin : confirmPin}

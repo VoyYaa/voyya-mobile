@@ -70,12 +70,11 @@ export default function HomeScreen(): React.JSX.Element {
   const copy = passengerCopy.home;
   const networkStatus = useNetworkStatus();
   const user = useSessionStore((s) => s.user);
-  const municipalityId = useTripDraftStore((s) => s.municipalityId);
   const origin = useTripDraftStore((s) => s.origin);
   const destination = useTripDraftStore((s) => s.destination);
   const setOrigin = useTripDraftStore((s) => s.setOrigin);
   const clearOrigin = useTripDraftStore((s) => s.clearOrigin);
-  const coverage = useCoverageGate(origin, municipalityId);
+  const coverage = useCoverageGate();
   const resolveOrigin = useResolveOrigin();
   const logout = useLogout();
 

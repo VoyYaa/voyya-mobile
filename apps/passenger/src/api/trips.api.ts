@@ -7,8 +7,10 @@ import {
   TripRequestCancelled,
   TripRequestCreated,
   TripRequestStatus,
+  TripServiceOptionsResponse,
 } from '@voyyaa/shared';
 import { apiRequest } from '@voyyaa/app-runtime';
+import { toCoarseCoordinate } from '../lib/coarse-coordinate';
 
 export function quoteFare(dto: QuoteFareDTO): Promise<QuoteResponse> {
   const body = QuoteFareDTO.parse(dto);
@@ -37,4 +39,16 @@ export function cancelTripRequest(
 
 export function getActiveTrip(): Promise<ActiveTripResponse> {
   return apiRequest({ method: 'GET', path: '/trips/active' }, ActiveTripResponse);
+}
+
+export function getServiceOptions(coordinate: {
+  lat: number;
+  lng: number;
+}): Promise<TripServiceOptionsResponse> {
+  const { lat, lng } = toCoarseCoordinate(coordinate);
+  const query = `lat=${lat}&lng=${lng}`;
+  return apiRequest(
+    { method: 'GET', path: `/trips/service-options?${query}` },
+    TripServiceOptionsResponse,
+  );
 }

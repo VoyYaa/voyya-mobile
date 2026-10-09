@@ -22,11 +22,14 @@ import { StageTicket } from '../src/components/StageTicket';
 import { useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
-import { useQuoteFare } from '../src/hooks/useQuoteFare';
-import { useCreateTripRequest } from '../src/hooks/useCreateTripRequest';
+import { useRetrySearch } from '../src/hooks/useRetrySearch';
+import { usePickupServiceOptions } from '../src/hooks/useServiceOptions';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { PROLONGED_SEARCH_THRESHOLD_SEC } from '../src/constants/parameters';
 import { MATCH_TIMING } from '../src/constants/search-timing';
+import { CHOOSE_COMPANY_PARAM } from '../src/constants/route-params';
+import { findServiceOption } from '../src/lib/company-selection';
+import { decideNoDriverVariant, type NoDriverVariant } from '../src/lib/no-driver-decision';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
 const copy = passengerCopy.searching;
@@ -42,6 +45,15 @@ const DRIVER_UI: readonly PassengerUiState[] = [
 const RADAR_MAX_SIZE = 300;
 const RADAR_MIN_SIZE = 180;
 const RADAR_HEIGHT_RATIO = 0.34;
+
+function searchBodies(variant: NoDriverVariant): readonly string[] {
+  if (variant.kind === 'company') {
+    const name = variant.company.display_name;
+    return [copy.bodyCompany(name), copy.prolongedBodyCompany(name), copy.matchedBody];
+  }
+  if (variant.kind === 'any') return [copy.bodyAny, copy.prolongedBody, copy.matchedBody];
+  return [copy.body, copy.prolongedBody, copy.matchedBody];
+}
 
 function ElapsedCounter({ resetKey }: { resetKey: number | null }): React.JSX.Element {
   const theme = useTheme();
@@ -88,14 +100,16 @@ export default function SearchingScreen(): React.JSX.Element {
   const origin = useTripDraftStore((s) => s.origin);
   const destination = useTripDraftStore((s) => s.destination);
   const serviceType = useTripDraftStore((s) => s.serviceType);
-  const municipalityId = useTripDraftStore((s) => s.municipalityId);
   const resetDraft = useTripDraftStore((s) => s.reset);
   const quote = useTripDraftStore((s) => s.quote);
   const activeTripCache = useActiveTripCache();
 
   const cancelTripRequest = useCancelTripRequest(tripRequestId);
-  const quoteFare = useQuoteFare();
-  const createTripRequest = useCreateTripRequest();
+  const { query: serviceOptions } = usePickupServiceOptions();
+  const retry = useRetrySearch({
+    previousTotal: data?.fare.total ?? quote?.fare.total ?? null,
+    requestedCompany: data?.requested_company ?? null,
+  });
 
   const [prolongedSearch, setProlongedSearch] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
@@ -163,48 +177,24 @@ export default function SearchingScreen(): React.JSX.Element {
     });
   };
 
-  const retrySearch = (): void => {
-    if (!origin || !destination) {
-      router.replace('/');
-      return;
-    }
-    createTripRequest.reset();
-    quoteFare.mutate(
-      { origin, destination, municipality_id: municipalityId, service_type: serviceType },
-      {
-        onSuccess: (freshQuote) => {
-          createTripRequest.mutate(
-            {
-              origin,
-              destination,
-              municipality_id: municipalityId,
-              service_type: serviceType,
-              payment_method: 'cash',
-              quote_token: freshQuote.quote_token,
-            },
-            {
-              onSuccess: (newTripRequest) => {
-                void activeTripCache.refresh().catch(() => undefined);
-                router.replace({
-                  pathname: '/searching',
-                  params: { id: String(newTripRequest.trip_request_id) },
-                });
-              },
-            },
-          );
-        },
-      },
-    );
-  };
-
   const goBackHome = (): void => {
     activeTripCache.clear();
     resetDraft();
     router.replace('/');
   };
 
-  const retrying = quoteFare.isPending || createTripRequest.isPending;
-  const retryFailed = quoteFare.isError || createTripRequest.isError;
+  const serviceOption = serviceOptions.data
+    ? findServiceOption(serviceOptions.data.services, serviceType)
+    : null;
+  const variant = decideNoDriverVariant({
+    requestedCompany: data?.requested_company ?? null,
+    selectionRequired: serviceOption ? serviceOption.selection_required : null,
+  });
+  const retrying = retry.pending;
+  const retryFailed = retry.failed;
+  const chooseOtherCompany = (): void => {
+    router.replace({ pathname: '/confirm', params: { [CHOOSE_COMPANY_PARAM]: '1' } });
+  };
 
   if (isError && !data) {
     const offline = networkStatus === 'offline';
@@ -236,8 +226,33 @@ export default function SearchingScreen(): React.JSX.Element {
                 accessibilityRole="alert"
                 title={copy.retryFailedTitle}
                 body={copy.retryFailedBody}
-                primaryAction={{ label: uiCopy.retry, onPress: retrySearch }}
+                primaryAction={{ label: uiCopy.retry, onPress: retry.repeatLast }}
                 secondaryAction={{ label: copy.backHome, onPress: goBackHome }}
+              />
+            ) : variant.kind === 'company' ? (
+              <StatePanel
+                tone="onStage"
+                glyph="clock"
+                title={copy.noDriverCompanyTitle(variant.company.display_name)}
+                body={copy.noDriverCompanyBody}
+                primaryAction={{ label: copy.searchAny, onPress: () => retry.run('any') }}
+                secondaryAction={{
+                  label: copy.retryWithCompany(variant.company.display_name),
+                  onPress: () => retry.run('same'),
+                }}
+                tertiaryAction={{ label: copy.backHome, onPress: goBackHome }}
+                testID="search-no-driver-company"
+              />
+            ) : variant.kind === 'any' ? (
+              <StatePanel
+                tone="onStage"
+                glyph="clock"
+                title={copy.noDriverAnyTitle}
+                body={copy.noDriverAnyBody}
+                primaryAction={{ label: copy.retryAny, onPress: () => retry.run('same') }}
+                secondaryAction={{ label: copy.chooseOther, onPress: chooseOtherCompany }}
+                tertiaryAction={{ label: copy.backHome, onPress: goBackHome }}
+                testID="search-no-driver-any"
               />
             ) : (
               <StatePanel
@@ -245,7 +260,7 @@ export default function SearchingScreen(): React.JSX.Element {
                 glyph="clock"
                 title={copy.noDriverTitle}
                 body={copy.noDriverBody}
-                primaryAction={{ label: copy.retry, onPress: retrySearch }}
+                primaryAction={{ label: copy.retry, onPress: () => retry.run('same') }}
                 secondaryAction={{ label: copy.backHome, onPress: goBackHome }}
                 testID="search-no-driver"
               />
@@ -266,6 +281,7 @@ export default function SearchingScreen(): React.JSX.Element {
   );
   const degraded = networkStatus === 'offline' || (isError && Boolean(data));
   const fareTotal = data?.fare.total ?? quote?.fare.total ?? null;
+  const bodies = searchBodies(variant);
   const bodyIndex = matchedCaption ? 2 : prolongedSearch ? 1 : 0;
 
   return (
@@ -326,9 +342,9 @@ export default function SearchingScreen(): React.JSX.Element {
             />
             <ElapsedCounter resetKey={tripRequestId} />
             <CrossFadeText
-              lines={[copy.body, copy.prolongedBody, copy.matchedBody]}
+              lines={bodies}
               activeIndex={bodyIndex}
-              reservedLines={2}
+              reservedLines={variant.kind === 'company' ? 3 : 2}
               announceFromIndex={1}
               style={{
                 ...theme.typography.body,

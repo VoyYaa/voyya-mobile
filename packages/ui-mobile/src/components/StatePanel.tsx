@@ -21,6 +21,7 @@ export interface StatePanelProps {
   body?: string;
   primaryAction?: StatePanelAction;
   secondaryAction?: StatePanelAction;
+  tertiaryAction?: StatePanelAction;
   accessibilityRole?: 'alert' | 'none';
   tone?: StatePanelTone;
   animateGlyph?: boolean;
@@ -57,6 +58,7 @@ export function StatePanel({
   body,
   primaryAction,
   secondaryAction,
+  tertiaryAction,
   accessibilityRole = 'none',
   tone = 'default',
   animateGlyph = true,
@@ -105,7 +107,7 @@ export function StatePanel({
           {body}
         </Text>
       )}
-      {(primaryAction || secondaryAction) && (
+      {(primaryAction || secondaryAction || tertiaryAction) && (
         <View
           style={{
             width: '100%',
@@ -134,6 +136,23 @@ export function StatePanel({
               <LinkButton
                 label={secondaryAction.label}
                 onPress={secondaryAction.onPress}
+                style={{ alignSelf: 'center' }}
+              />
+            </View>
+          )}
+          {tertiaryAction && onStage && (
+            <Button
+              label={tertiaryAction.label}
+              onPress={tertiaryAction.onPress}
+              variant={tertiaryAction.variant ?? 'ghostOnStage'}
+              size="sm"
+            />
+          )}
+          {tertiaryAction && !onStage && (
+            <View style={{ alignItems: 'center' }}>
+              <LinkButton
+                label={tertiaryAction.label}
+                onPress={tertiaryAction.onPress}
                 style={{ alignSelf: 'center' }}
               />
             </View>
