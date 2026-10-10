@@ -2,7 +2,13 @@ export const SHARING_CAP_MS = 90 * 60 * 1000;
 export const SHARING_NO_FIX_INTERVALS = 3;
 
 export type SharingStatus = 'idle' | 'running' | 'capped' | 'precise_needed' | 'failed';
-export type StopReason = 'server_signal' | 'trip_started' | 'forbidden' | 'cap' | 'precise_lost';
+export type StopReason =
+  | 'server_signal'
+  | 'trip_started'
+  | 'forbidden'
+  | 'cap'
+  | 'precise_lost'
+  | 'orphan_cleanup';
 export type LocationAccuracy = 'fine' | 'coarse' | 'none' | 'unknown';
 
 export interface SharingTarget {
@@ -56,9 +62,8 @@ export const INITIAL_SHARING_STATE: SharingState = {
 
 const IDLE: SharingState = INITIAL_SHARING_STATE;
 
-function stopped(state: SharingState, reason: StopReason): SharingTransition {
-  const effects: SharingEffect[] = state.status === 'running' ? [{ type: 'stop', reason }] : [];
-  return { state: IDLE, effects };
+function stopped(reason: StopReason): SharingTransition {
+  return { state: IDLE, effects: [{ type: 'stop', reason }] };
 }
 
 function started(target: SharingTarget, now: number): SharingTransition {
@@ -80,7 +85,7 @@ function onHome(
 ): SharingTransition {
   const { sharing } = event;
   if (sharing === null || event.tripStatus === 'in_progress') {
-    return stopped(state, event.tripStatus === 'in_progress' ? 'trip_started' : 'server_signal');
+    return stopped(event.tripStatus === 'in_progress' ? 'trip_started' : 'server_signal');
   }
 
   if (state.status === 'running') {
@@ -138,11 +143,11 @@ export function sharingReducer(state: SharingState, event: SharingEvent): Sharin
     case 'resume':
       return onResume(state, event);
     case 'report_result':
-      return event.sharing === null ? stopped(state, 'server_signal') : { state, effects: [] };
+      return event.sharing === null ? stopped('server_signal') : { state, effects: [] };
     case 'report_forbidden':
-      return stopped(state, 'forbidden');
+      return stopped('forbidden');
     case 'trip_started':
-      return stopped(state, 'trip_started');
+      return stopped('trip_started');
     case 'start_failed':
       return {
         state: { status: 'failed', tripRequestId: state.tripRequestId, startedAt: null },

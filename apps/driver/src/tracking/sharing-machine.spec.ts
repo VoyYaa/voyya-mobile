@@ -43,10 +43,10 @@ describe('sharingReducer start', () => {
     assert.deepEqual(effects, []);
   });
 
-  it('does not start without a server signal', () => {
+  it('does not start without a server signal and stops any task the system restored', () => {
     const { state, effects } = sharingReducer(INITIAL_SHARING_STATE, home({ sharing: null }));
     assert.equal(state.status, 'idle');
-    assert.deepEqual(effects, []);
+    assert.deepEqual(effects, [{ type: 'stop', reason: 'server_signal' }]);
   });
 
   it('N1: does not start with approximate permission and asks for the precise one', () => {
@@ -121,14 +121,27 @@ describe('sharingReducer stops', () => {
     assert.deepEqual(effects, [{ type: 'stop', reason: 'precise_lost' }]);
   });
 
-  it('does nothing when it was not running', () => {
-    for (const event of [
-      { type: 'report_result', sharing: null },
-      { type: 'report_forbidden' },
-      { type: 'trip_started' },
-    ] as const) {
-      assert.deepEqual(sharingReducer(INITIAL_SHARING_STATE, event).effects, []);
+  it('still stops when idle: a task restored after the process died is orphaned', () => {
+    const expected = [
+      [{ type: 'report_result', sharing: null }, 'server_signal'],
+      [{ type: 'report_forbidden' }, 'forbidden'],
+      [{ type: 'trip_started' }, 'trip_started'],
+      [home({ sharing: null }), 'server_signal'],
+      [home({ sharing: null, tripStatus: 'in_progress' }), 'trip_started'],
+    ] as const;
+    for (const [event, reason] of expected) {
+      const next = sharingReducer(INITIAL_SHARING_STATE, event);
+      assert.equal(next.state.status, 'idle');
+      assert.deepEqual(next.effects, [{ type: 'stop', reason }]);
     }
+  });
+
+  it('does not stop when idle for events that carry no stop signal', () => {
+    assert.deepEqual(sharingReducer(INITIAL_SHARING_STATE, { type: 'foreground' }).effects, []);
+    assert.deepEqual(
+      sharingReducer(INITIAL_SHARING_STATE, { type: 'tick', now: T0 }).effects,
+      [],
+    );
   });
 });
 

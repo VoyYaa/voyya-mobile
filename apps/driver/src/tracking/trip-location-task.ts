@@ -5,13 +5,16 @@ import { reportDriverLocation } from '../api/driver.api';
 import { useLocationIssueStore } from '../state/useLocationIssueStore';
 import { TRIP_LOCATION_TASK } from './location-service';
 import { pickReportableReading, type Reading } from './sharing-machine';
-import { dispatchSharing, noteGoodReading } from './sharing-runtime';
+import { dispatchSharing, noteGoodReading, stopOrphanedTripLocation } from './sharing-runtime';
 
 interface TripLocationTaskData {
   locations: LocationObject[];
 }
 
+const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
+const HTTP_CONFLICT = 409;
+const NOT_ON_SHIFT = 'NOT_ON_SHIFT';
 
 function toReading(location: LocationObject): Reading {
   return {
@@ -22,8 +25,10 @@ function toReading(location: LocationObject): Reading {
   };
 }
 
-function isForbidden(error: unknown): boolean {
-  return error instanceof ApiError && error.status === HTTP_FORBIDDEN;
+function isRejectedForGood(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false;
+  if (error.status === HTTP_FORBIDDEN || error.status === HTTP_UNAUTHORIZED) return true;
+  return error.status === HTTP_CONFLICT && domainErrorCode(error) === NOT_ON_SHIFT;
 }
 
 export async function reportBatch(locations: readonly LocationObject[]): Promise<void> {
@@ -36,13 +41,15 @@ export async function reportBatch(locations: readonly LocationObject[]): Promise
     const result = await reportDriverLocation({ lat: reading.latitude, lng: reading.longitude });
     dispatchSharing({ type: 'report_result', sharing: result.location_sharing });
   } catch (error) {
-    if (!isForbidden(error)) return;
+    if (!isRejectedForGood(error)) return;
     if (domainErrorCode(error) === 'LOCATION_CONSENT_REQUIRED') {
       useLocationIssueStore.getState().setIssue('consent_required');
     }
     dispatchSharing({ type: 'report_forbidden' });
   }
 }
+
+stopOrphanedTripLocation();
 
 TaskManager.defineTask<TripLocationTaskData>(TRIP_LOCATION_TASK, async ({ data, error }) => {
   if (error || !data) return;

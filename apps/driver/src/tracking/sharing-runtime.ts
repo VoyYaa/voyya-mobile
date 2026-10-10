@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { onSessionCleared } from '@voyyaa/app-runtime';
 import {
   INITIAL_SHARING_STATE,
   sharingReducer,
@@ -50,6 +51,15 @@ export function dispatchSharing(event: SharingEvent): void {
   );
   effects.forEach(enqueue);
 }
+
+export function stopOrphanedTripLocation(): void {
+  if (useSharingStore.getState().machine.status === 'running') return;
+  enqueue({ type: 'stop', reason: 'orphan_cleanup' });
+}
+
+onSessionCleared(() => {
+  dispatchSharing({ type: 'report_result', sharing: null });
+});
 
 export function noteGoodReading(now: number): void {
   useSharingStore.setState({ lastReadingAt: now });
