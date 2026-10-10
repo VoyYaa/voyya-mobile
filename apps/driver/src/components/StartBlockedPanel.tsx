@@ -80,6 +80,7 @@ export function StartBlockedPanel({
             variant="secondary"
             size="lg"
             disabled={noShow.kind === 'waiting'}
+            wrapLabel
             onPress={onNoShow}
             testID="blocked-no-show"
           />
