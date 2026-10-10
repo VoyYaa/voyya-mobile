@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { SessionResponse, SessionTokens, SessionUser } from '@voyyaa/shared';
 import { configureAuthHandlers } from '../api/http-client';
-import { refreshSession } from '../api/session.api';
+import { logout, refreshSession } from '../api/session.api';
 import {
   clearPersistedSession,
   readPersistedSession,
@@ -15,6 +15,7 @@ export type SessionStatus = 'hydrating' | 'authenticated' | 'guest';
 
 interface SessionState {
   status: SessionStatus;
+  sessionEpoch: number;
   accessToken: string | null;
   refreshToken: string | null;
   user: SessionUser | null;
@@ -30,8 +31,9 @@ function computeExpiresAt(expiresInSec: number): number {
   return Date.now() + expiresInSec * 1000;
 }
 
-export const useSessionStore = create<SessionState>((set) => ({
+export const useSessionStore = create<SessionState>((set, get) => ({
   status: 'hydrating',
+  sessionEpoch: 0,
   accessToken: null,
   refreshToken: null,
   user: null,
@@ -53,6 +55,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   },
 
   setSession: async (response) => {
+    set({ sessionEpoch: get().sessionEpoch + 1 });
     const accessTokenExpiresAt = computeExpiresAt(response.tokens.expires_in);
     await saveSession({
       accessToken: response.tokens.access_token,
@@ -81,6 +84,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   },
 
   clearSession: async () => {
+    set({ sessionEpoch: get().sessionEpoch + 1 });
     await clearPersistedSession();
     await runSessionClearedHandlers();
     set({
@@ -101,7 +105,15 @@ const refreshSessionOnce = createSessionRefresher({
   requestRefresh: (refreshToken) => refreshSession({ refresh_token: refreshToken }),
   saveTokens: (tokens) => useSessionStore.getState().setTokens(tokens),
   clear: () => useSessionStore.getState().clearSession(),
+  getEpoch: () => useSessionStore.getState().sessionEpoch,
+  revoke: async (refreshToken) => {
+    await logout({ refresh_token: refreshToken });
+  },
 });
+
+export function waitForSessionRefresh(): Promise<void> {
+  return refreshSessionOnce.whenIdle();
+}
 
 export async function tryRefreshSession(): Promise<string | null> {
   try {

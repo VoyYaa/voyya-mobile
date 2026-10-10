@@ -1,10 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 import { logout } from '../api/session.api';
-import { useSessionStore } from './useSessionStore';
+import { useSessionStore, waitForSessionRefresh } from './useSessionStore';
 
 export function useLogout() {
   return useMutation({
     mutationFn: async () => {
+      await waitForSessionRefresh();
       const { refreshToken } = useSessionStore.getState();
       try {
         if (refreshToken) {
