@@ -341,7 +341,7 @@ export default function HomeScreen(): React.JSX.Element {
 
       <LocationConsentSheet
         visible={consentVisible}
-        mode="shift"
+        mode={isOnShift ? 'accept' : 'shift'}
         onAccepted={handleConsentAccepted}
         onDismiss={handleConsentDismiss}
       />

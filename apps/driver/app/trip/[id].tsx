@@ -386,7 +386,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <Stage topInset={insets.top}>
+      <Stage topInset={insets.top} growWithContent>
         <View
           style={{
             paddingHorizontal: theme.spacing.gutter,
