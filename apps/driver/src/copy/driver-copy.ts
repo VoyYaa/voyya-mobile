@@ -1,4 +1,5 @@
 import { homeCopy } from './home-copy';
+import { issuesCopy } from './issues-copy';
 import { DRIVER_LOCATION_RETENTION_MAX_HOURS, DRIVER_PIN_LENGTH } from '@voyyaa/shared';
 
 export const driverCopy = {
@@ -338,21 +339,5 @@ export const driverCopy = {
     rowError: 'No pudimos confirmar este cobro.',
     addressRemoved: 'Dirección eliminada por política de retención.',
   },
-  issues: {
-    permissionDenied: 'Necesitamos tu ubicación para activar el turno.',
-    permissionDeniedAction: 'Cómo habilitarlo',
-    gpsDisabled: 'Activa la ubicación de tu teléfono para poder recibir solicitudes.',
-    gpsDisabledAction: 'Abrir ajustes',
-    locationTimeout: 'No pudimos obtener tu ubicación a tiempo. Inténtalo de nuevo.',
-    offline: 'Sin conexión · no pudimos activar tu turno.',
-    serverError: 'No pudimos activar tu turno.',
-    retry: 'Reintentar',
-    blockedByTrip:
-      'No puedes salir de turno con un viaje en curso. Finalízalo o cancélalo primero.',
-    locationPermission: 'Revisa el permiso de ubicación: no estás recibiendo solicitudes.',
-    consentRequired:
-      'Acepta el aviso nuevo para seguir recibiendo viajes. Sin aceptarlo, no te ofrecemos solicitudes.',
-    consentRequiredAction: 'Leer y aceptar',
-    preciseLocationNeeded: 'Activa la ubicación precisa para que tu pasajero te vea.',
-  },
+  issues: issuesCopy,
 } as const;
