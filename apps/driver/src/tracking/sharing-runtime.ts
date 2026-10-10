@@ -13,6 +13,7 @@ import { startTripLocationUpdates, stopTripLocationUpdates } from './location-se
 interface SharingStoreState {
   machine: SharingState;
   lastReadingAt: number | null;
+  intervalSec: number | null;
   notificationsGranted: boolean | null;
   accuracy: LocationAccuracy;
 }
@@ -20,6 +21,7 @@ interface SharingStoreState {
 export const useSharingStore = create<SharingStoreState>(() => ({
   machine: INITIAL_SHARING_STATE,
   lastReadingAt: null,
+  intervalSec: null,
   notificationsGranted: null,
   accuracy: 'unknown',
 }));
@@ -45,9 +47,11 @@ function enqueue(effect: SharingEffect): void {
 export function dispatchSharing(event: SharingEvent): void {
   const { machine } = useSharingStore.getState();
   const { state, effects } = sharingReducer(machine, event);
-  const restarted = effects.some((effect) => effect.type === 'start');
+  const started = effects.find((effect) => effect.type === 'start');
   useSharingStore.setState(
-    restarted ? { machine: state, lastReadingAt: null } : { machine: state },
+    started?.type === 'start'
+      ? { machine: state, lastReadingAt: null, intervalSec: started.intervalSec }
+      : { machine: state },
   );
   effects.forEach(enqueue);
 }
