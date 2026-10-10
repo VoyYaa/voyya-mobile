@@ -19,7 +19,7 @@
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "test": "node --test --import ./test-support/resolve-ts-extension.mjs src/api/http-client.spec.ts src/api/fetch-with-timeout.spec.ts src/location/within-deadline.spec.ts src/location/location-gate.spec.ts src/api/resolve-api-base-url.spec.ts src/session/dev-only/web-secure-storage.adapter.spec.ts src/consent/consent-service.spec.ts src/consent/consent-errors.spec.ts src/query/focus-bridge.spec.ts",
+    "test": "node --test --import ./test-support/resolve-ts-extension.mjs src/api/http-client.spec.ts src/api/fetch-with-timeout.spec.ts src/location/within-deadline.spec.ts src/location/location-gate.spec.ts src/api/resolve-api-base-url.spec.ts src/session/dev-only/web-secure-storage.adapter.spec.ts src/consent/consent-service.spec.ts src/consent/consent-errors.spec.ts src/query/focus-bridge.spec.ts src/session/session-refresher.spec.ts",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "dependencies": {

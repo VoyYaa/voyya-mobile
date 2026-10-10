@@ -9,6 +9,7 @@ import {
   updatePersistedTokens,
 } from './secure-storage';
 import { runSessionClearedHandlers } from './session-cleanup';
+import { createSessionRefresher } from './session-refresher';
 
 export type SessionStatus = 'hydrating' | 'authenticated' | 'guest';
 
@@ -92,22 +93,27 @@ export const useSessionStore = create<SessionState>((set) => ({
   },
 }));
 
+const refreshSessionOnce = createSessionRefresher({
+  getCurrent: () => {
+    const { accessToken, refreshToken } = useSessionStore.getState();
+    return { accessToken, refreshToken };
+  },
+  requestRefresh: (refreshToken) => refreshSession({ refresh_token: refreshToken }),
+  saveTokens: (tokens) => useSessionStore.getState().setTokens(tokens),
+  clear: () => useSessionStore.getState().clearSession(),
+});
+
 export async function tryRefreshSession(): Promise<string | null> {
-  const { refreshToken } = useSessionStore.getState();
-  if (!refreshToken) return null;
   try {
-    const newTokens = await refreshSession({ refresh_token: refreshToken });
-    await useSessionStore.getState().setTokens(newTokens);
-    return newTokens.access_token;
+    return await refreshSessionOnce();
   } catch {
-    await useSessionStore.getState().clearSession();
     return null;
   }
 }
 
 configureAuthHandlers({
   getAccessToken: () => useSessionStore.getState().accessToken,
-  refreshAndRetry: tryRefreshSession,
+  refreshAndRetry: refreshSessionOnce,
   onSessionExpired: () => {
     void useSessionStore.getState().clearSession();
   },

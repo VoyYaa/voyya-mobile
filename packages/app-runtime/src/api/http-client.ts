@@ -30,7 +30,7 @@ export function getApiBaseUrl(): string {
 
 export interface AuthHandlers {
   getAccessToken: () => string | null;
-  refreshAndRetry: () => Promise<string | null>;
+  refreshAndRetry: (failedAccessToken: string | null) => Promise<string | null>;
   onSessionExpired: () => void;
 }
 
@@ -75,6 +75,7 @@ async function performRequest<TResponse>(
   errorSchema: z.ZodType<ApiErrorPayload>,
   isRetry: boolean,
 ): Promise<TResponse> {
+  const usedToken = options.skipAuth ? null : (authHandlers?.getAccessToken() ?? null);
   let res: Response;
   try {
     res = await fetchWithTimeout(`${getApiBaseUrl()}${options.path}`, {
@@ -97,7 +98,7 @@ async function performRequest<TResponse>(
     !isRetry &&
     authHandlers
   ) {
-    const newToken = await authHandlers.refreshAndRetry();
+    const newToken = await authHandlers.refreshAndRetry(usedToken);
     if (newToken) {
       return performRequest(options, responseSchema, errorSchema, true);
     }

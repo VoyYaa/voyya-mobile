@@ -150,3 +150,65 @@ describe('apiRequest 429 handling', () => {
     });
   });
 });
+
+describe('apiRequest concurrent 401s', () => {
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  it('retries every request once with the token from one shared refresh', async () => {
+    let currentToken = 'old';
+    let refreshCalls = 0;
+    let expiredCalls = 0;
+    let shared: Promise<string | null> | null = null;
+    configureApiClient({ baseUrl: 'http://api.test', defaultErrorSchema: ErrorBody });
+    configureAuthHandlers({
+      getAccessToken: () => currentToken,
+      refreshAndRetry: () => {
+        shared ??= (async () => {
+          refreshCalls += 1;
+          await new Promise<void>((resolve) => setImmediate(resolve));
+          currentToken = 'fresh';
+          return currentToken;
+        })();
+        return shared;
+      },
+      onSessionExpired: () => {
+        expiredCalls += 1;
+      },
+    });
+    const seen: string[] = [];
+    globalThis.fetch = async (_url, init) => {
+      const header = new Headers(init?.headers).get('Authorization') ?? '';
+      seen.push(header);
+      return header === 'Bearer fresh'
+        ? jsonResponse(200, { ok: true })
+        : jsonResponse(401, { code: 'UNAUTHORIZED', message: 'x' });
+    };
+    const results = await Promise.all(
+      Array.from({ length: 6 }, () => apiRequest({ method: 'GET', path: '/x' }, OkBody)),
+    );
+    assert.equal(results.length, 6);
+    assert.equal(refreshCalls, 1);
+    assert.equal(expiredCalls, 0);
+    assert.equal(seen.filter((header) => header === 'Bearer fresh').length, 6);
+  });
+
+  it('keeps the session and surfaces the error when the refresh fails transiently', async () => {
+    let expiredCalls = 0;
+    configureApiClient({ baseUrl: 'http://api.test', defaultErrorSchema: ErrorBody });
+    configureAuthHandlers({
+      getAccessToken: () => 'old',
+      refreshAndRetry: () => Promise.reject(new ApiError('network', 'offline')),
+      onSessionExpired: () => {
+        expiredCalls += 1;
+      },
+    });
+    globalThis.fetch = async () => jsonResponse(401, { code: 'UNAUTHORIZED', message: 'x' });
+    await assert.rejects(
+      apiRequest({ method: 'GET', path: '/x' }, OkBody),
+      (error: unknown) => error instanceof ApiError && error.kind === 'network',
+    );
+    assert.equal(expiredCalls, 0);
+  });
+});
