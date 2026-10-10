@@ -9,6 +9,9 @@ no PostgreSQL.
 node tools/mock-api-llegada-segura/server.mjs        # puerto 3999 (MOCK_API_PORT)
 ```
 
+Escucha en `127.0.0.1`, sin autenticación real: el emulador llega con `10.0.2.2`. Para probar con un teléfono físico por la
+red local, arráncalo con `MOCK_API_HOST=0.0.0.0` y solo en una red de confianza.
+
 Las apps apuntan a él con `EXPO_PUBLIC_API_URL=http://10.0.2.2:3999` en el emulador de Android (el host es
 `10.0.2.2`). Los tokens son fijos: `passenger-token` y `driver-token`. Cualquier teléfono, OTP, cédula y PIN
 inician sesión.

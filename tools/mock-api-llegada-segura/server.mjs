@@ -1,6 +1,7 @@
 import http from 'node:http';
 
 const PORT = Number(process.env.MOCK_API_PORT ?? 3999);
+const HOST = process.env.MOCK_API_HOST ?? '127.0.0.1';
 const STALE_AFTER_SEC = 45;
 const HIDE_AFTER_SEC = 300;
 const INTERVAL_SEC = 15;
@@ -530,6 +531,6 @@ http
       json(res, 500, { code: 'MOCK_ERROR', message: String(error) }),
     );
   })
-  .listen(PORT, '0.0.0.0', () => {
-    console.log(`mock-api-llegada-segura escuchando en ${PORT}`);
+  .listen(PORT, HOST, () => {
+    console.log(`mock-api-llegada-segura escuchando en ${HOST}:${PORT}`);
   });
