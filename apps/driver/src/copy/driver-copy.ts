@@ -166,6 +166,7 @@ export const driverCopy = {
     seeAll: (count: number) => `Ver todas (${count})`,
     emptyTitle: 'Sin solicitudes cercanas por ahora',
     emptyBody: 'Sigues visible para los pasajeros.',
+    emptyBodyConsentPending: 'Para volver a recibir solicitudes, acepta el aviso nuevo.',
     homeLoadError: 'No pudimos cargar tu estado de turno',
     offersLoadError: 'No pudimos cargar tus solicitudes',
     nearest: 'Más cercana',
@@ -379,7 +380,7 @@ export const driverCopy = {
       'No puedes salir de turno con un viaje en curso. Finalízalo o cancélalo primero.',
     locationPermission: 'Revisa el permiso de ubicación: no estás recibiendo solicitudes.',
     consentRequired:
-      'Tu autorización de ubicación ya no está vigente. Acepta el aviso de nuevo para seguir en turno.',
+      'Acepta el aviso nuevo para seguir recibiendo viajes. Sin aceptarlo, no te ofrecemos solicitudes.',
     consentRequiredAction: 'Leer y aceptar',
     preciseLocationNeeded: 'Activa la ubicación precisa para que tu pasajero te vea.',
   },

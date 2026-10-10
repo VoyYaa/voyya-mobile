@@ -17,6 +17,7 @@ import {
 import {
   resolveLocationConsentConfirmed,
   isNetworkError,
+  useLocationConsentStatus,
   useLogout,
   useSessionStore,
 } from '@voyyaa/app-runtime';
@@ -81,7 +82,10 @@ export default function HomeScreen(): React.JSX.Element {
   const activeTrip = home.data?.active_trip ?? null;
   const isOnShift = shift?.status === 'available';
   const reportLocationBestEffort = useBestEffortLocationReport();
-  const locationIssue = useLocationIssueStore((s) => s.issue);
+  const consentStatus = useLocationConsentStatus();
+  const consentPending = isOnShift && consentStatus.data?.requires_acceptance === true;
+  const storedLocationIssue = useLocationIssueStore((s) => s.issue);
+  const locationIssue = consentPending ? 'consent_required' : storedLocationIssue;
   const setLocationIssue = useLocationIssueStore((s) => s.setIssue);
 
   const [consentVisible, setConsentVisible] = useState(false);
@@ -301,7 +305,9 @@ export default function HomeScreen(): React.JSX.Element {
               <EmptyState
                 glyph="empty"
                 title={driverCopy.home.emptyTitle}
-                body={driverCopy.home.emptyBody}
+                body={
+                  consentPending ? driverCopy.home.emptyBodyConsentPending : driverCopy.home.emptyBody
+                }
               />
             )}
 
