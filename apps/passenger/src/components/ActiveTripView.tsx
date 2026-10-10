@@ -161,7 +161,7 @@ export function ActiveTripView({
 
   return (
     <View style={{ flex: 1 }}>
-      <Stage topInset={insets.top} testID="trip-stage">
+      <Stage topInset={insets.top} growWithContent testID="trip-stage">
         <ScreenHeader tone="stage" title={copy.header} />
         <View
           style={{
