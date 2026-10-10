@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Linking, Platform } from 'react-native';
-import { getSecureStoragePort } from '@voyyaa/app-runtime';
+import { getSecureStoragePort, onSessionCleared } from '@voyyaa/app-runtime';
 import {
   buildNavigationLinks,
   isNavigableTarget,
@@ -16,6 +16,8 @@ import {
 } from '../trip/route-opener';
 
 const REMEMBERED_APP_KEY = 'voyya_navigation_app';
+
+onSessionCleared(() => getSecureStoragePort().deleteItem(REMEMBERED_APP_KEY));
 
 function currentPlatform(): NavigationPlatform {
   if (Platform.OS === 'ios') return 'ios';

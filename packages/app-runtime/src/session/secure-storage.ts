@@ -37,10 +37,10 @@ export async function readPersistedSession(): Promise<PersistedSession | null> {
 export async function saveSession(session: PersistedSession): Promise<void> {
   const storage = getSecureStoragePort();
   await Promise.all([
-    storage.setItem(KEYS.accessToken, session.accessToken),
+    storage.setItem(KEYS.accessToken, session.accessToken, DEVICE_ONLY),
     storage.setItem(KEYS.refreshToken, session.refreshToken, DEVICE_ONLY),
-    storage.setItem(KEYS.user, JSON.stringify(session.user)),
-    storage.setItem(KEYS.accessTokenExpiresAt, String(session.accessTokenExpiresAt)),
+    storage.setItem(KEYS.user, JSON.stringify(session.user), DEVICE_ONLY),
+    storage.setItem(KEYS.accessTokenExpiresAt, String(session.accessTokenExpiresAt), DEVICE_ONLY),
   ]);
 }
 
@@ -51,9 +51,9 @@ export async function updatePersistedTokens(
 ): Promise<void> {
   const storage = getSecureStoragePort();
   await Promise.all([
-    storage.setItem(KEYS.accessToken, accessToken),
+    storage.setItem(KEYS.accessToken, accessToken, DEVICE_ONLY),
     storage.setItem(KEYS.refreshToken, refreshToken, DEVICE_ONLY),
-    storage.setItem(KEYS.accessTokenExpiresAt, String(accessTokenExpiresAt)),
+    storage.setItem(KEYS.accessTokenExpiresAt, String(accessTokenExpiresAt), DEVICE_ONLY),
   ]);
 }
 
