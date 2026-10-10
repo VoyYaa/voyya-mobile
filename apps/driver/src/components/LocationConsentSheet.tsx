@@ -15,6 +15,7 @@ export interface LocationConsentSheetProps {
 
 const NOTICE = LOCATION_NOTICES.driver;
 const NOTICE_ROWS = NOTICE.rows.map(({ label, value }) => ({ label, value }));
+const FACT_ROWS = driverCopy.consentNotice.facts.map(({ label, value }) => ({ label, value }));
 const ERROR_ROW = {
   label: driverCopy.consentNotice.errorLabel,
   value: driverCopy.consentNotice.errorValue,
@@ -30,6 +31,7 @@ export function LocationConsentSheet({
   const grant = useGrantLocationConsent();
   const reset = grant.reset;
   const isRead = mode === 'read';
+  const noticeRows = isRead ? NOTICE_ROWS : [...FACT_ROWS, ...NOTICE_ROWS];
 
   useEffect(() => {
     if (!visible) reset();
@@ -54,7 +56,7 @@ export function LocationConsentSheet({
     <BaseLocationConsentSheet
       visible={visible}
       title={NOTICE.title}
-      rows={grant.isError ? [ERROR_ROW, ...NOTICE_ROWS] : NOTICE_ROWS}
+      rows={grant.isError ? [ERROR_ROW, ...noticeRows] : noticeRows}
       primaryLabel={primaryLabel}
       secondaryLabel={isRead || grant.isPending ? undefined : copy.secondary}
       onPrimary={isRead ? onDismiss : handleAccept}

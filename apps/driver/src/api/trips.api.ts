@@ -1,4 +1,4 @@
-import { CompleteTripDTO, TripError, TripTransitionResult } from '@voyyaa/shared';
+import { CompleteTripDTO, StartTripDTO, TripError, TripTransitionResult } from '@voyyaa/shared';
 import { driverRequest } from './driver-request';
 
 type TripTransitionAction =
@@ -24,8 +24,15 @@ export function markTripArrived(tripRequestId: number): Promise<TripTransitionRe
   return postTripTransition(tripRequestId, 'arrived');
 }
 
-export function startTrip(tripRequestId: number): Promise<TripTransitionResult> {
-  return postTripTransition(tripRequestId, 'start');
+export function startTrip(
+  tripRequestId: number,
+  dto?: StartTripDTO,
+): Promise<TripTransitionResult> {
+  return postTripTransition(
+    tripRequestId,
+    'start',
+    dto === undefined ? undefined : StartTripDTO.parse(dto),
+  );
 }
 
 export function completeTrip(

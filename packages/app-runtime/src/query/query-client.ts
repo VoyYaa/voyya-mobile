@@ -1,29 +1,30 @@
-import { QueryClient, focusManager } from '@tanstack/react-query';
-import { AppState, type AppStateStatus } from 'react-native';
+import { QueryClient, focusManager, onlineManager } from '@tanstack/react-query';
+import NetInfo from '@react-native-community/netinfo';
+import { AppState } from 'react-native';
+import { wireFocusToAppState, wireOnlineToNetwork } from './focus-bridge';
 
-function handleAppStateChange(status: AppStateStatus): void {
-  focusManager.setFocused(status === 'active');
-}
+let managersWired = false;
 
-let focusManagerWired = false;
-
-function wireFocusManagerToAppState(): void {
-  if (focusManagerWired) return;
-  focusManagerWired = true;
-  AppState.addEventListener('change', handleAppStateChange);
+function wireManagers(): void {
+  if (managersWired) return;
+  managersWired = true;
+  wireFocusToAppState(AppState, focusManager);
+  wireOnlineToNetwork(NetInfo, onlineManager);
 }
 
 export function createQueryClient(): QueryClient {
-  wireFocusManagerToAppState();
+  wireManagers();
   return new QueryClient({
     defaultOptions: {
       queries: {
         retry: 2,
         staleTime: 2000,
         refetchOnWindowFocus: false,
+        networkMode: 'always',
       },
       mutations: {
         retry: false,
+        networkMode: 'always',
       },
     },
   });

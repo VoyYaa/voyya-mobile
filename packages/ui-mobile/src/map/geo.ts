@@ -12,6 +12,27 @@ export function toLatLng(position: Position): MapLatLng | null {
   return { lat, lng };
 }
 
+export interface MapBounds {
+  ne: Position;
+  sw: Position;
+}
+
+export function toBounds(points: readonly MapLatLng[]): MapBounds | null {
+  const first = points[0];
+  if (!first) return null;
+  let minLat = first.lat;
+  let maxLat = first.lat;
+  let minLng = first.lng;
+  let maxLng = first.lng;
+  for (const point of points) {
+    minLat = Math.min(minLat, point.lat);
+    maxLat = Math.max(maxLat, point.lat);
+    minLng = Math.min(minLng, point.lng);
+    maxLng = Math.max(maxLng, point.lng);
+  }
+  return { ne: [maxLng, maxLat], sw: [minLng, minLat] };
+}
+
 export function toRouteFeature(points: readonly MapLatLng[]): Feature<LineString> {
   return {
     type: 'Feature',

@@ -17,6 +17,7 @@ import {
 import {
   resolveLocationConsentConfirmed,
   isNetworkError,
+  useLocationConsentStatus,
   useLogout,
   useSessionStore,
 } from '@voyyaa/app-runtime';
@@ -29,6 +30,8 @@ import { PendingCashBanner } from '../src/components/PendingCashBanner';
 import { LocationIssueBanner } from '../src/components/LocationIssueBanner';
 import { OfferBanner } from '../src/components/OfferBanner';
 import { LocationConsentSheet } from '../src/components/LocationConsentSheet';
+import { SharingDisclosureSheet } from '../src/components/SharingDisclosureSheet';
+import { useSharingDisclosure } from '../src/hooks/useSharingDisclosure';
 import { useDriverHome } from '../src/hooks/useDriverHome';
 import { useIsAuthenticated } from '../src/hooks/useIsAuthenticated';
 import { useShiftActivation, type ShiftActivationPhase } from '../src/hooks/useShiftActivation';
@@ -79,10 +82,15 @@ export default function HomeScreen(): React.JSX.Element {
   const activeTrip = home.data?.active_trip ?? null;
   const isOnShift = shift?.status === 'available';
   const reportLocationBestEffort = useBestEffortLocationReport();
-  const locationIssue = useLocationIssueStore((s) => s.issue);
+  const consentStatus = useLocationConsentStatus();
+  const consentPending = isOnShift && consentStatus.data?.requires_acceptance === true;
+  const storedLocationIssue = useLocationIssueStore((s) => s.issue);
+  const locationIssue = consentPending ? 'consent_required' : storedLocationIssue;
   const setLocationIssue = useLocationIssueStore((s) => s.setIssue);
 
   const [consentVisible, setConsentVisible] = useState(false);
+  const [readNoticeVisible, setReadNoticeVisible] = useState(false);
+  const disclosure = useSharingDisclosure();
   const [accountVisible, setAccountVisible] = useState(false);
   const [pulling, setPulling] = useState(false);
 
@@ -179,6 +187,7 @@ export default function HomeScreen(): React.JSX.Element {
 
   const handleConsentAccepted = (): void => {
     setConsentVisible(false);
+    void disclosure.showIfUnseen();
     if (isOnShift) {
       setLocationIssue(null);
       reportLocationBestEffort();
@@ -231,6 +240,7 @@ export default function HomeScreen(): React.JSX.Element {
     <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <ShiftHero
         onShift={isOnShift}
+        consentPending={consentPending}
         topInset={insets.top}
         driverName={driverName}
         onAvatarPress={() => setAccountVisible(true)}
@@ -261,6 +271,7 @@ export default function HomeScreen(): React.JSX.Element {
           checked={shift.on_shift}
           busy={shiftActivation.isBusy}
           disabled={!shift.vehicle_linked}
+          consentPending={consentPending}
           onToggle={handleShiftAction}
         />
 
@@ -296,7 +307,9 @@ export default function HomeScreen(): React.JSX.Element {
               <EmptyState
                 glyph="empty"
                 title={driverCopy.home.emptyTitle}
-                body={driverCopy.home.emptyBody}
+                body={
+                  consentPending ? driverCopy.home.emptyBodyConsentPending : driverCopy.home.emptyBody
+                }
               />
             )}
 
@@ -330,9 +343,23 @@ export default function HomeScreen(): React.JSX.Element {
 
       <LocationConsentSheet
         visible={consentVisible}
-        mode="shift"
+        mode={isOnShift ? 'accept' : 'shift'}
         onAccepted={handleConsentAccepted}
         onDismiss={handleConsentDismiss}
+      />
+      <LocationConsentSheet
+        visible={readNoticeVisible}
+        mode="read"
+        onAccepted={() => setReadNoticeVisible(false)}
+        onDismiss={() => setReadNoticeVisible(false)}
+      />
+      <SharingDisclosureSheet
+        visible={disclosure.visible}
+        onDismiss={disclosure.dismiss}
+        onReadFullNotice={() => {
+          disclosure.dismiss();
+          setReadNoticeVisible(true);
+        }}
       />
       <AccountSheet
         visible={accountVisible}

@@ -1,15 +1,13 @@
-import { z } from 'zod';
 import {
   DriverError,
   DriverHomeState,
   DriverShiftState,
   PendingCashTripsResponse,
   ReportDriverLocationDTO,
+  ReportDriverLocationResult,
   UpdateDriverShiftDTO,
 } from '@voyyaa/shared';
 import { driverRequest } from './driver-request';
-
-const LocationReported = z.object({ ok: z.literal(true) });
 
 export function updateDriverShift(dto: UpdateDriverShiftDTO): Promise<DriverShiftState> {
   const body = UpdateDriverShiftDTO.parse(dto);
@@ -22,11 +20,11 @@ export function updateDriverShift(dto: UpdateDriverShiftDTO): Promise<DriverShif
 
 export function reportDriverLocation(
   dto: ReportDriverLocationDTO,
-): Promise<z.infer<typeof LocationReported>> {
+): Promise<ReportDriverLocationResult> {
   const body = ReportDriverLocationDTO.parse(dto);
   return driverRequest(
     { method: 'POST', path: '/driver/location', body },
-    LocationReported,
+    ReportDriverLocationResult,
     DriverError,
   );
 }

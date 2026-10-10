@@ -9,12 +9,14 @@ import {
   RadarPulse,
   useTheme,
 } from '@voyyaa/ui-mobile';
+import { shiftSwitchHint } from '../home/shift-status-copy';
 import { driverCopy } from '../copy/driver-copy';
 
 export interface ShiftSwitchProps {
   checked: boolean;
   busy: boolean;
   disabled?: boolean;
+  consentPending?: boolean;
   onToggle: () => void;
 }
 
@@ -27,6 +29,7 @@ export function ShiftSwitch({
   checked,
   busy,
   disabled = false,
+  consentPending = false,
   onToggle,
 }: ShiftSwitchProps): React.JSX.Element {
   const theme = useTheme();
@@ -104,7 +107,7 @@ export function ShiftSwitch({
             {driverCopy.home.onShiftEyebrow}
           </Text>
           <Text style={{ ...theme.typography.small, color: colors.text }}>
-            {busy ? driverCopy.home.shiftBusyOff : driverCopy.home.shiftOnHint}
+            {busy ? driverCopy.home.shiftBusyOff : shiftSwitchHint({ consentPending })}
           </Text>
         </View>
       </View>

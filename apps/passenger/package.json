@@ -11,7 +11,7 @@
     "ios": "expo start --dev-client --ios",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
-    "test": "node --test src/lib/consent-phase.spec.ts src/lib/active-trip-route.spec.ts src/lib/format-date.spec.ts src/lib/free-cancellation.spec.ts src/lib/company-selection.spec.ts src/lib/no-driver-decision.spec.ts src/lib/driver-change.spec.ts src/lib/coarse-coordinate.spec.ts src/lib/verified-places.spec.ts",
+    "test": "node --test src/lib/consent-phase.spec.ts src/lib/active-trip-route.spec.ts src/lib/format-date.spec.ts src/lib/free-cancellation.spec.ts src/lib/company-selection.spec.ts src/lib/no-driver-decision.spec.ts src/lib/driver-change.spec.ts src/lib/coarse-coordinate.spec.ts src/lib/verified-places.spec.ts src/lib/start-code-store.spec.ts src/lib/pickup-origin-store.spec.ts src/lib/start-code-view.spec.ts src/lib/driver-tracking-presentation.spec.ts src/lib/trip-status-policy.spec.ts",
     "eas-build-post-install": "cd ../.. && pnpm run build",
     "web": "expo start --web"
   },
@@ -25,6 +25,7 @@
     "@voyyaa/shared": "workspace:*",
     "@voyyaa/ui-mobile": "workspace:*",
     "expo": "~51.0.28",
+    "expo-application": "~5.9.1",
     "expo-constants": "~16.0.2",
     "expo-dev-client": "~4.0.29",
     "expo-font": "~12.0.10",

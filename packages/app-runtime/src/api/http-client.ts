@@ -30,7 +30,7 @@ export function getApiBaseUrl(): string {
 
 export interface AuthHandlers {
   getAccessToken: () => string | null;
-  refreshAndRetry: () => Promise<string | null>;
+  refreshAndRetry: (failedAccessToken: string | null) => Promise<string | null>;
   onSessionExpired: () => void;
 }
 
@@ -75,6 +75,7 @@ async function performRequest<TResponse>(
   errorSchema: z.ZodType<ApiErrorPayload>,
   isRetry: boolean,
 ): Promise<TResponse> {
+  const usedToken = options.skipAuth ? null : (authHandlers?.getAccessToken() ?? null);
   let res: Response;
   try {
     res = await fetchWithTimeout(`${getApiBaseUrl()}${options.path}`, {
@@ -97,7 +98,7 @@ async function performRequest<TResponse>(
     !isRetry &&
     authHandlers
   ) {
-    const newToken = await authHandlers.refreshAndRetry();
+    const newToken = await authHandlers.refreshAndRetry(usedToken);
     if (newToken) {
       return performRequest(options, responseSchema, errorSchema, true);
     }
@@ -107,6 +108,7 @@ async function performRequest<TResponse>(
   const json: unknown = await res.json().catch(() => null);
 
   if (!res.ok) {
+    const retryAfterSec = parseRetryAfterSec(res.headers.get('Retry-After'));
     const parsedError = errorSchema.safeParse(json);
     if (parsedError.success) {
       const withBackoff = RetryInSecShape.safeParse(json);
@@ -117,6 +119,7 @@ async function performRequest<TResponse>(
         parsedError.data.code,
         withBackoff.success ? withBackoff.data.retry_in_sec : undefined,
         json,
+        retryAfterSec,
       );
     }
     throw new ApiError(
@@ -126,6 +129,7 @@ async function performRequest<TResponse>(
       undefined,
       undefined,
       json,
+      retryAfterSec,
     );
   }
 
@@ -134,6 +138,12 @@ async function performRequest<TResponse>(
     throw new ApiError('validation', 'La respuesta del servidor no tiene el formato esperado.');
   }
   return parsed.data;
+}
+
+export function parseRetryAfterSec(header: string | null): number | undefined {
+  if (header === null) return undefined;
+  const seconds = Number(header.trim());
+  return Number.isInteger(seconds) && seconds > 0 ? seconds : undefined;
 }
 
 function networkErrorMessage(e: unknown): string {

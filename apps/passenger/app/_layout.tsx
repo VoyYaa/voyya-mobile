@@ -19,6 +19,7 @@ import {
 } from '@voyyaa/app-runtime';
 import { ActiveTripStartupGate } from '../src/components/ActiveTripStartupGate';
 import { useRouteGuard } from '../src/hooks/useRouteGuard';
+import { wipeLocalTripDataOnFreshInstall } from '../src/lib/start-code-runtime';
 import { API_BASE_URL } from '../src/constants/env';
 
 configureApiClient({ baseUrl: API_BASE_URL, defaultErrorSchema: TripError });
@@ -36,6 +37,7 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
+    void wipeLocalTripDataOnFreshInstall();
     void hydrate();
   }, []);
 

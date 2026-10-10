@@ -1,5 +1,5 @@
-import React from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   AccentText,
@@ -16,9 +16,13 @@ import {
 } from '@voyyaa/ui-mobile';
 import type { Location, TripRequestStatus } from '@voyyaa/shared';
 import { useDriverChangeNotice } from '../hooks/useDriverChangeNotice';
+import { useSavedStartCode } from '../hooks/useStartCodePersistence';
 import { formatEta } from '../lib/eta';
+import { startCodeCardView, startCodeShouldAnnounceStart } from '../lib/start-code-view';
 import { passengerCopy } from '../copy/passenger-copy';
 import { DriverCard } from './DriverCard';
+import { DriverTrackingCard } from './DriverTrackingCard';
+import { StartCodeCard } from './StartCodeCard';
 import { FreeCancelRail } from './FreeCancelRail';
 import { TripStepRail, type TripStep } from './TripStepRail';
 
@@ -33,6 +37,7 @@ export interface ActiveTripViewProps {
   isStale: boolean;
   offline: boolean;
   onCancel: () => void;
+  onRefresh: () => void;
 }
 
 const copy = passengerCopy.trip;
@@ -121,15 +126,42 @@ export function ActiveTripView({
   isStale,
   offline,
   onCancel,
+  onRefresh,
 }: ActiveTripViewProps): React.JSX.Element {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const inProgress = step === 3;
+  const arrived = step === 2;
   const driverChange = useDriverChangeNotice(data.trip_request_id, data.driver);
+  const saved = useSavedStartCode(data.trip_request_id, offline || isStale);
+  const codeView = startCodeCardView({
+    response: data,
+    saved,
+    offline,
+    refreshFailed: isStale,
+  });
+  const [codeChanged, setCodeChanged] = useState(false);
+  const hadCards = useRef(false);
+  const hasCards =
+    codeView.kind === 'code' || codeView.kind === 'blocked' || data.driver_tracking !== null;
+
+  useEffect(() => {
+    if (driverChange.message !== null) setCodeChanged(true);
+  }, [driverChange.message]);
+
+  useEffect(() => setCodeChanged(false), [step]);
+
+  useEffect(() => {
+    const previous = hadCards.current ? 'code' : 'hidden';
+    if (startCodeShouldAnnounceStart(previous, inProgress)) {
+      AccessibilityInfo.announceForAccessibility(passengerCopy.startCode.startedAnnouncement);
+    }
+    hadCards.current = hasCards;
+  }, [hasCards, inProgress]);
 
   return (
     <View style={{ flex: 1 }}>
-      <Stage topInset={insets.top} testID="trip-stage">
+      <Stage topInset={insets.top} growWithContent testID="trip-stage">
         <ScreenHeader tone="stage" title={copy.header} />
         <View
           style={{
@@ -151,7 +183,26 @@ export function ActiveTripView({
           gap: theme.spacing.md,
         }}
       >
-        <LastUpdatedHint updatedAtMs={dataUpdatedAt} isStale={isStale} />
+        {(data.driver_tracking === null || isStale) && (
+          <LastUpdatedHint updatedAtMs={dataUpdatedAt} isStale={isStale} />
+        )}
+
+        <StartCodeCard
+          view={codeView}
+          plate={data.driver?.plate ?? null}
+          arrived={arrived}
+          changed={codeChanged}
+          onRetry={onRefresh}
+        />
+
+        <DriverTrackingCard
+          tracking={data.driver_tracking}
+          dataUpdatedAt={dataUpdatedAt}
+          isError={isStale}
+          offline={offline}
+          arrived={arrived}
+          origin={origin}
+        />
 
         {data.driver ? (
           <DriverCard driver={data.driver} />

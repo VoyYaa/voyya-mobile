@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Linking, Platform, ScrollView, Text, View } from 'react-native';
+import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -18,7 +18,7 @@ import {
   useCountdown,
   useTheme,
 } from '@voyyaa/ui-mobile';
-import { ApiError, isNetworkError, useSessionStore } from '@voyyaa/app-runtime';
+import { ApiError, isNetworkError, useLocationConsentStatus } from '@voyyaa/app-runtime';
 import { PassengerSummaryRow } from '../../src/components/PassengerSummaryRow';
 import { DriverStepRail } from '../../src/components/DriverStepRail';
 import { NoShowWait } from '../../src/components/NoShowWait';
@@ -26,7 +26,10 @@ import { FinishTripSheet } from '../../src/components/FinishTripSheet';
 import { NoShowConfirmSheet } from '../../src/components/NoShowConfirmSheet';
 import { CancelTripSheet } from '../../src/components/CancelTripSheet';
 import { StartedConfirmSheet } from '../../src/components/StartedConfirmSheet';
-import { LocationIssueBanner } from '../../src/components/LocationIssueBanner';
+import { StartCodeSheet } from '../../src/components/StartCodeSheet';
+import { StartBlockedPanel, type BlockedNoShow } from '../../src/components/StartBlockedPanel';
+import { RouteButton } from '../../src/components/RouteButton';
+import { SharingStatusBadge } from '../../src/components/SharingStatusBadge';
 import { useDriverHome } from '../../src/hooks/useDriverHome';
 import {
   useCompleteTrip,
@@ -37,12 +40,13 @@ import {
 } from '../../src/hooks/useTripActions';
 import { useCancelAssignmentByDriver } from '../../src/hooks/useCancelAssignmentByDriver';
 import { useBestEffortLocationReport } from '../../src/hooks/useReportLocation';
-import { useLocationIssueStore } from '../../src/state/useLocationIssueStore';
-import { buildDirectionsUrl, type DirectionsPlatform } from '../../src/trip/directions-url';
+import { dispatchSharing } from '../../src/tracking/sharing-runtime';
+import { isStartCodeRequiredError } from '../../src/trip/start-code-flow';
 import { driverCopy } from '../../src/copy/driver-copy';
 
 type SubState = 'en_camino' | 'esperando' | 'en_curso';
-type SheetKind = 'finish' | 'no_show' | 'cancel' | 'started' | null;
+type SheetKind =
+  'finish' | 'no_show' | 'cancel' | 'started' | 'start_code' | 'already_started' | null;
 type ActionIssue = 'offline' | 'generic' | null;
 
 interface ClosedState {
@@ -53,16 +57,11 @@ interface ClosedState {
 const STEP_INDEX: Record<SubState, number> = { en_camino: 0, esperando: 1, en_curso: 2 };
 const CLOSE_REDIRECT_MS = 1100;
 const TOAST_DURATION_MS = 1000;
+const SHARING_STOPPED_TOAST_MS = 3200;
 const REMATE_GLYPH_SIZE = 96;
 
 function actionErrorMessage(issue: ActionIssue): string {
   return issue === 'offline' ? driverCopy.trip.actionOffline : driverCopy.trip.actionGeneric;
-}
-
-function directionsPlatform(): DirectionsPlatform {
-  if (Platform.OS === 'ios') return 'ios';
-  if (Platform.OS === 'android') return 'android';
-  return 'web';
 }
 
 function secondsBetween(fromIso: string | null, toIso: string | null): number {
@@ -74,13 +73,11 @@ export default function ActiveTripScreen(): React.JSX.Element {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const municipality = useSessionStore((s) => s.user?.tenant?.municipality_name ?? null);
 
   const home = useDriverHome();
   const activeTrip = home.data?.active_trip ?? null;
   const activeTripRequestId = activeTrip?.trip_request_id ?? null;
   const reportLocationBestEffort = useBestEffortLocationReport();
-  const locationIssue = useLocationIssueStore((s) => s.issue);
 
   const enRoute = useMarkTripEnRoute(activeTripRequestId);
   const arrived = useMarkTripArrived(activeTripRequestId);
@@ -95,7 +92,11 @@ export default function ActiveTripScreen(): React.JSX.Element {
   >(null);
   const [sheet, setSheet] = useState<SheetKind>(null);
   const [sheetError, setSheetError] = useState<string | undefined>(undefined);
-  const [toast, setToast] = useState<{ message: string; tone: ToastTone } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    tone: ToastTone;
+    durationMs?: number;
+  } | null>(null);
   const [closed, setClosed] = useState<ClosedState | null>(null);
 
   useEffect(() => {
@@ -103,6 +104,24 @@ export default function ActiveTripScreen(): React.JSX.Element {
       router.replace('/');
     }
   }, [home.isLoading, activeTrip, closed, router]);
+
+  const consentStatus = useLocationConsentStatus();
+  const consentRequired = consentStatus.data?.requires_acceptance === true;
+  const previousConsentRequired = useRef(consentRequired);
+  useEffect(() => {
+    if (previousConsentRequired.current && !consentRequired) {
+      setToast({ message: driverCopy.sharing.consentDone, tone: 'success' });
+    }
+    previousConsentRequired.current = consentRequired;
+  }, [consentRequired]);
+
+  const startBlockedNow = activeTrip?.start_blocked ?? false;
+  useEffect(() => {
+    if (startBlockedNow && (sheet === 'start_code' || sheet === 'already_started')) {
+      setSheet(null);
+      AccessibilityInfo.announceForAccessibility(driverCopy.blocked.announcement);
+    }
+  }, [startBlockedNow, sheet]);
 
   const subState: SubState | null = !activeTrip
     ? null
@@ -159,10 +178,47 @@ export default function ActiveTripScreen(): React.JSX.Element {
   }
 
   function handleIniciar(): void {
+    if (activeTrip?.start_code_required) {
+      setActionIssue(null);
+      setSheet('start_code');
+      return;
+    }
     setLastPrimaryAction('start');
     setActionIssue(null);
     reportLocationBestEffort();
-    start.mutate(undefined, { onError: handleActionError });
+    start.mutate(undefined, {
+      onSuccess: () => dispatchSharing({ type: 'trip_started' }),
+      onError: (error) => {
+        if (isStartCodeRequiredError(error)) {
+          void home.refetch();
+          setSheet('start_code');
+          return;
+        }
+        handleActionError(error);
+      },
+    });
+  }
+
+  function handleCodeStarted(): void {
+    closeSheet();
+    setToast({
+      message: driverCopy.sharing.stoppedToast,
+      tone: 'neutral',
+      durationMs: SHARING_STOPPED_TOAST_MS,
+    });
+    void home.refetch();
+  }
+
+  function handleCodeBlocked(): void {
+    closeSheet();
+    AccessibilityInfo.announceForAccessibility(driverCopy.blocked.announcement);
+    void home.refetch();
+  }
+
+  function handleTripChangedUnderSheet(): void {
+    closeSheet();
+    setToast({ message: driverCopy.startCode.tripChanged, tone: 'neutral' });
+    void home.refetch();
   }
 
   function retryLastPrimaryAction(): void {
@@ -184,8 +240,16 @@ export default function ActiveTripScreen(): React.JSX.Element {
     setSheetError(undefined);
     reportLocationBestEffort();
     start.mutate(undefined, {
-      onSuccess: closeSheet,
+      onSuccess: () => {
+        dispatchSharing({ type: 'trip_started' });
+        closeSheet();
+      },
       onError: (error) => {
+        if (isStartCodeRequiredError(error)) {
+          void home.refetch();
+          setSheet('already_started');
+          return;
+        }
         if (error instanceof ApiError && error.status === 409) {
           closeSheet();
           void home.refetch();
@@ -246,13 +310,6 @@ export default function ActiveTripScreen(): React.JSX.Element {
           ),
         onError: sheetFailure,
       },
-    );
-  }
-
-  function handleDirections(address: string): void {
-    const url = buildDirectionsUrl(address, municipality, directionsPlatform());
-    Linking.openURL(url).catch(() =>
-      setToast({ message: driverCopy.trip.directionsError, tone: 'danger' }),
     );
   }
 
@@ -318,14 +375,18 @@ export default function ActiveTripScreen(): React.JSX.Element {
 
   const isAssignedNotYetMoving = activeTrip.status === 'assigned';
   const towardsDropoff = subState === 'en_curso';
-  const directionsAddress = towardsDropoff ? activeTrip.dropoff_address : activeTrip.pickup_address;
-  const directionsLabel = towardsDropoff
-    ? driverCopy.trip.directionsToDropoff
-    : driverCopy.trip.directionsToPickup;
+  const routeTarget = towardsDropoff ? activeTrip.dropoff_location : activeTrip.pickup_location;
+  const startBlocked = activeTrip.start_blocked && subState !== 'en_curso';
+  const blockedNoShow: BlockedNoShow =
+    subState === 'en_camino'
+      ? { kind: 'needs_arrival', loading: arrived.isPending }
+      : noShowEnabled
+        ? { kind: 'enabled' }
+        : { kind: 'waiting', remainingSec: noShowRemainingSec };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <Stage topInset={insets.top}>
+      <Stage topInset={insets.top} growWithContent>
         <View
           style={{
             paddingHorizontal: theme.spacing.gutter,
@@ -369,16 +430,11 @@ export default function ActiveTripScreen(): React.JSX.Element {
             flexGrow: 1,
           }}
         >
-          {locationIssue && (
-            <LocationIssueBanner
-              kind={locationIssue}
-              onPress={() =>
-                locationIssue === 'consent_required'
-                  ? router.push('/privacy')
-                  : void Linking.openSettings()
-              }
-            />
-          )}
+          <SharingStatusBadge
+            sharing={activeTrip.location_sharing}
+            consentRequired={consentRequired}
+            onReadConsent={() => router.push('/privacy')}
+          />
 
           <PassengerSummaryRow
             passengerName={activeTrip.passenger.name}
@@ -401,12 +457,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
             />
           </Card>
 
-          <Button
-            label={directionsLabel}
-            variant="ghost"
-            onPress={() => handleDirections(directionsAddress)}
-            testID="trip-directions"
-          />
+          <RouteButton target={routeTarget} leg={towardsDropoff ? 'dropoff' : 'pickup'} />
 
           {actionIssue && subState !== 'en_curso' && (
             <View accessibilityRole="alert" style={{ gap: theme.spacing.sm }}>
@@ -423,8 +474,18 @@ export default function ActiveTripScreen(): React.JSX.Element {
 
           <View style={{ flex: 1 }} />
 
+          {startBlocked && (
+            <StartBlockedPanel
+              passengerPhone={activeTrip.passenger.contact_phone}
+              noShow={blockedNoShow}
+              onArrived={handleLlegue}
+              onNoShow={() => setSheet('no_show')}
+              onCancel={() => setSheet('cancel')}
+            />
+          )}
+
           <View style={{ gap: theme.spacing.lg }}>
-            {subState === 'en_camino' && (
+            {!startBlocked && subState === 'en_camino' && (
               <Button
                 label={
                   isAssignedNotYetMoving ? driverCopy.trip.startEnRoute : driverCopy.trip.arrived
@@ -436,12 +497,15 @@ export default function ActiveTripScreen(): React.JSX.Element {
               />
             )}
 
-            {subState === 'esperando' && (
+            {!startBlocked && subState === 'esperando' && (
               <>
                 <Button
                   label={driverCopy.trip.startTrip}
                   size="lg"
                   loading={start.isPending}
+                  accessibilityHint={
+                    activeTrip.start_code_required ? driverCopy.trip.startTripHint : undefined
+                  }
                   onPress={handleIniciar}
                   testID="trip-primary"
                 />
@@ -460,7 +524,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
               />
             )}
 
-            {subState !== 'en_curso' && (
+            {!startBlocked && subState !== 'en_curso' && (
               <View style={{ gap: theme.spacing.xs }}>
                 <Text style={{ ...theme.typography.eyebrow, color: theme.colors.textMuted }}>
                   {driverCopy.trip.moreOptions}
@@ -472,7 +536,9 @@ export default function ActiveTripScreen(): React.JSX.Element {
                     <LinkButton
                       label={driverCopy.trip.alreadyStarted}
                       tone="muted"
-                      onPress={() => setSheet('started')}
+                      onPress={() =>
+                        setSheet(activeTrip.start_code_required ? 'already_started' : 'started')
+                      }
                       testID="trip-already-started"
                     />
                   )}
@@ -496,6 +562,16 @@ export default function ActiveTripScreen(): React.JSX.Element {
         </ScrollView>
       </View>
 
+      <StartCodeSheet
+        visible={sheet === 'start_code' || sheet === 'already_started'}
+        variant={sheet === 'already_started' ? 'already_started' : 'start'}
+        tripRequestId={activeTripRequestId}
+        attemptsRemaining={activeTrip.start_attempts_remaining}
+        onClose={closeSheet}
+        onStarted={handleCodeStarted}
+        onBlocked={handleCodeBlocked}
+        onChanged={handleTripChangedUnderSheet}
+      />
       <StartedConfirmSheet
         visible={sheet === 'started'}
         loading={start.isPending}
@@ -530,7 +606,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
         message={toast?.message ?? ''}
         tone={toast?.tone ?? 'neutral'}
         visible={toast !== null}
-        durationMs={TOAST_DURATION_MS}
+        durationMs={toast?.durationMs ?? TOAST_DURATION_MS}
         onHide={() => setToast(null)}
       />
     </View>

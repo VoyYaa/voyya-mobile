@@ -20,7 +20,7 @@
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "test": "node --test src/palette.spec.ts src/utils/color.spec.ts src/utils/trip-status-tone.spec.ts src/motion/ref-counted-loop.spec.ts src/motion/hop-timeline.spec.ts src/map/mapbox-access-token.spec.ts",
+    "test": "node --test src/palette.spec.ts src/utils/color.spec.ts src/utils/trip-status-tone.spec.ts src/motion/ref-counted-loop.spec.ts src/motion/hop-timeline.spec.ts src/map/mapbox-access-token.spec.ts src/map/geo.spec.ts",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "peerDependencies": {

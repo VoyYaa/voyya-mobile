@@ -1,3 +1,5 @@
+import { homeCopy } from './home-copy';
+import { issuesCopy } from './issues-copy';
 import { DRIVER_LOCATION_RETENTION_MAX_HOURS, DRIVER_PIN_LENGTH } from '@voyyaa/shared';
 
 export const driverCopy = {
@@ -77,6 +79,28 @@ export const driverCopy = {
     retry: 'Reintentar',
     errorLabel: 'No pudimos guardar tu aceptación',
     errorValue: 'Revisa tu conexión e inténtalo de nuevo.',
+    factsHeading: 'Lo esencial, antes de aceptar',
+    facts: [
+      {
+        label: 'Quién te ve y cuándo',
+        value:
+          'El pasajero de cada viaje que aceptas ve dónde estás, desde que aceptas hasta que inicias el viaje. Tu empresa no ve dónde estás.',
+      },
+      {
+        label: 'Aunque VoyYa no esté en pantalla',
+        value:
+          'En Android sigue funcionando con una notificación visible de VoyYa. En iPhone solo comparte con VoyYa en pantalla.',
+      },
+      {
+        label: 'No guardamos tu recorrido',
+        value: 'Guardamos solo tu última ubicación, no el camino que haces.',
+      },
+      {
+        label: 'Google Maps y Waze',
+        value:
+          'Reciben las coordenadas del punto de recogida o del destino cuando tocas el botón de ruta. No reciben tu nombre ni el del pasajero.',
+      },
+    ],
   },
   privacy: {
     title: 'Privacidad de mi ubicación',
@@ -127,36 +151,7 @@ export const driverCopy = {
     toastRevokedActiveTrip:
       'Listo. Borramos tu última ubicación. Saldrás de turno al terminar tu viaje.',
   },
-  home: {
-    onShiftEyebrow: 'En turno',
-    offShiftEyebrow: 'Fuera de turno',
-    waitingTitle: 'Esperando solicitudes',
-    waitingBody: 'Sigues visible para los pasajeros.',
-    offShiftTitle: 'Estás fuera de turno',
-    offShiftBody: 'Actívalo para empezar a recibir solicitudes cercanas.',
-    activateShift: 'Activar turno',
-    endShift: 'Terminar turno',
-    shiftBusyOn: 'Activando turno…',
-    shiftBusyOff: 'Actualizando turno…',
-    shiftOnHint: 'Recibiendo solicitudes cercanas.',
-    noVehicle: 'No tienes un vehículo vinculado. Contacta al administrador.',
-    nearbyTitle: 'Solicitudes cercanas',
-    seeAll: (count: number) => `Ver todas (${count})`,
-    emptyTitle: 'Sin solicitudes cercanas por ahora',
-    emptyBody: 'Sigues visible para los pasajeros.',
-    homeLoadError: 'No pudimos cargar tu estado de turno',
-    offersLoadError: 'No pudimos cargar tus solicitudes',
-    nearest: 'Más cercana',
-    rulesTrigger: '¿Cómo se asignan los viajes?',
-    rulesTitle: 'Reglas de asignación',
-    rulesBody: (radiusKm: number, timeoutSec: number) =>
-      `Mostradas por cercanía · radio ${radiusKm} km · ${timeoutSec} s para responder`,
-    cashBanner: (count: number) =>
-      count === 1
-        ? 'Tienes 1 viaje sin confirmar el cobro.'
-        : `Tienes ${count} viajes sin confirmar el cobro.`,
-    accountOpen: 'Mi cuenta',
-  },
+  home: homeCopy,
   offer: {
     title: 'Nueva solicitud',
     banner: (distanceM: number, neighborhood: string) =>
@@ -211,11 +206,9 @@ export const driverCopy = {
     arrivedChip: 'Llegaste · cortesía en curso',
     startEnRoute: 'Voy en camino',
     arrived: 'Llegué al punto de recogida',
-    startTrip: 'Inicié el viaje',
+    startTrip: 'Iniciar viaje',
+    startTripHint: 'Te pedirá el código del pasajero.',
     finishTrip: 'Finalizar viaje',
-    directionsToPickup: 'Cómo llegar al punto de recogida',
-    directionsToDropoff: 'Cómo llegar al destino',
-    directionsError: 'No pudimos abrir la aplicación de mapas.',
     moreOptions: 'Más opciones',
     alreadyStarted: 'Ya inició el viaje',
     cancelTrip: 'Cancelar viaje',
@@ -240,6 +233,97 @@ export const driverCopy = {
     toastCancelled: 'Viaje cancelado.',
     passenger: 'Pasajero',
   },
+  startCode: {
+    sheetTitle: 'Código de inicio',
+    sheetBody: 'Pídele al pasajero su código de 4 números y escríbelo aquí.',
+    helper: 'Está en la app del pasajero, en la tarjeta de su viaje.',
+    inputLabel: 'Código de inicio, 4 números',
+    confirm: 'Iniciar viaje',
+    confirmDisabledHint: 'Escribe los 4 números para continuar',
+    verifying: 'Verificando…',
+    back: 'Volver',
+    priorAttempts: (n: number) =>
+      n === 1
+        ? 'Ya hubo intentos fallidos. Te queda 1 intento.'
+        : `Ya hubo intentos fallidos. Te quedan ${n} intentos.`,
+    invalid: (n: number) => `Código incorrecto. Te quedan ${n} intentos.`,
+    invalidLast: 'Código incorrecto. Último intento.',
+    invalidUnknown: 'Código incorrecto. Revisa los números e inténtalo de nuevo.',
+    lastAttemptWarning: 'Último intento. Si fallas, el inicio de este viaje se bloquea.',
+    offline: 'Sin conexión. Para iniciar necesitamos validar el código en el servidor.',
+    uncertain: 'No pudimos confirmar el resultado. Revisando tu viaje…',
+    notSent: 'No se envió el código. Revisa tu conexión e inténtalo de nuevo.',
+    rateLimited: 'Demasiados intentos seguidos. Espera unos segundos e inténtalo de nuevo.',
+    tripChanged: 'El viaje cambió. Actualizamos tu pantalla.',
+    server: 'No pudimos procesar la acción.',
+    success: 'Código correcto. Viaje iniciado.',
+    alreadyStartedTitle: '¿El viaje ya inició?',
+    alreadyStartedBody: 'Para registrar el inicio, escribe el código de 4 números del pasajero.',
+    alreadyStartedConfirm: 'Registrar inicio',
+    alreadyStartedKeep: 'Todavía no',
+  },
+  blocked: {
+    title: 'El inicio de este viaje quedó bloqueado',
+    body: 'No pudimos verificar el código después de 5 intentos. Por seguridad, no se puede volver a intentar.',
+    heading: '¿Qué puedes hacer?',
+    callPassenger: 'Llamar al pasajero',
+    noPhone: 'No hay teléfono del pasajero disponible.',
+    needArrival: 'Marca que llegaste para que empiece la cortesía de espera.',
+    advice:
+      'Si el pasajero está contigo, cancela este viaje y pídele que vuelva a solicitar un taxi.',
+    announcement: 'El inicio de este viaje quedó bloqueado. Revisa las opciones.',
+  },
+  route: {
+    toPickup: 'Abrir ruta al punto de recogida',
+    toDropoff: 'Abrir ruta al destino',
+    pickupTarget: 'punto de recogida',
+    dropoffTarget: 'destino',
+    opensIn: (app: string) => `Se abrirá en ${app}`,
+    accessibility: (target: string, app: string | null) =>
+      `Abrir ruta al ${target} en ${app ?? 'una app de navegación'}`,
+    changeApp: 'Cambiar app',
+    sheetTitle: '¿Con qué app abrimos tu ruta?',
+    sheetBody: 'La recordaremos para la próxima vez. Puedes cambiarla cuando quieras.',
+    failedTitle: 'No pudimos abrir una app de mapas',
+    failedBody: 'Puedes escribir estas coordenadas en tu app de navegación:',
+    failedDone: 'Entendido',
+    apps: { google_maps: 'Google Maps', waze: 'Waze' },
+  },
+  sharing: {
+    active: 'Compartiendo tu ubicación con el pasajero',
+    noGps: 'Sin señal GPS · tu pasajero ve tu última ubicación',
+    offline: 'Sin conexión · tu pasajero ve tu última ubicación',
+    consentRequired: 'Acepta el aviso nuevo para que tu pasajero te vea.',
+    consentAction: 'Leer y aceptar',
+    consentDone: 'Listo. Tu pasajero ya puede verte.',
+    stoppedToast: 'Viaje iniciado. Dejamos de compartir tu ubicación con el pasajero.',
+    preciseNeeded: 'Activa la ubicación precisa para que tu pasajero te vea.',
+    preciseAction: 'Ir a ajustes',
+    notificationsOff: 'Activa las notificaciones para ver el aviso de ubicación compartida.',
+    notificationsAction: 'Activar',
+    capReached: 'Se detuvo el seguimiento después de 90 min.',
+    capAction: 'Volver a compartir',
+    resuming: 'Verificando…',
+    resumeOffline: 'Sin conexión. No pudimos reanudar el seguimiento.',
+    resumeFailed: 'No pudimos reanudar el seguimiento.',
+    iosOnlyForeground: 'Solo compartimos tu ubicación mientras VoyYa esté en pantalla.',
+    notificationTitle: 'VoyYa está compartiendo tu ubicación con el pasajero',
+    notificationBody: 'Se detiene cuando inicias el viaje. Toca para volver a VoyYa.',
+  },
+  disclosure: {
+    title: 'Tu pasajero te verá venir',
+    intro:
+      'Desde que aceptas un viaje hasta que lo inicias, VoyYa comparte tu ubicación con el pasajero de ese viaje, aunque VoyYa no esté en pantalla.',
+    bullets: [
+      'Mientras tanto verás una notificación de VoyYa.',
+      'Al iniciar el viaje, se detiene.',
+      'No guardamos tu recorrido: solo tu última ubicación.',
+      'Si abres Google Maps o Waze con el botón de ruta, ellos reciben las coordenadas del punto.',
+    ],
+    iosNote: 'En iPhone solo compartimos tu ubicación mientras VoyYa esté en pantalla.',
+    fullNotice: 'Ver aviso completo',
+    ok: 'Entendido',
+  },
   cash: {
     title: 'Cobros pendientes',
     headerEyebrow: 'Por confirmar',
@@ -255,20 +339,5 @@ export const driverCopy = {
     rowError: 'No pudimos confirmar este cobro.',
     addressRemoved: 'Dirección eliminada por política de retención.',
   },
-  issues: {
-    permissionDenied: 'Necesitamos tu ubicación para activar el turno.',
-    permissionDeniedAction: 'Cómo habilitarlo',
-    gpsDisabled: 'Activa la ubicación de tu teléfono para poder recibir solicitudes.',
-    gpsDisabledAction: 'Abrir ajustes',
-    locationTimeout: 'No pudimos obtener tu ubicación a tiempo. Inténtalo de nuevo.',
-    offline: 'Sin conexión · no pudimos activar tu turno.',
-    serverError: 'No pudimos activar tu turno.',
-    retry: 'Reintentar',
-    blockedByTrip:
-      'No puedes salir de turno con un viaje en curso. Finalízalo o cancélalo primero.',
-    locationPermission: 'Revisa el permiso de ubicación: no estás recibiendo solicitudes.',
-    consentRequired:
-      'Tu autorización de ubicación ya no está vigente. Acepta el aviso de nuevo para seguir en turno.',
-    consentRequiredAction: 'Leer y aceptar',
-  },
+  issues: issuesCopy,
 } as const;

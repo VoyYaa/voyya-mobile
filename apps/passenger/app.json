@@ -37,6 +37,12 @@
     ],
     "android": {
       "package": "co.voyya.passenger",
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon-foreground.png",
         "monochromeImage": "./assets/adaptive-icon-monochrome.png",

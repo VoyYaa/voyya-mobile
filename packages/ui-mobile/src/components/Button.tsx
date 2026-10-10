@@ -27,6 +27,7 @@ export interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   loadingLabel?: string;
+  wrapLabel?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityHint?: string;
   accessibilityLabel?: string;
@@ -54,6 +55,7 @@ export function Button({
   disabled = false,
   loading = false,
   loadingLabel,
+  wrapLabel = false,
   style,
   accessibilityHint,
   accessibilityLabel,
@@ -166,8 +168,12 @@ export function Button({
       )}
       <Text
         maxFontSizeMultiplier={1.3}
-        style={{ ...theme.typography.button, color: palette.fg }}
-        numberOfLines={1}
+        style={{
+          ...theme.typography.button,
+          color: palette.fg,
+          ...(wrapLabel ? { textAlign: 'center', flexShrink: 1, paddingVertical: theme.spacing.xs } : null),
+        }}
+        numberOfLines={wrapLabel ? undefined : 1}
       >
         {loading && loadingLabel ? loadingLabel : label}
       </Text>

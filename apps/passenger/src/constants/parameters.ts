@@ -1,7 +1,9 @@
+import { TRIP_STATUS_POLL_MS } from '../lib/trip-status-policy';
+
 export const FREE_CANCELLATION_WINDOW_MIN = 2;
 
 export const PROLONGED_SEARCH_THRESHOLD_SEC = 50;
 
-export const TRIP_REQUEST_STATUS_POLL_MS = 4000;
+export const TRIP_REQUEST_STATUS_POLL_MS = TRIP_STATUS_POLL_MS;
 
 export const SERVICE_OPTIONS_STALE_MS = 30_000;
