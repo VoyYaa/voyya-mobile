@@ -12,7 +12,16 @@ describe('shift status copy', () => {
 
   it('tells the truth while the new notice is pending', () => {
     const text = shiftHeroText({ onShift: true, consentPending: true });
-    assert.equal(text.body, 'No estás recibiendo solicitudes: acepta el aviso nuevo.');
+    assert.equal(text.title, 'Aviso nuevo pendiente');
+    assert.equal(text.body, 'Pronto dejarás de recibir solicitudes: acepta el aviso nuevo.');
+    assert.equal(
+      shiftSwitchHint({ consentPending: true }),
+      'Sin el aviso nuevo dejarás de recibir solicitudes.',
+    );
+    const pendingCopy = [text.title, text.body, shiftSwitchHint({ consentPending: true })];
+    for (const line of pendingCopy) {
+      assert.ok(!/pausa|no estás recibiendo/i.test(line));
+    }
     assert.ok(!text.body.includes('visible'));
     assert.ok(!text.title.includes('Esperando'));
     assert.ok(!shiftSwitchHint({ consentPending: true }).includes('Recibiendo'));
