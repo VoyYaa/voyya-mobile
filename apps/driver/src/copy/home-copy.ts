@@ -18,7 +18,7 @@ export const homeCopy = {
   seeAll: (count: number) => `Ver todas (${count})`,
   emptyTitle: 'Sin solicitudes cercanas por ahora',
   emptyBody: 'Sigues visible para los pasajeros.',
-  emptyBodyConsentPending: 'Para volver a recibir solicitudes, acepta el aviso nuevo.',
+  emptyBodyConsentPending: 'Para seguir recibiendo solicitudes, acepta el aviso nuevo.',
   homeLoadError: 'No pudimos cargar tu estado de turno',
   offersLoadError: 'No pudimos cargar tus solicitudes',
   nearest: 'Más cercana',

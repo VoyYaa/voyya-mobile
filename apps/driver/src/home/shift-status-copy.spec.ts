@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { homeCopy } from '../copy/home-copy.ts';
 import { shiftHeroText, shiftSwitchHint } from './shift-status-copy.ts';
 
 describe('shift status copy', () => {
@@ -18,13 +19,25 @@ describe('shift status copy', () => {
       shiftSwitchHint({ consentPending: true }),
       'Sin el aviso nuevo dejarás de recibir solicitudes.',
     );
-    const pendingCopy = [text.title, text.body, shiftSwitchHint({ consentPending: true })];
+    const pendingCopy = [
+      text.title,
+      text.body,
+      shiftSwitchHint({ consentPending: true }),
+      homeCopy.emptyBodyConsentPending,
+    ];
     for (const line of pendingCopy) {
-      assert.ok(!/pausa|no estás recibiendo/i.test(line));
+      assert.ok(!/pausa|no estás recibiendo|volver a recibir/i.test(line));
     }
     assert.ok(!text.body.includes('visible'));
     assert.ok(!text.title.includes('Esperando'));
     assert.ok(!shiftSwitchHint({ consentPending: true }).includes('Recibiendo'));
+  });
+
+  it('words the empty state without saying requests already stopped', () => {
+    assert.equal(
+      homeCopy.emptyBodyConsentPending,
+      'Para seguir recibiendo solicitudes, acepta el aviso nuevo.',
+    );
   });
 
   it('ignores a pending notice when off shift', () => {
