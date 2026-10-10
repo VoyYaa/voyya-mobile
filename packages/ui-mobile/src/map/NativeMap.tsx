@@ -4,6 +4,7 @@ import Mapbox, {
   Camera,
   LineLayer,
   MapView,
+  MarkerView,
   PointAnnotation,
   ShapeSource,
   type MapState,
@@ -149,15 +150,18 @@ export function NativeMap({
             </ShapeSource>
           )}
 
-          {markers.map((marker) => (
-            <PointAnnotation
-              key={`${marker.id}-${marker.freshness ?? 'live'}`}
-              id={`${marker.id}-${marker.freshness ?? 'live'}`}
-              coordinate={toPosition(marker.coord)}
-            >
-              {marker.kind === 'car' ? (
+          {markers.map((marker) =>
+            marker.kind === 'car' ? (
+              <MarkerView
+                key={`${marker.id}-${marker.freshness ?? 'live'}`}
+                coordinate={toPosition(marker.coord)}
+                anchor={{ x: 0.5, y: 0.5 }}
+                allowOverlap
+              >
                 <TaxiMarker freshness={marker.freshness ?? 'live'} />
-              ) : (
+              </MarkerView>
+            ) : (
+              <PointAnnotation key={marker.id} id={marker.id} coordinate={toPosition(marker.coord)}>
                 <View
                   style={{
                     width: 28,
@@ -173,9 +177,9 @@ export function NativeMap({
                     {GLYPH_BY_KIND[marker.kind]}
                   </Text>
                 </View>
-              )}
-            </PointAnnotation>
-          ))}
+              </PointAnnotation>
+            ),
+          )}
         </MapView>
 
         {pinDrop && (

@@ -57,7 +57,16 @@ export function useStartCodeSubmission({
   const callbacks = useRef({ onStarted, onBlocked, onChanged });
   callbacks.current = { onStarted, onBlocked, onChanged };
 
-  useEffect(() => setOverride(null), [attemptsRemaining]);
+  useEffect(() => {
+    setOverride(null);
+    setFailure((current) =>
+      current?.kind === 'invalid' &&
+      attemptsRemaining !== null &&
+      current.attemptsRemaining !== attemptsRemaining
+        ? null
+        : current,
+    );
+  }, [attemptsRemaining]);
 
   useEffect(() => {
     if (rateUntil === null) return;

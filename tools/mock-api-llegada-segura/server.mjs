@@ -129,7 +129,7 @@ function driverTripView() {
     no_show_available_at: trip.arrivedAt ? iso(trip.arrivedAt + 120_000) : null,
     cash_collected_at: null,
     start_code_required: required,
-    start_attempts_remaining: required ? MAX_ATTEMPTS - trip.failed : null,
+    start_attempts_remaining: required ? (trip.blocked ? 0 : MAX_ATTEMPTS - trip.failed) : null,
     start_blocked: required && trip.blocked,
     pickup_location: { lat: PICKUP.lat, lng: PICKUP.lng },
     dropoff_location: trip.status === 'in_progress' ? { lat: DROPOFF.lat, lng: DROPOFF.lng } : null,
@@ -335,7 +335,7 @@ async function handle(req, res) {
       res,
       429,
       { statusCode: 429, message: 'ThrottlerException: Too Many Requests' },
-      { 'Retry-After': '7' },
+      { 'Retry-After': String(S.control.retryAfter ?? 7) },
     );
   }
 
