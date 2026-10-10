@@ -1,3 +1,4 @@
+import { homeCopy } from './home-copy';
 import { DRIVER_LOCATION_RETENTION_MAX_HOURS, DRIVER_PIN_LENGTH } from '@voyyaa/shared';
 
 export const driverCopy = {
@@ -149,37 +150,7 @@ export const driverCopy = {
     toastRevokedActiveTrip:
       'Listo. Borramos tu última ubicación. Saldrás de turno al terminar tu viaje.',
   },
-  home: {
-    onShiftEyebrow: 'En turno',
-    offShiftEyebrow: 'Fuera de turno',
-    waitingTitle: 'Esperando solicitudes',
-    waitingBody: 'Sigues visible para los pasajeros.',
-    offShiftTitle: 'Estás fuera de turno',
-    offShiftBody: 'Actívalo para empezar a recibir solicitudes cercanas.',
-    activateShift: 'Activar turno',
-    endShift: 'Terminar turno',
-    shiftBusyOn: 'Activando turno…',
-    shiftBusyOff: 'Actualizando turno…',
-    shiftOnHint: 'Recibiendo solicitudes cercanas.',
-    noVehicle: 'No tienes un vehículo vinculado. Contacta al administrador.',
-    nearbyTitle: 'Solicitudes cercanas',
-    seeAll: (count: number) => `Ver todas (${count})`,
-    emptyTitle: 'Sin solicitudes cercanas por ahora',
-    emptyBody: 'Sigues visible para los pasajeros.',
-    emptyBodyConsentPending: 'Para volver a recibir solicitudes, acepta el aviso nuevo.',
-    homeLoadError: 'No pudimos cargar tu estado de turno',
-    offersLoadError: 'No pudimos cargar tus solicitudes',
-    nearest: 'Más cercana',
-    rulesTrigger: '¿Cómo se asignan los viajes?',
-    rulesTitle: 'Reglas de asignación',
-    rulesBody: (radiusKm: number, timeoutSec: number) =>
-      `Mostradas por cercanía · radio ${radiusKm} km · ${timeoutSec} s para responder`,
-    cashBanner: (count: number) =>
-      count === 1
-        ? 'Tienes 1 viaje sin confirmar el cobro.'
-        : `Tienes ${count} viajes sin confirmar el cobro.`,
-    accountOpen: 'Mi cuenta',
-  },
+  home: homeCopy,
   offer: {
     title: 'Nueva solicitud',
     banner: (distanceM: number, neighborhood: string) =>

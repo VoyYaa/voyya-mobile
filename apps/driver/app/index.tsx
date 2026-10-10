@@ -240,6 +240,7 @@ export default function HomeScreen(): React.JSX.Element {
     <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <ShiftHero
         onShift={isOnShift}
+        consentPending={consentPending}
         topInset={insets.top}
         driverName={driverName}
         onAvatarPress={() => setAccountVisible(true)}
@@ -270,6 +271,7 @@ export default function HomeScreen(): React.JSX.Element {
           checked={shift.on_shift}
           busy={shiftActivation.isBusy}
           disabled={!shift.vehicle_linked}
+          consentPending={consentPending}
           onToggle={handleShiftAction}
         />
 

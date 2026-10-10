@@ -2,9 +2,11 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { AccountAvatar, BrandMark, RadarPulse, Stage, useTheme } from '@voyyaa/ui-mobile';
 import { driverCopy } from '../copy/driver-copy';
+import { shiftHeroText } from '../home/shift-status-copy';
 
 export interface ShiftHeroProps {
   onShift: boolean;
+  consentPending?: boolean;
   topInset: number;
   driverName?: string;
   onAvatarPress: () => void;
@@ -20,12 +22,14 @@ const STATUS_DOT_SIZE = 8;
 
 export function ShiftHero({
   onShift,
+  consentPending = false,
   topInset,
   driverName,
   onAvatarPress,
 }: ShiftHeroProps): React.JSX.Element {
   const theme = useTheme();
   const { colors } = theme;
+  const heroText = shiftHeroText({ onShift, consentPending });
 
   const header = (
     <View
@@ -79,7 +83,7 @@ export function ShiftHero({
         accessibilityRole="header"
         style={{ ...theme.typography.headline, color: onShift ? colors.onStage : colors.text }}
       >
-        {onShift ? driverCopy.home.waitingTitle : driverCopy.home.offShiftTitle}
+        {heroText.title}
       </Text>
       <Text
         style={{
@@ -87,7 +91,7 @@ export function ShiftHero({
           color: onShift ? colors.onStageMuted : colors.textMuted,
         }}
       >
-        {onShift ? driverCopy.home.waitingBody : driverCopy.home.offShiftBody}
+        {heroText.body}
       </Text>
     </View>
   );
