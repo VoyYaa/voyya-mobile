@@ -20,6 +20,8 @@ import { TripOutcomeView, type TripOutcomeKind } from '../src/components/TripOut
 import type { TripStep } from '../src/components/TripStepRail';
 import { useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
+import { usePickupOriginPersistence } from '../src/hooks/usePickupOriginPersistence';
+import { pickupOriginStore } from '../src/lib/pickup-origin-runtime';
 import { usePersistStartCode, useSavedStartCode } from '../src/hooks/useStartCodePersistence';
 import { StartCodeCard } from '../src/components/StartCodeCard';
 import { startCodeCardView } from '../src/lib/start-code-view';
@@ -58,6 +60,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
   const { data, isLoading, isError, dataUpdatedAt, refetch } = useTripRequestStatus(tripRequestId);
   const showLoader = useDelayedLoading(isLoading);
   usePersistStartCode(data);
+  usePickupOriginPersistence(tripRequestId);
   const savedStartCode = useSavedStartCode(tripRequestId, !data);
 
   const origin = useTripDraftStore((s) => s.origin);
@@ -79,6 +82,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
 
   const goHome = (): void => {
     activeTripCache.clear();
+    void pickupOriginStore.clear();
     resetDraft();
     router.replace('/');
   };
@@ -91,6 +95,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
           message: result.free_of_charge ? copy.cancelledFree : copy.cancelledRecorded,
           tone: result.free_of_charge ? 'success' : 'neutral',
         });
+        void pickupOriginStore.clear();
         resetDraft();
         setTimeout(() => router.replace('/'), 1000);
       },
