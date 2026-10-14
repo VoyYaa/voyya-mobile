@@ -2,7 +2,10 @@ import { useEffect } from 'react';
 import { useTripDraftStore } from '../state/useTripDraftStore';
 import { pickupOriginStore } from '../lib/pickup-origin-runtime';
 
-export function usePickupOriginPersistence(tripRequestId: number | null): void {
+export function usePickupOriginPersistence(
+  tripRequestId: number | null,
+  canRestore: boolean,
+): void {
   const origin = useTripDraftStore((s) => s.origin);
   const setOrigin = useTripDraftStore((s) => s.setOrigin);
   const hasOrigin = origin !== null;
@@ -13,7 +16,7 @@ export function usePickupOriginPersistence(tripRequestId: number | null): void {
   }, [tripRequestId, origin]);
 
   useEffect(() => {
-    if (tripRequestId === null || hasOrigin) return;
+    if (tripRequestId === null || hasOrigin || !canRestore) return;
     let cancelled = false;
     void pickupOriginStore.read(tripRequestId).then((restored) => {
       if (!cancelled && restored !== null) setOrigin(restored, 'manual');
@@ -21,5 +24,5 @@ export function usePickupOriginPersistence(tripRequestId: number | null): void {
     return () => {
       cancelled = true;
     };
-  }, [tripRequestId, hasOrigin, setOrigin]);
+  }, [tripRequestId, hasOrigin, canRestore, setOrigin]);
 }

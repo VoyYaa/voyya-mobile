@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { CancelTripRequestDTO } from '@voyyaa/shared';
 import { cancelTripRequest } from '../api/trips.api';
+import { startCodeRecordStore } from '../lib/start-code-runtime';
 import { tripRequestQueryKey, useActiveTripCache } from './useActiveTrip';
 
 export function useCancelTripRequest(tripRequestId: number | null) {
@@ -20,6 +21,7 @@ export function useCancelTripRequest(tripRequestId: number | null) {
         void queryClient.invalidateQueries({ queryKey: tripRequestQueryKey(tripRequestId) });
       }
       activeTrip.clear();
+      void startCodeRecordStore.clear();
     },
   });
 }

@@ -3,6 +3,7 @@ import { DATA_CONTROLLER, TRIP_COORDINATES_RETENTION_DAYS } from '@voyyaa/shared
 import { FREE_CANCELLATION_WINDOW_MIN } from '../constants/parameters';
 import { CAN_PIN_DROP } from '../constants/platform';
 import { notificationsCopy } from './notifications-copy';
+import { savedStartCodeCopy, savedTripCopy } from './saved-trip-copy';
 
 export const passengerCopy = {
   auth: {
@@ -271,10 +272,7 @@ export const passengerCopy = {
     instructionNoPlateArrived:
       'Tu conductor dice que llegó. Dáselo en persona, cuando veas el taxi. No lo des por teléfono.',
     onlyDriverNote: 'Solo lo necesita tu conductor.',
-    accessibility: (digits: string, instruction: string): string =>
-      `Tu código de inicio: ${digits}. ${instruction}`,
-    savedOffline: 'Sin conexión · mostrando el código guardado en tu teléfono.',
-    savedRefreshFailed: 'No pudimos actualizar tu viaje · mostrando el código guardado.',
+    saved: savedStartCodeCopy,
     loadingLabel: 'Cargando tu código…',
     offlineEmptyTitle: 'Conéctate para ver tu código',
     offlineEmptyBody:
@@ -403,5 +401,6 @@ export const passengerCopy = {
     openError: 'No pudimos abrir tu viaje.',
     openOffline: 'Sin conexión. Reintenta cuando vuelva la señal.',
   },
+  savedTrip: savedTripCopy,
   notifications: notificationsCopy,
 } as const;

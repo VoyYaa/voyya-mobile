@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import type { TripStatus } from '@voyyaa/shared';
 
 import {
+  assignedSeed,
   detectTripTransition,
   transitionNoticeText,
   type TripSnapshot,
@@ -93,4 +94,35 @@ describe('transitionNoticeText', () => {
       assert.equal(transitionNoticeText(kind), text);
     });
   }
+});
+
+describe('assignedSeed (HU-CS-05)', () => {
+  it('assumes an assigned trip when the screen is restored from the saved code and nothing was seen', () => {
+    assert.deepEqual(assignedSeed(null, 77), snap('assigned', null, 77));
+  });
+
+  it('replaces what was seen of another trip', () => {
+    assert.deepEqual(
+      assignedSeed(snap('driver_en_route', null, 70), 77),
+      snap('assigned', null, 77),
+    );
+  });
+
+  it('keeps what was already seen of the same trip', () => {
+    assert.equal(assignedSeed(snap('driver_en_route', null, 77), 77), null);
+  });
+
+  it('lets the first answer say the driver cancelled, even after a cold start', () => {
+    const seed = assignedSeed(null, 77);
+    assert.equal(
+      detectTripTransition(seed, snap('pending_assignment')),
+      'driver_cancelled_searching',
+    );
+    assert.equal(detectTripTransition(seed, snap('cancelled_by_driver')), 'driver_cancelled_ended');
+  });
+
+  it('stays silent when the first answer is still an assigned trip', () => {
+    assert.equal(detectTripTransition(assignedSeed(null, 77), snap('assigned')), null);
+    assert.equal(detectTripTransition(assignedSeed(null, 77), snap('driver_en_route')), null);
+  });
 });

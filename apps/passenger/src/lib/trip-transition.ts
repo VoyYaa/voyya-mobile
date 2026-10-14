@@ -37,6 +37,14 @@ export function detectTripTransition(
   return null;
 }
 
+export function assignedSeed(
+  previous: TripSnapshot | null,
+  tripRequestId: number,
+): TripSnapshot | null {
+  if (previous !== null && previous.tripRequestId === tripRequestId) return null;
+  return { tripRequestId, status: 'assigned', arrivedAt: null };
+}
+
 const TEXT_BY_NOTICE: Record<TripTransitionNotice, string> = {
   driver_cancelled_searching: notificationsCopy.foreground.driverCancelledSearching,
   driver_cancelled_ended: notificationsCopy.foreground.driverCancelledEnded,

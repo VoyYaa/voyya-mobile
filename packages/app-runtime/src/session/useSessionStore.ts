@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { SessionResponse, SessionTokens, SessionUser } from '@voyyaa/shared';
+import type { SessionResponse, SessionTokens } from '@voyyaa/shared';
 import { configureAuthHandlers } from '../api/http-client';
 import { logout, refreshSession } from '../api/session.api';
 import {
@@ -9,17 +9,17 @@ import {
   updatePersistedTokens,
 } from './secure-storage';
 import { runSessionClearedHandlers } from './session-cleanup';
+import {
+  clearSessionIdentity,
+  readSessionIdentity,
+  type SessionIdentity,
+} from './session-lifecycle';
 import { createSessionRefresher } from './session-refresher';
 
-export type SessionStatus = 'hydrating' | 'authenticated' | 'guest';
+export type { SessionStatus } from './session-lifecycle';
 
-interface SessionState {
-  status: SessionStatus;
+interface SessionState extends SessionIdentity {
   sessionEpoch: number;
-  accessToken: string | null;
-  refreshToken: string | null;
-  user: SessionUser | null;
-  accessTokenExpiresAt: number | null;
 
   hydrate: () => Promise<void>;
   setSession: (response: SessionResponse) => Promise<void>;
@@ -38,20 +38,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   refreshToken: null,
   user: null,
   accessTokenExpiresAt: null,
+  sessionStartedAt: null,
 
   hydrate: async () => {
-    const persisted = await readPersistedSession();
-    if (!persisted) {
-      set({ status: 'guest' });
-      return;
-    }
-    set({
-      status: 'authenticated',
-      accessToken: persisted.accessToken,
-      refreshToken: persisted.refreshToken,
-      user: persisted.user,
-      accessTokenExpiresAt: persisted.accessTokenExpiresAt,
-    });
+    set(await readSessionIdentity({ readPersistedSession, now: Date.now }));
   },
 
   setSession: async (response) => {
@@ -69,6 +59,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       refreshToken: response.tokens.refresh_token,
       user: response.user,
       accessTokenExpiresAt,
+      sessionStartedAt: Date.now(),
     });
   },
 
@@ -85,14 +76,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   clearSession: async () => {
     set({ sessionEpoch: get().sessionEpoch + 1 });
-    await clearPersistedSession();
-    await runSessionClearedHandlers();
-    set({
-      status: 'guest',
-      accessToken: null,
-      refreshToken: null,
-      user: null,
-      accessTokenExpiresAt: null,
+    await clearSessionIdentity({
+      clearPersistedSession,
+      runClearedHandlers: runSessionClearedHandlers,
+      apply: (identity) => set(identity),
     });
   },
 }));

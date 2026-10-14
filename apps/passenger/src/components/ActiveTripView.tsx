@@ -17,7 +17,7 @@ import {
 import type { Location, TripRequestStatus } from '@voyyaa/shared';
 import { useDriverChangeNotice } from '../hooks/useDriverChangeNotice';
 import { usePassengerNotifications } from '../hooks/usePassengerNotifications';
-import { useSavedStartCode } from '../hooks/useStartCodePersistence';
+import { useRestoredStartCode } from '../hooks/useStartCodePersistence';
 import { formatEta } from '../lib/eta';
 import { startCodeCardView, startCodeShouldAnnounceStart } from '../lib/start-code-view';
 import { tripPhaseOf } from '../lib/trip-phase';
@@ -39,6 +39,7 @@ export interface ActiveTripViewProps {
   dataUpdatedAt: number;
   isStale: boolean;
   offline: boolean;
+  initialCodeChanged: boolean;
   onCancel: () => void;
   onRefresh: () => void;
 }
@@ -128,6 +129,7 @@ export function ActiveTripView({
   dataUpdatedAt,
   isStale,
   offline,
+  initialCodeChanged,
   onCancel,
   onRefresh,
 }: ActiveTripViewProps): React.JSX.Element {
@@ -135,19 +137,20 @@ export function ActiveTripView({
   const insets = useSafeAreaInsets();
   const inProgress = step === 3;
   const arrived = step === 2;
-  const driverChange = useDriverChangeNotice(data.trip_request_id, data.driver);
+  const driverChange = useDriverChangeNotice(data.trip_request_id, data.driver, initialCodeChanged);
   const { banner } = usePassengerNotifications({
     tripRequestId: data.trip_request_id,
     phase: tripPhaseOf(data),
   });
-  const saved = useSavedStartCode(data.trip_request_id, offline || isStale);
+  const saved = useRestoredStartCode(data.trip_request_id)?.start_code ?? null;
   const codeView = startCodeCardView({
     response: data,
     saved,
     offline,
     refreshFailed: isStale,
   });
-  const [codeChanged, setCodeChanged] = useState(false);
+  const [codeChanged, setCodeChanged] = useState(initialCodeChanged);
+  const previousStep = useRef(step);
   const hadCards = useRef(false);
   const hasCards =
     codeView.kind === 'code' || codeView.kind === 'blocked' || data.driver_tracking !== null;
@@ -156,7 +159,11 @@ export function ActiveTripView({
     if (driverChange.message !== null) setCodeChanged(true);
   }, [driverChange.message]);
 
-  useEffect(() => setCodeChanged(false), [step]);
+  useEffect(() => {
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    setCodeChanged(false);
+  }, [step]);
 
   useEffect(() => {
     const previous = hadCards.current ? 'code' : 'hidden';

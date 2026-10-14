@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import {
+  assignedSeed,
   detectTripTransition,
   type TripSnapshot,
   type TripTransitionNotice,
@@ -17,6 +18,7 @@ interface TripTransitionState {
   notice: TransitionNoticeEntry | null;
 
   observe: (snapshot: TripSnapshot) => TripTransitionNotice | null;
+  seedAssigned: (tripRequestId: number) => void;
   markToastShown: (id: number) => void;
 }
 
@@ -39,6 +41,11 @@ export const useTripTransitionStore = create<TripTransitionState>((set, get) => 
           : null,
     });
     return kind;
+  },
+
+  seedAssigned: (tripRequestId) => {
+    const seed = assignedSeed(get().lastSeen, tripRequestId);
+    if (seed !== null) set({ lastSeen: seed });
   },
 
   markToastShown: (id) =>

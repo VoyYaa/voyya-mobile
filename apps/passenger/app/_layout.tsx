@@ -25,8 +25,9 @@ import { useForegroundNotifications } from '../src/hooks/useForegroundNotificati
 import { useNotificationConfirmation } from '../src/hooks/useNotificationConfirmation';
 import { usePassengerNotificationRouting } from '../src/hooks/usePassengerNotificationRouting';
 import { useRouteGuard } from '../src/hooks/useRouteGuard';
+import { useStartCodeReconciler } from '../src/hooks/useStartCodeReconciler';
 import { configurePassengerPush } from '../src/notifications/configure-passenger-push';
-import { wipeLocalTripDataOnFreshInstall } from '../src/lib/start-code-runtime';
+import { startCodeRecordStore } from '../src/lib/start-code-runtime';
 import { API_BASE_URL } from '../src/constants/env';
 
 configureApiClient({ baseUrl: API_BASE_URL, defaultErrorSchema: TripError });
@@ -49,7 +50,7 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
-    void wipeLocalTripDataOnFreshInstall();
+    void startCodeRecordStore.ready();
     void hydrate();
   }, []);
 
@@ -65,7 +66,11 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
   useNotificationConfirmation();
   useForegroundNotifications();
   const startup = useActiveTripStartup();
-  const tap = usePassengerNotificationRouting({ startupSettled: startup.phase === 'done' });
+  useStartCodeReconciler();
+  const tap = usePassengerNotificationRouting({
+    startupSettled: startup.phase === 'done',
+    startupRestored: startup.restored,
+  });
 
   const hideSplash = useCallback((): void => {
     SplashScreen.hideAsync().catch(() => undefined);

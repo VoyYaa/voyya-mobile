@@ -21,7 +21,12 @@ export interface TapState {
 
 export type TapEvent =
   | { type: 'tapped'; tap: PendingTap }
-  | { type: 'resolved'; target: NotificationTarget; networkOffline: boolean }
+  | {
+      type: 'resolved';
+      target: NotificationTarget;
+      networkOffline: boolean;
+      startupRestored?: boolean;
+    }
   | { type: 'network_restored' }
   | { type: 'retry' }
   | { type: 'skip' }
@@ -36,14 +41,15 @@ export const INITIAL_TAP_STATE: TapState = {
 
 function afterResolution(
   state: TapState,
-  event: { target: NotificationTarget; networkOffline: boolean },
+  event: { target: NotificationTarget; networkOffline: boolean; startupRestored?: boolean },
 ): TapState {
-  const { target, networkOffline } = event;
+  const { target, networkOffline, startupRestored = false } = event;
   if (target.kind !== 'unavailable') {
     return { ...state, pending: null, failure: null, waitingForNetwork: false };
   }
   const keepScreen =
-    state.pending?.origin === 'background' && target.reason === 'offline' && networkOffline;
+    startupRestored ||
+    (state.pending?.origin === 'background' && target.reason === 'offline' && networkOffline);
   if (keepScreen) return { ...state, waitingForNetwork: true };
   return { ...state, failure: target.reason };
 }
