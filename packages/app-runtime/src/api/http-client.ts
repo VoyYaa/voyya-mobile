@@ -93,6 +93,7 @@ async function performRequest<TResponse>(
 
   if (
     res.status === 401 &&
+    usedToken !== null &&
     !options.skipAuth &&
     !options.skipRefreshOn401 &&
     !isRetry &&
@@ -102,7 +103,7 @@ async function performRequest<TResponse>(
     if (newToken) {
       return performRequest(options, responseSchema, errorSchema, true);
     }
-    authHandlers.onSessionExpired();
+    if (authHandlers.getAccessToken() === usedToken) authHandlers.onSessionExpired();
   }
 
   const json: unknown = await res.json().catch(() => null);

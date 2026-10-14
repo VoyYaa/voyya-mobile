@@ -233,3 +233,71 @@ describe('consent service and GPS gate (ADR-029 §4)', () => {
     assert.equal(h.gps.reads, 0);
   });
 });
+
+describe('consent service when the session changes while a request is in flight (CS-14)', () => {
+  let h: Harness;
+
+  beforeEach(() => {
+    h = createHarness();
+  });
+
+  function keyOf(userId: number): string {
+    return `voyya_consent_v2_location_${userId}`;
+  }
+
+  it('does not confirm the next user with the answer that was asked for the previous one', async () => {
+    h.remote.list = async () => {
+      h.setUserId(8);
+      return [status()];
+    };
+
+    await h.service.refresh('location');
+
+    assert.equal(h.entries.has(keyOf(8)), false);
+    assert.equal(await h.service.isConfirmed('location'), false);
+  });
+
+  it('does not write the confirmation of a grant that finished under another user', async () => {
+    h.remote.grant = async () => {
+      h.setUserId(8);
+      return status();
+    };
+
+    await h.service.grant('location');
+
+    assert.equal(h.entries.has(keyOf(8)), false);
+    assert.equal(h.entries.has(keyOf(USER_ID)), false);
+  });
+
+  it('does not clear the confirmation of the next user when a stale answer says none', async () => {
+    h.setUserId(8);
+    await h.service.grant('location');
+    h.setUserId(USER_ID);
+    h.remote.list = async () => {
+      h.setUserId(8);
+      return [];
+    };
+
+    await h.service.refresh('location');
+
+    assert.equal(h.entries.has(keyOf(8)), true);
+  });
+
+  it('does not write anything when there is no session when the answer arrives', async () => {
+    h.remote.list = async () => {
+      h.setUserId(null);
+      return [status()];
+    };
+
+    await h.service.refresh('location');
+
+    assert.equal(h.entries.size, 0);
+  });
+
+  it('keeps working as before when the session does not change', async () => {
+    await h.service.refresh('location');
+
+    assert.equal(h.entries.has(keyOf(USER_ID)), true);
+    assert.equal(await h.service.isConfirmed('location'), true);
+  });
+});

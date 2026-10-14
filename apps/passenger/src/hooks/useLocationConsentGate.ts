@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { ConsentStatus } from '@voyyaa/shared';
-import { phaseOfStatus, type LocationConsentPhase } from '../lib/consent-phase';
+import {
+  consentGatePhase,
+  freshConsentStatus,
+  type LocationConsentPhase,
+} from '../lib/consent-phase';
 import {
   isLocationConsentConfirmed,
   useLocationConsentStatus,
   useNetworkStatus,
+  useSessionStore,
 } from '@voyyaa/app-runtime';
 
 export interface LocationConsentGate {
@@ -16,6 +21,8 @@ export interface LocationConsentGate {
 export function useLocationConsentGate(): LocationConsentGate {
   const query = useLocationConsentStatus();
   const network = useNetworkStatus();
+  const userId = useSessionStore((s) => s.user?.user_id ?? null);
+  const sessionStartedAt = useSessionStore((s) => s.sessionStartedAt);
   const [localConfirmed, setLocalConfirmed] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -26,15 +33,18 @@ export function useLocationConsentGate(): LocationConsentGate {
     return () => {
       current = false;
     };
-  }, [query.data]);
+  }, [query.data, userId]);
 
   const retry = (): void => {
     void query.refetch();
   };
 
-  if (query.data) return { phase: phaseOfStatus(query.data), status: query.data, retry };
-  if (localConfirmed === null) return { phase: 'checking', status: null, retry };
-  if (localConfirmed) return { phase: 'confirmed', status: null, retry };
-  if (query.isError || network === 'offline') return { phase: 'unknown', status: null, retry };
-  return { phase: 'checking', status: null, retry };
+  const status = freshConsentStatus(query.data, query.dataUpdatedAt, sessionStartedAt);
+  const phase = consentGatePhase({
+    status,
+    localConfirmed,
+    failed: query.isError,
+    offline: network === 'offline',
+  });
+  return { phase, status, retry };
 }

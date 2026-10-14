@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type { TripRequestStatus } from '@voyyaa/shared';
-import { useSessionStore } from '@voyyaa/app-runtime';
+import { CONSENT_QUERY_PREFIX, useSessionStore } from '@voyyaa/app-runtime';
 import { getActiveTrip } from '../api/trips.api';
 import { ACTIVE_TRIP_QUERY_OPTIONS } from '../lib/trip-status-policy';
 
@@ -10,6 +10,7 @@ export const TRIP_REQUEST_QUERY_PREFIX = ['tripRequest'] as const;
 export const SESSION_SCOPED_QUERY_PREFIXES = [
   TRIP_REQUEST_QUERY_PREFIX,
   ACTIVE_TRIP_QUERY_PREFIX,
+  CONSENT_QUERY_PREFIX,
 ] as const;
 
 export function purgeSessionScopedQueries(queryClient: QueryClient): void {

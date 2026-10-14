@@ -5,6 +5,7 @@ import {
   START_CODE_RECORD_READY_TIMEOUT_MS,
   START_CODE_RECORD_REFRESH_MS,
 } from '../constants/parameters';
+import { resetTripSessionState } from '../state/reset-trip-session-state';
 import { PICKUP_ORIGIN_KEY } from './pickup-origin-store';
 import { createStartCodeRecordStore } from './start-code-store';
 
@@ -28,3 +29,4 @@ export const startCodeRecordStore = createStartCodeRecordStore({
 });
 
 onSessionCleared(() => startCodeRecordStore.clear());
+onSessionCleared(resetTripSessionState);

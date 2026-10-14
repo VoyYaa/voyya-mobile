@@ -19,6 +19,7 @@ interface TripTransitionState {
 
   observe: (snapshot: TripSnapshot) => TripTransitionNotice | null;
   seedAssigned: (tripRequestId: number) => void;
+  reset: () => void;
   markToastShown: (id: number) => void;
 }
 
@@ -47,6 +48,8 @@ export const useTripTransitionStore = create<TripTransitionState>((set, get) => 
     const seed = assignedSeed(get().lastSeen, tripRequestId);
     if (seed !== null) set({ lastSeen: seed });
   },
+
+  reset: () => set({ lastSeen: null, notice: null }),
 
   markToastShown: (id) =>
     set((state) =>

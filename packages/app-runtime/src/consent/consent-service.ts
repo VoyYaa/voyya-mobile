@@ -75,9 +75,16 @@ export function createConsentService(deps: ConsentServiceDeps): ConsentService {
     return flag !== null && flag.version === deps.currentVersion;
   }
 
-  async function applyStatus(purpose: ConsentPurpose, status: ConsentStatus): Promise<void> {
-    const userId = deps.getUserId();
-    if (userId === null) return;
+  function sessionUnchanged(userId: number | null): userId is number {
+    return userId !== null && deps.getUserId() === userId;
+  }
+
+  async function applyStatus(
+    purpose: ConsentPurpose,
+    status: ConsentStatus,
+    userId: number | null,
+  ): Promise<void> {
+    if (!sessionUnchanged(userId)) return;
     const confirmed =
       status.state === 'granted' &&
       !status.requires_acceptance &&
@@ -91,23 +98,26 @@ export function createConsentService(deps: ConsentServiceDeps): ConsentService {
   }
 
   async function grant(purpose: ConsentPurpose): Promise<ConsentStatus> {
+    const userId = deps.getUserId();
     const status = await deps.remote.grant({ purpose, notice_version: deps.currentVersion });
-    await applyStatus(purpose, status);
+    await applyStatus(purpose, status, userId);
     return status;
   }
 
   async function revoke(purpose: ConsentPurpose): Promise<ConsentStatus> {
+    const userId = deps.getUserId();
     await forget(purpose);
     const status = await deps.remote.revoke({ purpose });
-    await applyStatus(purpose, status);
+    await applyStatus(purpose, status, userId);
     return status;
   }
 
   async function refresh(purpose: ConsentPurpose): Promise<ConsentStatus> {
+    const userId = deps.getUserId();
     const statuses = await deps.remote.list();
     const status = statuses.find((entry) => entry.purpose === purpose);
     if (!status) {
-      await forget(purpose);
+      if (sessionUnchanged(userId)) await forget(purpose);
       return {
         purpose,
         state: 'none',
@@ -118,7 +128,7 @@ export function createConsentService(deps: ConsentServiceDeps): ConsentService {
         requires_acceptance: true,
       };
     }
-    await applyStatus(purpose, status);
+    await applyStatus(purpose, status, userId);
     return status;
   }
 

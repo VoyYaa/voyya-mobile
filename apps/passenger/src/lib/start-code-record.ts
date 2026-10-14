@@ -154,6 +154,17 @@ export function toServerStartCode(
   };
 }
 
+export function recordBelongsToAnotherTrip(
+  probe: RecordProbe,
+  tripRequestId: number | null,
+): boolean {
+  return (
+    probe.kind === 'present' &&
+    tripRequestId !== null &&
+    probe.record.trip_request_id !== tripRequestId
+  );
+}
+
 export function usableRecord(
   probe: RecordProbe,
   { tripRequestId, userId, now, ttlMs }: UsableRecordContext,

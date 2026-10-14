@@ -182,3 +182,18 @@ describe('active trip after the connection returns (D-PP-05)', () => {
     client.clear();
   });
 });
+
+describe('trip status query availability', () => {
+  it('asks the server only for a known trip and only with a session', () => {
+    assert.equal(policy.tripStatusQueryEnabled(41, true), true);
+  });
+
+  it('does not poll a trip once the session is over, so a stale screen cannot hit the server without a token', () => {
+    assert.equal(policy.tripStatusQueryEnabled(41, false), false);
+  });
+
+  it('does not ask for a trip that is not known', () => {
+    assert.equal(policy.tripStatusQueryEnabled(null, true), false);
+    assert.equal(policy.tripStatusQueryEnabled(null, false), false);
+  });
+});

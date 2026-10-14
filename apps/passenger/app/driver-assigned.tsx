@@ -40,6 +40,7 @@ import {
 } from '../src/lib/saved-trip-mode';
 import { isSessionFresh } from '../src/lib/session-freshness';
 import { startCodeRecordStore } from '../src/lib/start-code-runtime';
+import { recordBelongsToAnotherTrip } from '../src/lib/start-code-record';
 import { codeChangedAfterRestore } from '../src/lib/start-code-view';
 import { canRestorePickup, tripScreenMode } from '../src/lib/trip-screen-mode';
 import { passengerCopy } from '../src/copy/passenger-copy';
@@ -128,7 +129,9 @@ export default function DriverAssignedScreen(): React.JSX.Element {
 
   useEffect(() => {
     if (mode.kind !== 'not_found') return;
-    void startCodeRecordStore.clear();
+    if (!recordBelongsToAnotherTrip(startCodeRecordStore.getSnapshot(), tripRequestId)) {
+      void startCodeRecordStore.clear();
+    }
     resetDraft();
     router.replace({ pathname: '/', params: { notice: TRIP_NOT_FOUND_NOTICE } });
   }, [mode.kind]);

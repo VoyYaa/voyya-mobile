@@ -32,7 +32,7 @@ import { useActiveTrip, useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useCoverageGate } from '../src/hooks/useCoverageGate';
 import { usePickupPlaces } from '../src/hooks/usePlacesAvailability';
 import { useLocationConsentGate } from '../src/hooks/useLocationConsentGate';
-import type { LocationConsentPhase } from '../src/lib/consent-phase';
+import { noticeToastVisible, type LocationConsentPhase } from '../src/lib/consent-phase';
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { TRIP_ENDED_NOTICE, TRIP_NOT_FOUND_NOTICE } from '../src/constants/notices';
@@ -84,7 +84,7 @@ export default function HomeScreen(): React.JSX.Element {
   const grant = useGrantLocationConsent();
   const activeTrip = useActiveTrip();
   const activeTripCache = useActiveTripCache();
-  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [noticeOpen, setNoticeOpen] = useState(gate.phase === 'needs_notice');
   const [accountVisible, setAccountVisible] = useState(false);
   const [endedToast, setEndedToast] = useState(false);
   const [notFoundToast, setNotFoundToast] = useState(false);
@@ -422,7 +422,11 @@ export default function HomeScreen(): React.JSX.Element {
       <Toast
         message={passengerCopy.notifications.tap.notFound}
         tone="info"
-        visible={notFoundToast}
+        visible={noticeToastVisible({
+          pending: notFoundToast,
+          sheetOpen: noticeOpen,
+          phase: gate.phase,
+        })}
         onHide={() => setNotFoundToast(false)}
         testID="home-trip-not-found-toast"
       />

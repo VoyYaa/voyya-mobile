@@ -14,18 +14,34 @@ const pickup = source('./usePickupOriginPersistence.ts');
 const cancel = source('./useCancelTripRequest.ts');
 const routing = source('./usePassengerNotificationRouting.ts');
 const screen = source('../../app/driver-assigned.tsx');
+const home = source('../../app/index.tsx');
+const tripStatusQuery = source('./useTripRequestStatus.ts');
+const consentGate = source('./useLocationConsentGate.ts');
+const httpClient = source('../../../../packages/app-runtime/src/api/http-client.ts');
 const layout = source('../../app/_layout.tsx');
 const startCodeRuntime = source('../lib/start-code-runtime.ts');
 const pickupRuntime = source('../lib/pickup-origin-runtime.ts');
 
 describe('R-2: the trip queries do not survive the session', () => {
-  it('scopes both trip prefixes to the session', () => {
+  it('scopes both trip prefixes and the consent prefix to the session (CS-14)', () => {
     assert.match(
       activeTrip,
-      /SESSION_SCOPED_QUERY_PREFIXES = \[\s*TRIP_REQUEST_QUERY_PREFIX,\s*ACTIVE_TRIP_QUERY_PREFIX,?\s*\] as const/,
+      /SESSION_SCOPED_QUERY_PREFIXES = \[\s*TRIP_REQUEST_QUERY_PREFIX,\s*ACTIVE_TRIP_QUERY_PREFIX,\s*CONSENT_QUERY_PREFIX,?\s*\] as const/,
     );
     assert.match(activeTrip, /TRIP_REQUEST_QUERY_PREFIX = \['tripRequest'\] as const/);
     assert.match(activeTrip, /ACTIVE_TRIP_QUERY_PREFIX = \['trips', 'active'\] as const/);
+    assert.match(activeTrip, /CONSENT_QUERY_PREFIX[\s\S]*from '@voyyaa\/app-runtime'/);
+  });
+
+  it('keeps the consent query of the runtime under that same prefix', () => {
+    const runtimeConsent = source(
+      '../../../../packages/app-runtime/src/consent/useLocationConsent.ts',
+    );
+    assert.match(runtimeConsent, /CONSENT_QUERY_PREFIX = \['consents'\] as const/);
+    assert.match(
+      runtimeConsent,
+      /LOCATION_CONSENT_QUERY_KEY = \[\.\.\.CONSENT_QUERY_PREFIX, 'location'\] as const/,
+    );
   });
 
   it('cancels and removes every query of the session scope', () => {
@@ -68,6 +84,10 @@ describe('R-1 and R-4 on the trip screen', () => {
   it('on not found, clears the record and its pickup point, resets the draft and goes home with the notice', () => {
     const block = /mode\.kind !== 'not_found'[\s\S]*?\[mode\.kind\]\)/.exec(screen)?.[0] ?? '';
     assert.match(block, /startCodeRecordStore\.clear\(\)/);
+    assert.match(
+      block,
+      /recordBelongsToAnotherTrip\(startCodeRecordStore\.getSnapshot\(\), tripRequestId\)/,
+    );
     assert.match(block, /resetDraft\(\)/);
     assert.match(block, /TRIP_NOT_FOUND_NOTICE/);
     assert.match(block, /router\.replace/);
@@ -118,6 +138,14 @@ describe('the clean-up events are hooked up', () => {
     assert.doesNotMatch(pickupRuntime, /onSessionCleared/);
   });
 
+  it('resets the in-memory trip state of the previous user when the session ends (CS-13)', () => {
+    assert.match(startCodeRuntime, /onSessionCleared\(resetTripSessionState\)/);
+    assert.match(
+      startCodeRuntime,
+      /import \{ resetTripSessionState \} from '..\/state\/reset-trip-session-state'/,
+    );
+  });
+
   it('tells the record store about the pickup point as a companion key', () => {
     assert.match(startCodeRuntime, /companionKeys: \[PICKUP_ORIGIN_KEY\]/);
   });
@@ -145,5 +173,39 @@ describe('the startup does not change the time-outs of the requests', () => {
   it('passes the restored flag on to the notification tap routing', () => {
     assert.match(routing, /startupRestored: startupRestoredRef\.current/);
     assert.match(layout, /startupRestored: startup\.restored/);
+  });
+});
+
+describe('the new session is not ended or confirmed by the previous one (CS-14, D-CS-05, D-CS-08)', () => {
+  it('asks the server for a trip only while there is a session, so a stale screen stops polling', () => {
+    assert.match(
+      tripStatusQuery,
+      /enabled: tripStatusQueryEnabled\(tripRequestId, authenticated\)/,
+    );
+    assert.match(tripStatusQuery, /s\.status === 'authenticated'/);
+  });
+
+  it('ends the session on a 401 only for the request that carried the current token', () => {
+    assert.match(httpClient, /usedToken !== null &&/);
+    assert.match(
+      httpClient,
+      /if \(authHandlers\.getAccessToken\(\) === usedToken\) authHandlers\.onSessionExpired\(\);/,
+    );
+  });
+
+  it('decides the location consent only from an answer obtained in this session', () => {
+    assert.match(
+      consentGate,
+      /freshConsentStatus\(query\.data, query\.dataUpdatedAt, sessionStartedAt\)/,
+    );
+    assert.match(consentGate, /consentGatePhase\(\{/);
+  });
+
+  it('does not let the location sheet hide the not found notice', () => {
+    assert.match(
+      home,
+      /visible=\{noticeToastVisible\(\{\s*pending: notFoundToast,\s*sheetOpen: noticeOpen,\s*phase: gate\.phase,?\s*\}\)\}/,
+    );
+    assert.match(home, /useState\(gate\.phase === 'needs_notice'\)/);
   });
 });

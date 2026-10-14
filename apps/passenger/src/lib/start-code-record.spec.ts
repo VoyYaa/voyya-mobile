@@ -6,6 +6,7 @@ import {
   msUntilExpiry,
   nextStartCodeRecord,
   parseStartCodeRecord,
+  recordBelongsToAnotherTrip,
   recordValidity,
   serializeStartCodeRecord,
   toServerStartCode,
@@ -331,5 +332,31 @@ describe('toServerStartCode', () => {
       start_code: '4821',
       start_code_state: 'active',
     });
+  });
+});
+
+describe('recordBelongsToAnotherTrip (CS-15)', () => {
+  const present = (overrides: Partial<StartCodeRecord> = {}): RecordProbe => ({
+    kind: 'present',
+    record: record(overrides),
+  });
+
+  it('is true for the saved record of a different trip, which a link to a missing trip must not delete', () => {
+    assert.equal(recordBelongsToAnotherTrip(present({ trip_request_id: 40 }), 41), true);
+  });
+
+  it('is false for the record of the same trip, even when it belongs to another user', () => {
+    assert.equal(recordBelongsToAnotherTrip(present({ trip_request_id: 41 }), 41), false);
+    assert.equal(recordBelongsToAnotherTrip(present({ user_id: 8 }), 41), false);
+  });
+
+  it('is false when the screen has no trip id', () => {
+    assert.equal(recordBelongsToAnotherTrip(present(), null), false);
+  });
+
+  it('is false when there is nothing recognisable saved, so leftovers still get cleared', () => {
+    for (const probe of [{ kind: 'loading' }, { kind: 'absent' }, { kind: 'invalid' }] as const) {
+      assert.equal(recordBelongsToAnotherTrip(probe, 41), false, probe.kind);
+    }
   });
 });
