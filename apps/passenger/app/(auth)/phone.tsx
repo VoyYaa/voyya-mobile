@@ -1,25 +1,32 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   AccentText,
   BrandMark,
   Button,
-  Card,
-  MarkGlyph,
   Reveal,
   Stage,
   TextField,
-  formatMMSS,
-  useCountdown,
   useTheme,
 } from '@voyyaa/ui-mobile';
-import { domainErrorCode, retryInSecOf, useNetworkStatus } from '@voyyaa/app-runtime';
+import { rateLimitWaitSec, useNetworkStatus } from '@voyyaa/app-runtime';
+import { AuthMessage } from '../../src/components/AuthMessage';
+import { WaitCard } from '../../src/components/WaitCard';
 import { useRequestOtp } from '../../src/hooks/useRequestOtp';
+import { useWaitDeadline } from '../../src/hooks/useWaitDeadline';
 import { passengerCopy } from '../../src/copy/passenger-copy';
+import { classifyOtpFailure } from '../../src/lib/otp-errors';
+import { sendNoticeView, type SendNoticeKind } from '../../src/lib/otp-presentation';
 
-const RATE_LIMIT_FALLBACK_SEC = 90;
 const PHONE_LENGTH = 10;
 const BRAND_MARK_SIZE = 56;
 
@@ -32,23 +39,55 @@ export default function PhoneScreen(): React.JSX.Element {
   const copy = passengerCopy.auth;
 
   const [digits, setDigits] = useState('');
-  const [errorInline, setErrorInline] = useState<string | undefined>(undefined);
-  const [rateLimitDeadline, setRateLimitDeadline] = useState<string | null>(null);
-  const [rateLimitTimeKnown, setRateLimitTimeKnown] = useState(true);
+  const [fieldError, setFieldError] = useState<string | undefined>(undefined);
+  const [notice, setNotice] = useState<SendNoticeKind | null>(null);
 
-  const rateLimitRemaining = useCountdown(rateLimitDeadline);
-  const isRateLimited = rateLimitDeadline !== null && rateLimitRemaining > 0;
-  const isFormatValid = digits.length === PHONE_LENGTH;
+  const wait = useWaitDeadline(() =>
+    AccessibilityInfo.announceForAccessibility(copy.sendAvailable),
+  );
+  const throttle = useWaitDeadline();
   const offline = networkStatus === 'offline';
+  const isFormatValid = digits.length === PHONE_LENGTH;
+  const visibleNotice: SendNoticeKind | null = wait.active
+    ? null
+    : offline
+      ? 'offline'
+      : throttle.active
+        ? 'throttled'
+        : notice;
 
   const handleChangeDigits = (raw: string): void => {
-    setErrorInline(undefined);
+    setFieldError(undefined);
+    setNotice(null);
+    wait.clear();
     setDigits(raw.replace(/[^0-9]/g, '').slice(0, PHONE_LENGTH));
   };
 
+  const handleFailure = (error: unknown): void => {
+    const failure = classifyOtpFailure(error, 'request');
+    switch (failure.kind) {
+      case 'rate_limited':
+        wait.start(failure.retryInSec);
+        return;
+      case 'invalid_phone':
+        setFieldError(copy.phoneInvalid);
+        return;
+      case 'throttled':
+        throttle.start(rateLimitWaitSec(error));
+        setNotice('throttled');
+        return;
+      default:
+        setNotice(failure.kind);
+    }
+  };
+
   const handleSubmit = (): void => {
-    if (!isFormatValid || offline || requestOtp.isPending) return;
+    if (!isFormatValid || offline || wait.active || throttle.active || requestOtp.isPending) {
+      return;
+    }
     const phone = `+57${digits}`;
+    setFieldError(undefined);
+    setNotice(null);
     requestOtp.mutate(
       { phone },
       {
@@ -56,17 +95,7 @@ export default function PhoneScreen(): React.JSX.Element {
           const resendAtIso = new Date(Date.now() + response.resend_in_sec * 1000).toISOString();
           router.push({ pathname: '/(auth)/otp', params: { phone, resendAtIso } });
         },
-        onError: (error) => {
-          if (domainErrorCode(error) === 'OTP_RATE_LIMIT') {
-            const sec = retryInSecOf(error);
-            setRateLimitTimeKnown(sec !== undefined);
-            setRateLimitDeadline(
-              new Date(Date.now() + (sec ?? RATE_LIMIT_FALLBACK_SEC) * 1000).toISOString(),
-            );
-          } else {
-            setErrorInline(copy.phoneInvalid);
-          }
-        },
+        onError: handleFailure,
       },
     );
   };
@@ -118,9 +147,20 @@ export default function PhoneScreen(): React.JSX.Element {
             gap: theme.spacing.lg,
           }}
         >
-          <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
-            {copy.phoneIntro}
-          </Text>
+          <View style={{ gap: theme.spacing.sm }}>
+            <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
+              {copy.phoneIntro}
+            </Text>
+            <Text
+              testID="phone-orientation"
+              style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+            >
+              <Text style={{ ...theme.typography.smallStrong, color: theme.colors.text }}>
+                {copy.orientationLead}
+              </Text>{' '}
+              {copy.orientationBody}
+            </Text>
+          </View>
 
           <TextField
             label={copy.phoneLabel}
@@ -129,13 +169,13 @@ export default function PhoneScreen(): React.JSX.Element {
             placeholder={copy.phonePlaceholder}
             keyboardType="numeric"
             maxLength={PHONE_LENGTH}
-            disabled={requestOtp.isPending || isRateLimited}
+            disabled={requestOtp.isPending}
             leadingAdornment={
               <Text style={{ ...theme.typography.bodyStrong, color: theme.colors.textMuted }}>
                 +57
               </Text>
             }
-            error={errorInline}
+            error={fieldError}
             autoComplete="tel"
             textContentType="telephoneNumber"
             returnKeyType="send"
@@ -143,31 +183,18 @@ export default function PhoneScreen(): React.JSX.Element {
             testID="telefono-input"
           />
 
-          {isRateLimited ? (
-            <Card tone="tint" testID="rate-limit-card">
-              <View
-                accessibilityRole="alert"
-                style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}
-              >
-                <MarkGlyph glyph="clock" size={40} />
-                <View style={{ flex: 1, gap: theme.spacing.xxs }}>
-                  <Text style={{ ...theme.typography.bodyStrong, color: theme.colors.text }}>
-                    {copy.rateLimitTitle}
-                  </Text>
-                  <Text style={{ ...theme.typography.small, color: theme.colors.text }}>
-                    {rateLimitTimeKnown
-                      ? copy.rateLimitWait(formatMMSS(rateLimitRemaining))
-                      : copy.rateLimitWaitUnknown}
-                  </Text>
-                </View>
-              </View>
-            </Card>
+          {wait.active ? (
+            <WaitCard
+              title={copy.rateLimitTitle}
+              remainingSec={wait.remainingSec}
+              timeKnown={wait.timeKnown}
+            />
           ) : (
             <Button
               label={copy.sendCode}
               size="lg"
               onPress={handleSubmit}
-              disabled={!isFormatValid || offline}
+              disabled={!isFormatValid || offline || throttle.active}
               loading={requestOtp.isPending}
               loadingLabel={copy.sending}
               accessibilityHint={offline ? copy.offlineSendHint : undefined}
@@ -175,16 +202,8 @@ export default function PhoneScreen(): React.JSX.Element {
             />
           )}
 
-          {offline && !isRateLimited && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
-              <MarkGlyph glyph="offline" size={24} animate={false} />
-              <Text
-                accessibilityRole="alert"
-                style={{ ...theme.typography.smallStrong, color: theme.colors.infoInk, flex: 1 }}
-              >
-                {copy.offlineSend}
-              </Text>
-            </View>
+          {visibleNotice !== null && (
+            <AuthMessage message={sendNoticeView(visibleNotice)} alert testID="send-notice" />
           )}
         </ScrollView>
       </View>

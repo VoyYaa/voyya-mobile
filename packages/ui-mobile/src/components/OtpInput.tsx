@@ -1,19 +1,26 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Text, TextInput, View } from 'react-native';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { Animated, Text, TextInput, View, type LayoutChangeEvent } from 'react-native';
 import { useTheme } from '../theme';
 import { USE_NATIVE_DRIVER, motion } from '../tokens';
 import { uiCopy } from '../copy';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useLoopValue } from '../motion/useLoopValue';
+import { applyOtpEntry } from '../utils/otp-entry';
+import { OTP_BOX_HEIGHT, fitOtpBoxes } from '../utils/otp-layout';
 import { MarkGlyph } from './brand/MarkGlyph';
 
 export type OtpInputStatus = 'editing' | 'verifying' | 'error' | 'success';
+
+export interface OtpInputHandle {
+  focus: () => void;
+}
 
 export interface OtpInputProps {
   length?: number;
   value: string;
   onChangeValue: (value: string) => void;
   onComplete?: (value: string) => void;
+  onErrorSettled?: () => void;
   status: OtpInputStatus;
   disabled?: boolean;
   reducedMotion?: boolean;
@@ -23,9 +30,10 @@ export interface OtpInputProps {
   testID?: string;
 }
 
-const BOX_WIDTH = 56;
-const BOX_HEIGHT = 64;
-const BOX_GAP = 10;
+const DEFAULT_LENGTH = 4;
+const DIGIT_FONT_SIZE = 28;
+const DIGIT_MAX_FONT_MULTIPLIER = 1.3;
+const DISABLED_OPACITY = 0.5;
 const ERROR_CLEAR_DELAY_MS = 600;
 const SHAKE_STEP_MS = 60;
 const STAGGER_MS = 40;
@@ -37,23 +45,32 @@ const WAVE_PERIOD_MS = 900;
 interface OtpBoxProps {
   digit: string | undefined;
   index: number;
-  isCursor: boolean;
+  width: number;
+  isActive: boolean;
   status: OtpInputStatus;
   reduced: boolean;
 }
 
-function OtpBox({ digit, index, isCursor, status, reduced }: OtpBoxProps): React.JSX.Element {
+function OtpBox({
+  digit,
+  index,
+  width,
+  isActive,
+  status,
+  reduced,
+}: OtpBoxProps): React.JSX.Element {
   const theme = useTheme();
   const { colors } = theme;
   const pop = useRef(new Animated.Value(1)).current;
   const previousDigit = useRef(digit);
   const [successShown, setSuccessShown] = useState(false);
+  const showCaret = isActive && digit === undefined;
   const wave = useLoopValue(status === 'verifying' && !reduced, {
     durationMs: WAVE_PERIOD_MS,
     easing: motion.ease.inOut,
     delayMs: index * STAGGER_MS,
   });
-  const caret = useLoopValue(isCursor && !reduced, { durationMs: CARET_PERIOD_MS });
+  const caret = useLoopValue(showCaret && !reduced, { durationMs: CARET_PERIOD_MS });
 
   useEffect(() => {
     const wasEmpty = previousDigit.current === undefined;
@@ -89,17 +106,17 @@ function OtpBox({ digit, index, isCursor, status, reduced }: OtpBoxProps): React
     ? colors.danger
     : successShown
       ? colors.success
-      : isCursor || digit
+      : isActive || digit
         ? colors.focusRing
         : colors.borderStrong;
-  const emphasized = isError || successShown || isCursor;
+  const emphasized = isError || successShown || isActive;
   const digitColor = isError ? colors.dangerInk : successShown ? colors.successInk : colors.text;
 
   return (
     <Animated.View
       style={{
-        width: BOX_WIDTH,
-        height: BOX_HEIGHT,
+        width,
+        height: OTP_BOX_HEIGHT,
         borderWidth: emphasized ? 2 : 1.5,
         borderColor,
         borderRadius: theme.radius.field,
@@ -110,13 +127,29 @@ function OtpBox({ digit, index, isCursor, status, reduced }: OtpBoxProps): React
       }}
     >
       {digit !== undefined ? (
-        <Text style={{ ...theme.typography.numeric, fontSize: 28, color: digitColor }}>
+        <Text
+          maxFontSizeMultiplier={DIGIT_MAX_FONT_MULTIPLIER}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={{
+            ...theme.typography.numeric,
+            fontSize: DIGIT_FONT_SIZE,
+            color: digitColor,
+            width: '100%',
+            textAlign: 'center',
+          }}
+        >
           {digit}
         </Text>
       ) : (
-        isCursor && (
+        showCaret && (
           <Animated.View
-            style={{ width: 2, height: 28, backgroundColor: colors.text, opacity: caretOpacity }}
+            style={{
+              width: 2,
+              height: DIGIT_FONT_SIZE,
+              backgroundColor: colors.text,
+              opacity: caretOpacity,
+            }}
           />
         )
       )}
@@ -124,34 +157,56 @@ function OtpBox({ digit, index, isCursor, status, reduced }: OtpBoxProps): React
   );
 }
 
-export function OtpInput({
-  length = 4,
-  value,
-  onChangeValue,
-  onComplete,
-  status,
-  disabled = false,
-  reducedMotion = false,
-  autoFocus = false,
-  autofill = true,
-  accessibilityLabel,
-  testID,
-}: OtpInputProps): React.JSX.Element {
+export const OtpInput = forwardRef<OtpInputHandle, OtpInputProps>(function OtpInput(
+  {
+    length = DEFAULT_LENGTH,
+    value,
+    onChangeValue,
+    onComplete,
+    onErrorSettled,
+    status,
+    disabled = false,
+    reducedMotion = false,
+    autoFocus = false,
+    autofill = true,
+    accessibilityLabel,
+    testID,
+  },
+  ref,
+): React.JSX.Element {
   const theme = useTheme();
   const hookReduced = useReducedMotion();
   const reduced = reducedMotion || hookReduced;
   const inputRef = useRef<TextInput>(null);
   const completedRef = useRef(false);
   const [focused, setFocused] = useState(false);
+  const [availableWidth, setAvailableWidth] = useState<number | null>(null);
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
   const onChangeValueRef = useRef(onChangeValue);
   onChangeValueRef.current = onChangeValue;
+  const onErrorSettledRef = useRef(onErrorSettled);
+  onErrorSettledRef.current = onErrorSettled;
   const reducedRef = useRef(reduced);
   reducedRef.current = reduced;
 
+  useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }), []);
+
+  useEffect(() => {
+    if (value.length < length) completedRef.current = false;
+  }, [value, length]);
+
+  const layout = fitOtpBoxes(length, availableWidth ?? Number.POSITIVE_INFINITY);
+  const dimmed = disabled && status === 'editing';
+  const groupOpacity = availableWidth === null ? 0 : dimmed ? DISABLED_OPACITY : 1;
+  const activeIndex = Math.min(value.length, length - 1);
+
+  const handleLayout = (event: LayoutChangeEvent): void => {
+    setAvailableWidth(event.nativeEvent.layout.width);
+  };
+
   const handleChangeText = (raw: string): void => {
-    const digits = raw.replace(/[^0-9]/g, '').slice(0, length);
+    const digits = applyOtpEntry(value, raw, length);
     onChangeValue(digits);
     if (digits.length === length) {
       if (!completedRef.current) {
@@ -193,6 +248,7 @@ export function OtpInput({
       completedRef.current = false;
       onChangeValueRef.current('');
       inputRef.current?.focus();
+      onErrorSettledRef.current?.();
     }, ERROR_CLEAR_DELAY_MS);
     return () => clearTimeout(timer);
   }, [status, shakeAnim]);
@@ -201,50 +257,57 @@ export function OtpInput({
     <OtpBox
       key={index}
       index={index}
+      width={layout.boxWidth}
       digit={value[index]}
-      isCursor={focused && status === 'editing' && index === value.length}
+      isActive={focused && !disabled && status === 'editing' && index === activeIndex}
       status={status}
       reduced={reduced}
     />
   ));
 
   return (
-    <View testID={testID} style={{ alignSelf: 'center', position: 'relative' }}>
-      <Animated.View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={{
-          flexDirection: 'row',
-          gap: BOX_GAP,
-          transform: [
-            {
-              translateX: shakeAnim.interpolate({
-                inputRange: [-1, 0, 1],
-                outputRange: [-6, 0, 6],
-              }),
-            },
-          ],
-        }}
-      >
-        {boxes}
-      </Animated.View>
-      <TextInput
-        ref={inputRef}
-        value={value}
-        onChangeText={handleChangeText}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        editable={!disabled}
-        autoFocus={autoFocus}
-        keyboardType="number-pad"
-        maxLength={length}
-        textContentType={autofill ? 'oneTimeCode' : 'none'}
-        autoComplete={autofill ? 'sms-otp' : 'off'}
-        importantForAutofill={autofill ? 'auto' : 'no'}
-        accessibilityLabel={accessibilityLabel ?? `Código de verificación de ${length} dígitos`}
-        accessibilityValue={{ text: `${value.length} de ${length} dígitos ingresados` }}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0 }}
-      />
+    <View
+      testID={testID}
+      onLayout={handleLayout}
+      style={{ alignSelf: 'stretch', alignItems: 'center' }}
+    >
+      <View style={{ width: layout.totalWidth, position: 'relative', opacity: groupOpacity }}>
+        <Animated.View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={{
+            flexDirection: 'row',
+            gap: layout.boxGap,
+            transform: [
+              {
+                translateX: shakeAnim.interpolate({
+                  inputRange: [-1, 0, 1],
+                  outputRange: [-6, 0, 6],
+                }),
+              },
+            ],
+          }}
+        >
+          {boxes}
+        </Animated.View>
+        <TextInput
+          ref={inputRef}
+          value={value}
+          onChangeText={handleChangeText}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          editable={!disabled}
+          autoFocus={autoFocus}
+          keyboardType="number-pad"
+          textContentType={autofill ? 'oneTimeCode' : 'none'}
+          autoComplete={autofill ? 'sms-otp' : 'off'}
+          importantForAutofill={autofill ? 'auto' : 'no'}
+          accessibilityLabel={accessibilityLabel ?? `Código de verificación de ${length} dígitos`}
+          accessibilityValue={{ text: `${value.length} de ${length} dígitos ingresados` }}
+          accessibilityState={{ disabled, busy: status === 'verifying' }}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0 }}
+        />
+      </View>
       {status === 'success' && (
         <View
           accessibilityLabel={uiCopy.otpSuccess}
@@ -255,4 +318,4 @@ export function OtpInput({
       )}
     </View>
   );
-}
+});

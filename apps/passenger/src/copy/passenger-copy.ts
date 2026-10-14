@@ -2,45 +2,11 @@ import { formatCOP } from '@voyyaa/ui-mobile';
 import { DATA_CONTROLLER, TRIP_COORDINATES_RETENTION_DAYS } from '@voyyaa/shared';
 import { FREE_CANCELLATION_WINDOW_MIN } from '../constants/parameters';
 import { CAN_PIN_DROP } from '../constants/platform';
+import { authCopy } from './auth-copy';
 import { notificationsCopy } from './notifications-copy';
 
 export const passengerCopy = {
-  auth: {
-    heroTitle: 'Tu taxi, sin llamar a nadie.',
-    heroAccent: 'sin llamar a nadie.',
-    phoneLabel: 'Número de celular',
-    phonePlaceholder: '300 123 4567',
-    phoneIntro: 'Te enviaremos un código por SMS para confirmar tu número.',
-    phoneInvalid: 'Ese número no parece válido. Verifica que sean 10 dígitos de un celular.',
-    sendCode: 'Enviar código',
-    sending: 'Enviando…',
-    offlineSend: 'Sin conexión · no se puede enviar el código ahora.',
-    offlineSendHint: 'Sin conexión, no se puede enviar el código ahora',
-    rateLimitTitle: 'Ya pediste varios códigos',
-    rateLimitWait: (remaining: string): string =>
-      `Por seguridad, espera ${remaining} antes de solicitar uno nuevo.`,
-    rateLimitWaitUnknown: 'Espera unos minutos antes de intentar de nuevo.',
-    otpHeader: 'Verificación',
-    otpSentTo: 'Enviamos un código de 4 dígitos a',
-    otpAnnounce: (maskedPhone: string): string =>
-      `Código enviado a ${maskedPhone}. Ingresa los 4 dígitos.`,
-    otpVerifying: 'Verificando código…',
-    otpVerifyingAnnounce: 'Verificando código.',
-    otpIncorrect: 'Código incorrecto. Inténtalo de nuevo.',
-    otpExpired: 'Este código venció. Solicita uno nuevo.',
-    otpOffline: 'Sin conexión · no pudimos verificar tu código.',
-    otpOfflineAnnounce: 'Sin conexión, no pudimos verificar tu código.',
-    otpSuccess: 'Código verificado.',
-    otpRetry: 'Reintentar',
-    otpResend: 'Reenviar código',
-    otpResending: 'Reenviando…',
-    otpResendIn: (seconds: number): string => `Reenviar código en ${seconds} s`,
-    otpResendAvailable: 'Ya puedes reenviar el código.',
-    otpResent: 'Código reenviado.',
-    otpRateLimited: (remaining: string): string =>
-      `Ya pediste varios códigos · espera ${remaining} antes de pedir otro.`,
-    otpRateLimitedUnknown: 'Ya pediste varios códigos · espera unos minutos antes de pedir otro.',
-  },
+  auth: authCopy,
   home: {
     whereTo: '¿A dónde vas?',
     whereToHint: 'Toca para escribir tu destino',

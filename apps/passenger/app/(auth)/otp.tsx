@@ -1,48 +1,41 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
+import { AccessibilityInfo, Keyboard, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   BrandMark,
   Button,
-  Card,
   LinkButton,
-  MarkGlyph,
   OtpInput,
   Reveal,
   ScreenHeader,
   Toast,
-  formatMMSS,
   useCountdown,
   useTheme,
-  type OtpInputStatus,
+  type OtpInputHandle,
 } from '@voyyaa/ui-mobile';
-import type { SessionResponse } from '@voyyaa/shared';
-import {
-  domainErrorCode,
-  isNetworkError,
-  retryInSecOf,
-  useSessionStore,
-} from '@voyyaa/app-runtime';
-import { useVerifyOtp } from '../../src/hooks/useVerifyOtp';
+import { OTP_LENGTH, type SessionResponse } from '@voyyaa/shared';
+import { rateLimitWaitSec, useSessionStore } from '@voyyaa/app-runtime';
+import { AuthMessage } from '../../src/components/AuthMessage';
+import { WaitCard } from '../../src/components/WaitCard';
 import { useRequestOtp } from '../../src/hooks/useRequestOtp';
+import { useVerifyOtp } from '../../src/hooks/useVerifyOtp';
+import { useWaitDeadline, type WaitDeadline } from '../../src/hooks/useWaitDeadline';
 import { passengerCopy } from '../../src/copy/passenger-copy';
-
-type VerifyOutcome = 'idle' | 'verifying' | 'incorrect' | 'expired' | 'offline' | 'success';
+import { classifyOtpFailure } from '../../src/lib/otp-errors';
+import {
+  sendNoticeView,
+  shouldClearOutcome,
+  verifyView,
+  type SendNoticeKind,
+  type VerifyOutcome,
+} from '../../src/lib/otp-presentation';
 
 const copy = passengerCopy.auth;
 
-const ANNOUNCE_MESSAGES: Record<VerifyOutcome, string | null> = {
-  idle: null,
-  verifying: copy.otpVerifyingAnnounce,
-  incorrect: copy.otpIncorrect,
-  expired: copy.otpExpired,
-  offline: copy.otpOfflineAnnounce,
-  success: copy.otpSuccess,
-};
-
-const RATE_LIMIT_FALLBACK_SEC = 90;
 const SUCCESS_HOLD_MS = 700;
+const MESSAGE_LINES = 2;
+const FALLBACK_LINE_HEIGHT = 19;
 
 function maskPhone(phone: string): string {
   const digits = phone.replace(/\D/g, '');
@@ -50,80 +43,61 @@ function maskPhone(phone: string): string {
   return `+57 ${local.slice(0, 3)} ··· ··${local.slice(-2)}`;
 }
 
-function toOtpStatus(outcome: VerifyOutcome): OtpInputStatus {
-  switch (outcome) {
-    case 'verifying':
-      return 'verifying';
-    case 'incorrect':
-      return 'error';
-    case 'success':
-      return 'success';
-    default:
-      return 'editing';
-  }
-}
-
 interface ResendAreaProps {
-  isRateLimited: boolean;
-  rateLimitRemaining: number;
-  rateLimitTimeKnown: boolean;
+  wait: WaitDeadline;
   canResend: boolean;
+  locked: boolean;
   resending: boolean;
   resendRemaining: number;
+  notice: SendNoticeKind | null;
   onResend: () => void;
 }
 
 function ResendArea({
-  isRateLimited,
-  rateLimitRemaining,
-  rateLimitTimeKnown,
+  wait,
   canResend,
+  locked,
   resending,
   resendRemaining,
+  notice,
   onResend,
 }: ResendAreaProps): React.JSX.Element {
   const theme = useTheme();
 
-  if (isRateLimited) {
+  if (wait.active) {
     return (
-      <Card tone="tint" testID="rate-limit-card">
-        <View
-          accessibilityRole="alert"
-          style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}
-        >
-          <MarkGlyph glyph="clock" size={32} />
-          <Text style={{ ...theme.typography.small, color: theme.colors.text, flex: 1 }}>
-            {rateLimitTimeKnown
-              ? copy.otpRateLimited(formatMMSS(rateLimitRemaining))
-              : copy.otpRateLimitedUnknown}
-          </Text>
-        </View>
-      </Card>
-    );
-  }
-
-  if (canResend) {
-    return (
-      <LinkButton
-        label={resending ? copy.otpResending : copy.otpResend}
-        disabled={resending}
-        onPress={onResend}
-        style={{ alignSelf: 'center' }}
-        testID="resend-code-button"
+      <WaitCard
+        title={copy.rateLimitTitleResend}
+        remainingSec={wait.remainingSec}
+        timeKnown={wait.timeKnown}
       />
     );
   }
 
   return (
-    <Text
-      style={{
-        ...theme.typography.smallStrong,
-        color: theme.colors.textMuted,
-        textAlign: 'center',
-      }}
-    >
-      {copy.otpResendIn(resendRemaining)}
-    </Text>
+    <View style={{ alignItems: 'center', gap: theme.spacing.sm }}>
+      {canResend ? (
+        <LinkButton
+          label={resending ? copy.otpResending : copy.otpResend}
+          disabled={resending || locked}
+          onPress={onResend}
+          style={{ alignSelf: 'center' }}
+          testID="resend-code-button"
+        />
+      ) : (
+        <Text
+          accessibilityLabel={copy.otpResendInSpoken(resendRemaining)}
+          style={{
+            ...theme.typography.smallStrong,
+            color: theme.colors.textMuted,
+            textAlign: 'center',
+          }}
+        >
+          {copy.otpResendIn(resendRemaining)}
+        </Text>
+      )}
+      {notice !== null && <AuthMessage message={sendNoticeView(notice)} testID="resend-notice" />}
+    </View>
   );
 }
 
@@ -138,19 +112,27 @@ export default function OtpScreen(): React.JSX.Element {
 
   const [value, setValue] = useState('');
   const [outcome, setOutcome] = useState<VerifyOutcome>('idle');
+  const [shaking, setShaking] = useState(false);
   const [resendDeadline, setResendDeadline] = useState<string | null>(params.resendAtIso ?? null);
-  const [rateLimitDeadline, setRateLimitDeadline] = useState<string | null>(null);
-  const [rateLimitTimeKnown, setRateLimitTimeKnown] = useState(true);
+  const [resendNotice, setResendNotice] = useState<SendNoticeKind | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [focusRequest, setFocusRequest] = useState(0);
 
-  const resendRemaining = useCountdown(resendDeadline);
-  const rateLimitRemaining = useCountdown(rateLimitDeadline);
-  const isRateLimited = rateLimitDeadline !== null && rateLimitRemaining > 0;
-  const canResend = !isRateLimited && (outcome === 'expired' || resendRemaining <= 0);
-
+  const otpRef = useRef<OtpInputHandle>(null);
+  const submittedCode = useRef('');
   const previousOutcome = useRef<VerifyOutcome | null>(null);
   const canResendAnnounced = useRef(false);
   const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const rateLimit = useWaitDeadline();
+  const verifyThrottle = useWaitDeadline();
+  const resendThrottle = useWaitDeadline();
+  const resendRemaining = useCountdown(resendDeadline);
+
+  const view = verifyView(outcome, shaking);
+  const canResend = !rateLimit.active && (outcome === 'expired' || resendRemaining <= 0);
+  const messageHeight =
+    (theme.typography.smallStrong.lineHeight ?? FALLBACK_LINE_HEIGHT) * MESSAGE_LINES;
 
   useEffect(() => {
     if (!params.phone) router.replace('/(auth)/phone');
@@ -166,8 +148,8 @@ export default function OtpScreen(): React.JSX.Element {
   useEffect(() => {
     if (previousOutcome.current === outcome) return;
     previousOutcome.current = outcome;
-    const message = ANNOUNCE_MESSAGES[outcome];
-    if (message) AccessibilityInfo.announceForAccessibility(message);
+    if (view.announcement) AccessibilityInfo.announceForAccessibility(view.announcement);
+    if (view.closesKeyboard) Keyboard.dismiss();
   }, [outcome]);
 
   useEffect(() => {
@@ -180,74 +162,98 @@ export default function OtpScreen(): React.JSX.Element {
   }, [canResend]);
 
   useEffect(() => {
-    if (outcome !== 'incorrect' && outcome !== 'offline') return;
-    setOutcome('idle');
-  }, [value]);
+    if (resendNotice !== null) {
+      AccessibilityInfo.announceForAccessibility(sendNoticeView(resendNotice).text);
+    }
+  }, [resendNotice]);
+
+  useEffect(() => {
+    if (shouldClearOutcome(outcome, shaking, value, submittedCode.current)) setOutcome('idle');
+  }, [value, outcome, shaking]);
+
+  useEffect(() => {
+    if (focusRequest > 0) otpRef.current?.focus();
+  }, [focusRequest]);
 
   const completeSession = (response: SessionResponse): void => {
     setOutcome('success');
     successTimer.current = setTimeout(() => void setSession(response), SUCCESS_HOLD_MS);
   };
 
+  const handleVerifyFailure = (error: unknown): void => {
+    const failure = classifyOtpFailure(error, 'verify');
+    switch (failure.kind) {
+      case 'incorrect':
+        setShaking(true);
+        setOutcome('incorrect');
+        return;
+      case 'expired':
+      case 'max_attempts':
+        setValue('');
+        setOutcome(failure.kind);
+        return;
+      case 'throttled':
+        verifyThrottle.start(rateLimitWaitSec(error));
+        setOutcome('throttled');
+        return;
+      default:
+        setOutcome(failure.kind);
+    }
+  };
+
   const handleComplete = (code: string): void => {
+    submittedCode.current = code;
     setOutcome('verifying');
     verifyOtp.mutate(
       { phone: params.phone, code },
-      {
-        onSuccess: completeSession,
-        onError: (error) => {
-          if (isNetworkError(error)) {
-            setOutcome('offline');
-            return;
-          }
-          setOutcome(domainErrorCode(error) === 'OTP_EXPIRED' ? 'expired' : 'incorrect');
-        },
-      },
+      { onSuccess: completeSession, onError: handleVerifyFailure },
     );
   };
 
   const handleRetry = (): void => {
-    if (value.length > 0) handleComplete(value);
+    if (value.length === OTP_LENGTH) handleComplete(value);
+  };
+
+  const handleResendSuccess = (resendInSec: number): void => {
+    setValue('');
+    setOutcome('idle');
+    setShaking(false);
+    rateLimit.clear();
+    verifyThrottle.clear();
+    resendThrottle.clear();
+    setResendDeadline(new Date(Date.now() + resendInSec * 1000).toISOString());
+    setToastVisible(true);
+    setFocusRequest((count) => count + 1);
+  };
+
+  const handleResendFailure = (error: unknown): void => {
+    const failure = classifyOtpFailure(error, 'request');
+    switch (failure.kind) {
+      case 'rate_limited':
+        rateLimit.start(failure.retryInSec);
+        return;
+      case 'throttled':
+        resendThrottle.start(rateLimitWaitSec(error));
+        setResendNotice('throttled');
+        return;
+      case 'invalid_phone':
+        setResendNotice('server');
+        return;
+      default:
+        setResendNotice(failure.kind);
+    }
   };
 
   const handleResend = (): void => {
-    if (!canResend || resendOtp.isPending) return;
+    if (!canResend || resendOtp.isPending || resendThrottle.active) return;
+    setResendNotice(null);
     resendOtp.mutate(
       { phone: params.phone },
       {
-        onSuccess: (response) => {
-          setValue('');
-          setOutcome('idle');
-          setResendDeadline(new Date(Date.now() + response.resend_in_sec * 1000).toISOString());
-          setToastVisible(true);
-        },
-        onError: (error) => {
-          if (domainErrorCode(error) === 'OTP_RATE_LIMIT') {
-            const sec = retryInSecOf(error);
-            setRateLimitTimeKnown(sec !== undefined);
-            setRateLimitDeadline(
-              new Date(Date.now() + (sec ?? RATE_LIMIT_FALLBACK_SEC) * 1000).toISOString(),
-            );
-          }
-        },
+        onSuccess: (response) => handleResendSuccess(response.resend_in_sec),
+        onError: handleResendFailure,
       },
     );
-  };
-
-  const otpStatus = toOtpStatus(outcome);
-  const feedbackColor =
-    outcome === 'incorrect' || outcome === 'expired'
-      ? theme.colors.dangerInk
-      : outcome === 'success'
-        ? theme.colors.successInk
-        : theme.colors.textMuted;
-  const feedback: Record<VerifyOutcome, string | null> = {
-    idle: null,
-    verifying: copy.otpVerifying,
-    incorrect: copy.otpIncorrect,
-    expired: copy.otpExpired,
-    offline: copy.otpOffline,
-    success: copy.otpSuccess,
   };
 
   return (
@@ -281,39 +287,28 @@ export default function OtpScreen(): React.JSX.Element {
         <Reveal index={1}>
           <View style={{ alignItems: 'center', gap: theme.spacing.md }}>
             <OtpInput
+              ref={otpRef}
+              length={OTP_LENGTH}
               value={value}
               onChangeValue={setValue}
               onComplete={handleComplete}
-              status={otpStatus}
-              disabled={outcome === 'verifying' || outcome === 'success'}
+              onErrorSettled={() => setShaking(false)}
+              status={view.inputStatus}
+              disabled={view.inputDisabled}
               autoFocus
               testID="otp-input"
             />
-            <View
-              style={{
-                minHeight: 24,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: theme.spacing.sm,
-              }}
-            >
-              {feedback[outcome] !== null && (
-                <>
-                  {(outcome === 'incorrect' || outcome === 'expired') && (
-                    <MarkGlyph glyph="error" size={20} animate={false} />
-                  )}
-                  {outcome === 'offline' && <MarkGlyph glyph="offline" size={20} animate={false} />}
-                  <Text
-                    accessibilityRole={outcome === 'verifying' ? undefined : 'alert'}
-                    style={{ ...theme.typography.smallStrong, color: feedbackColor }}
-                  >
-                    {feedback[outcome]}
-                  </Text>
-                </>
-              )}
+            <View style={{ minHeight: messageHeight, justifyContent: 'center' }}>
+              {view.message !== null && <AuthMessage message={view.message} testID="otp-message" />}
             </View>
-            {outcome === 'offline' && (
-              <Button label={copy.otpRetry} variant="ghost" onPress={handleRetry} />
+            {view.showRetry && (
+              <Button
+                label={copy.otpRetry}
+                variant="ghost"
+                onPress={handleRetry}
+                disabled={outcome === 'throttled' && verifyThrottle.active}
+                testID="retry-verify-button"
+              />
             )}
           </View>
         </Reveal>
@@ -321,12 +316,12 @@ export default function OtpScreen(): React.JSX.Element {
         {outcome !== 'verifying' && outcome !== 'success' && (
           <Reveal index={2}>
             <ResendArea
-              isRateLimited={isRateLimited}
-              rateLimitRemaining={rateLimitRemaining}
-              rateLimitTimeKnown={rateLimitTimeKnown}
+              wait={rateLimit}
               canResend={canResend}
+              locked={resendThrottle.active}
               resending={resendOtp.isPending}
               resendRemaining={resendRemaining}
+              notice={resendNotice}
               onResend={handleResend}
             />
           </Reveal>

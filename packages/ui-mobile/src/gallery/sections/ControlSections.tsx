@@ -191,22 +191,78 @@ export function FieldSection(): React.JSX.Element {
   );
 }
 
+const OTP_GALLERY_LENGTH = 6;
+const OTP_GALLERY_NARROW_WIDTH = 272;
+const OTP_GALLERY_FULL_CODE = '123456';
+const OTP_GALLERY_STATUSES: readonly OtpInputStatus[] = ['verifying', 'success'];
+
 export function OtpSection(): React.JSX.Element {
   const [value, setValue] = useState('12');
-  const statuses: readonly OtpInputStatus[] = ['verifying', 'success'];
+  const [sixValue, setSixValue] = useState('123');
 
   return (
     <GallerySection title="Código OTP">
-      <GalleryCaption label="editing" />
+      <GalleryCaption label="4 casillas · editing (código de inicio)" />
       <OtpInput value={value} onChangeValue={setValue} status="editing" />
-      {statuses.map((status) => (
+      {OTP_GALLERY_STATUSES.map((status) => (
         <View key={status}>
-          <GalleryCaption label={status} />
+          <GalleryCaption label={`4 casillas · ${status}`} />
           <OtpInput value="1234" onChangeValue={noop} status={status} />
         </View>
       ))}
-      <GalleryCaption label="error (se limpia a los 600 ms)" />
+      <GalleryCaption label="4 casillas · error (se limpia a los 600 ms)" />
       <OtpInput value="1234" onChangeValue={noop} status="error" />
+      <GalleryCaption label="6 casillas · vacío" />
+      <OtpInput length={OTP_GALLERY_LENGTH} value="" onChangeValue={noop} status="editing" />
+      <GalleryCaption label="6 casillas · editing" />
+      <OtpInput
+        length={OTP_GALLERY_LENGTH}
+        value={sixValue}
+        onChangeValue={setSixValue}
+        status="editing"
+      />
+      <GalleryCaption label="6 casillas · lleno" />
+      <OtpInput
+        length={OTP_GALLERY_LENGTH}
+        value={OTP_GALLERY_FULL_CODE}
+        onChangeValue={noop}
+        status="editing"
+      />
+      {OTP_GALLERY_STATUSES.map((status) => (
+        <View key={status}>
+          <GalleryCaption label={`6 casillas · ${status}`} />
+          <OtpInput
+            length={OTP_GALLERY_LENGTH}
+            value={OTP_GALLERY_FULL_CODE}
+            onChangeValue={noop}
+            status={status}
+          />
+        </View>
+      ))}
+      <GalleryCaption label="6 casillas · error (se limpia a los 600 ms)" />
+      <OtpInput
+        length={OTP_GALLERY_LENGTH}
+        value={OTP_GALLERY_FULL_CODE}
+        onChangeValue={noop}
+        status="error"
+      />
+      <GalleryCaption label="6 casillas · deshabilitado (venció, tope de intentos)" />
+      <OtpInput
+        length={OTP_GALLERY_LENGTH}
+        value=""
+        onChangeValue={noop}
+        status="editing"
+        disabled
+      />
+      <GalleryCaption label="6 casillas · contenedor de 272 dp (equivale a 320 dp)" />
+      <View style={{ width: OTP_GALLERY_NARROW_WIDTH }}>
+        <OtpInput
+          length={OTP_GALLERY_LENGTH}
+          value={OTP_GALLERY_FULL_CODE}
+          onChangeValue={noop}
+          status="editing"
+        />
+      </View>
     </GallerySection>
   );
 }
