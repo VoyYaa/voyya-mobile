@@ -27,6 +27,8 @@ const GLYPHS: readonly MarkGlyphName[] = [
   'success',
   'pin',
   'search',
+  'bell',
+  'bell_off',
 ];
 const SPINNER_SIZES: readonly BrandSpinnerSize[] = [16, 20, 24, 32];
 const MORPH_FRAMES: readonly number[] = [0, 0.25, 0.5, 0.75, 1];

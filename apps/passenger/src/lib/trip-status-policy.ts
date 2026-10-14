@@ -7,6 +7,10 @@ export const TRIP_STATUS_RESUME_OPTIONS = {
   refetchOnWindowFocus: 'always',
 } as const;
 
+export const ACTIVE_TRIP_QUERY_OPTIONS = {
+  refetchOnReconnect: 'always',
+} as const;
+
 export function tripStatusRefetchInterval(
   data: { status: TripStatus } | undefined,
 ): number | false {

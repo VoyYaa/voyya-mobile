@@ -3,8 +3,8 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useRouter, type Router } from 'expo-router';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { PushNotificationData } from '@voyyaa/shared';
 import { NEARBY_OFFERS_QUERY_KEY } from '../hooks/useNearbyOffers';
+import { resolveDriverNotificationTarget } from './notification-target';
 
 const IS_WEB = Platform.OS === 'web';
 
@@ -19,21 +19,8 @@ if (!IS_WEB) {
 }
 
 function routeToOffer(router: Router, rawData: unknown): void {
-  const parsed = PushNotificationData.safeParse(rawData);
-  if (!parsed.success) return;
-
-  switch (parsed.data.type) {
-    case 'assignment_offer':
-      router.push({
-        pathname: '/requests/[id]',
-        params: { id: String(parsed.data.assignment_id) },
-      });
-      return;
-    default: {
-      const exhaustive: never = parsed.data.type;
-      return exhaustive;
-    }
-  }
+  const target = resolveDriverNotificationTarget(rawData);
+  if (target) router.push(target);
 }
 
 export function useNotificationRouting(): void {

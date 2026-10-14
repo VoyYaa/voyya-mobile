@@ -39,6 +39,8 @@ function stageGlyphColor(glyph: MarkGlyphName, colors: ColorTokens): string {
     success: colors.success,
     pin: colors.brand,
     search: colors.brand,
+    bell: colors.brand,
+    bell_off: colors.onStageMuted,
   };
   return byGlyph[glyph];
 }

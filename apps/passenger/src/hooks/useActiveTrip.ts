@@ -3,13 +3,17 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TripRequestStatus } from '@voyyaa/shared';
 import { useSessionStore } from '@voyyaa/app-runtime';
 import { getActiveTrip } from '../api/trips.api';
+import { ACTIVE_TRIP_QUERY_OPTIONS } from '../lib/trip-status-policy';
+
+export const ACTIVE_TRIP_QUERY_PREFIX = ['trips', 'active'] as const;
+export const TRIP_REQUEST_QUERY_PREFIX = ['tripRequest'] as const;
 
 export function activeTripQueryKey(userId: number | null): readonly unknown[] {
-  return ['trips', 'active', userId];
+  return [...ACTIVE_TRIP_QUERY_PREFIX, userId];
 }
 
 export function tripRequestQueryKey(tripRequestId: number | null): readonly unknown[] {
-  return ['tripRequest', tripRequestId];
+  return [...TRIP_REQUEST_QUERY_PREFIX, tripRequestId];
 }
 
 async function fetchActiveTrip(): Promise<TripRequestStatus | null> {
@@ -24,6 +28,7 @@ export function useActiveTrip() {
     queryKey: activeTripQueryKey(userId),
     queryFn: fetchActiveTrip,
     enabled: authenticated,
+    ...ACTIVE_TRIP_QUERY_OPTIONS,
   });
 }
 

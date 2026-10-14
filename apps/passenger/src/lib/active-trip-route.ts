@@ -11,3 +11,12 @@ export function activeTripRoute(trip: TripRequestStatus): ActiveTripRoute | null
   if (trip.status === 'pending_assignment') return { pathname: '/searching', params };
   return { pathname: '/driver-assigned', params };
 }
+
+export interface CurrentRoute {
+  pathname: string;
+  id: string | undefined;
+}
+
+export function isSameTripRoute(current: CurrentRoute, route: ActiveTripRoute): boolean {
+  return current.pathname === route.pathname && current.id === route.params.id;
+}

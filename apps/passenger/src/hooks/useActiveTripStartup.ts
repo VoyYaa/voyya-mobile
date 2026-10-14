@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { isNetworkError, useNetworkStatus, useSessionStore } from '@voyyaa/app-runtime';
 import { activeTripRoute } from '../lib/active-trip-route';
-import { useActiveTrip, useActiveTripCache } from './useActiveTrip';
+import { ACTIVE_TRIP_QUERY_PREFIX, useActiveTrip, useActiveTripCache } from './useActiveTrip';
 
 export type ActiveTripStartupPhase = 'idle' | 'checking' | 'error' | 'offline' | 'done';
 
@@ -27,7 +27,7 @@ export function useActiveTripStartup(): ActiveTripStartup {
     if (!authenticated) {
       setSkipped(false);
       setRouted(false);
-      queryClient.removeQueries({ queryKey: ['trips', 'active'] });
+      queryClient.removeQueries({ queryKey: ACTIVE_TRIP_QUERY_PREFIX });
     }
   }, [authenticated]);
 
@@ -43,7 +43,7 @@ export function useActiveTripStartup(): ActiveTripStartup {
 
   const failed = query.isError || (query.data === undefined && network === 'offline');
   useEffect(() => {
-    if (network === 'online' && failed && !skipped) void query.refetch();
+    if (network === 'online' && failed && !skipped) void query.refetch({ cancelRefetch: false });
   }, [network]);
 
   const retry = useCallback((): void => {

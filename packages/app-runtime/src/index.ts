@@ -21,9 +21,22 @@ export * from './connectivity/ConnectivityBanner';
 export * from './location/device-location-port';
 export * from './location/device-location';
 export * from './dev/silence-known-web-warnings';
+export * from './dev/silence-push-dev-warnings';
 export * from './consent/consent.api';
 export * from './consent/consent-errors';
 export * from './consent/consent-service';
 export * from './consent/location-consent';
 export * from './consent/useLocationConsent';
 export * from './location/location-gate';
+export * from './session/logout-flow';
+export * from './notifications/notifications-module';
+export * from './notifications/push-permission';
+export * from './notifications/push-store';
+export { PUSH_REVOCATION_DEADLINE_MS } from './notifications/push-revocation';
+export type {
+  PushChannel,
+  PushRegistrationStatus,
+  PushSyncOutcome,
+} from './notifications/push-registrar';
+export * from './notifications/push-notifications';
+export * from './notifications/usePushRegistration';

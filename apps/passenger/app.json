@@ -25,6 +25,12 @@
         }
       ],
       [
+        "expo-notifications",
+        {
+          "color": "#F4A21A"
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "VoyYa usa tu ubicación aproximada al abrir la app para confirmar que estás en zona de cobertura y ubicarte en el mapa al pedir tu taxi.",

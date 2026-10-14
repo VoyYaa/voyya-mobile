@@ -15,15 +15,27 @@ import {
   refreshLocationConsent,
   useSessionStore,
   silenceKnownWebWarnings,
+  silencePushDevWarnings,
   useProactiveRefresh,
+  usePushRegistration,
 } from '@voyyaa/app-runtime';
 import { ActiveTripStartupGate } from '../src/components/ActiveTripStartupGate';
+import { useActiveTripStartup } from '../src/hooks/useActiveTripStartup';
+import { useForegroundNotifications } from '../src/hooks/useForegroundNotifications';
+import { useNotificationConfirmation } from '../src/hooks/useNotificationConfirmation';
+import { usePassengerNotificationRouting } from '../src/hooks/usePassengerNotificationRouting';
 import { useRouteGuard } from '../src/hooks/useRouteGuard';
+import { configurePassengerPush } from '../src/notifications/configure-passenger-push';
 import { wipeLocalTripDataOnFreshInstall } from '../src/lib/start-code-runtime';
 import { API_BASE_URL } from '../src/constants/env';
 
 configureApiClient({ baseUrl: API_BASE_URL, defaultErrorSchema: TripError });
+configurePassengerPush();
 silenceKnownWebWarnings();
+silencePushDevWarnings();
+if (__DEV__) {
+  void import('../src/dev/simulate-push').then((dev) => dev.installPushSimulator());
+}
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 interface RootStackProps {
@@ -49,6 +61,11 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
 
   useRouteGuard();
   useProactiveRefresh();
+  usePushRegistration();
+  useNotificationConfirmation();
+  useForegroundNotifications();
+  const startup = useActiveTripStartup();
+  const tap = usePassengerNotificationRouting({ startupSettled: startup.phase === 'done' });
 
   const hideSplash = useCallback((): void => {
     SplashScreen.hideAsync().catch(() => undefined);
@@ -75,7 +92,7 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
               options={{ animation: 'fade', gestureEnabled: false }}
             />
           </Stack>
-          <ActiveTripStartupGate />
+          <ActiveTripStartupGate startup={startup} tap={tap} />
         </>
       )}
       {booting && (

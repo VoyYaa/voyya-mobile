@@ -17,19 +17,26 @@ import {
 import type { PassengerUiState } from '@voyyaa/shared';
 import { useNetworkStatus } from '@voyyaa/app-runtime';
 import { CrossFadeText } from '../src/components/CrossFadeText';
+import { NotificationsBanner } from '../src/components/NotificationsBanner';
+import { NotificationsPromptSheet } from '../src/components/NotificationsPromptSheet';
 import { SearchRadar } from '../src/components/SearchRadar';
 import { StageTicket } from '../src/components/StageTicket';
 import { useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useTripRequestStatus } from '../src/hooks/useTripRequestStatus';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
+import { usePassengerNotifications } from '../src/hooks/usePassengerNotifications';
 import { useRetrySearch } from '../src/hooks/useRetrySearch';
+import { useTripTransitionNotice } from '../src/hooks/useTripTransitionNotice';
 import { usePickupServiceOptions } from '../src/hooks/useServiceOptions';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
+import { useTripTransitionStore } from '../src/state/useTripTransitionStore';
 import { PROLONGED_SEARCH_THRESHOLD_SEC } from '../src/constants/parameters';
 import { MATCH_TIMING } from '../src/constants/search-timing';
 import { CHOOSE_COMPANY_PARAM } from '../src/constants/route-params';
 import { findServiceOption } from '../src/lib/company-selection';
 import { decideNoDriverVariant, type NoDriverVariant } from '../src/lib/no-driver-decision';
+import { tripPhaseOf } from '../src/lib/trip-phase';
+import { notificationsCopy } from '../src/copy/notifications-copy';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
 const copy = passengerCopy.searching;
@@ -44,7 +51,9 @@ const DRIVER_UI: readonly PassengerUiState[] = [
 
 const RADAR_MAX_SIZE = 300;
 const RADAR_MIN_SIZE = 180;
+const RADAR_MIN_SIZE_COMPACT = 120;
 const RADAR_HEIGHT_RATIO = 0.34;
+const BANNER_HEIGHT_ESTIMATE = 114;
 
 function searchBodies(variant: NoDriverVariant): readonly string[] {
   if (variant.kind === 'company') {
@@ -115,8 +124,17 @@ export default function SearchingScreen(): React.JSX.Element {
   const [toastVisible, setToastVisible] = useState(false);
   const [matched, setMatched] = useState(false);
   const [matchedCaption, setMatchedCaption] = useState(false);
+  const [bannerHeight, setBannerHeight] = useState(0);
   const sawSearching = useRef(false);
   const navigated = useRef(false);
+
+  useTripTransitionNotice(data);
+  const notifications = usePassengerNotifications({
+    tripRequestId,
+    phase: tripPhaseOf(data),
+  });
+  const transitionNotice = useTripTransitionStore((s) => s.notice);
+  const markToastShown = useTripTransitionStore((s) => s.markToastShown);
 
   const goToTrip = useCallback((): void => {
     if (navigated.current || !tripRequestId) return;
@@ -276,9 +294,27 @@ export default function SearchingScreen(): React.JSX.Element {
     );
   }
 
-  const radarSize = Math.round(
+  const baseRadarSize = Math.round(
     Math.min(RADAR_MAX_SIZE, Math.max(RADAR_MIN_SIZE, windowHeight * RADAR_HEIGHT_RATIO)),
   );
+  const radarSize = notifications.banner
+    ? Math.max(
+        RADAR_MIN_SIZE_COMPACT,
+        baseRadarSize -
+          (bannerHeight > 0 ? bannerHeight : BANNER_HEIGHT_ESTIMATE) -
+          theme.spacing.md,
+      )
+    : baseRadarSize;
+  const cancelClearance =
+    theme.touch.comfortable +
+    theme.spacing.md +
+    Math.max(insets.bottom, theme.spacing.xl) -
+    theme.spacing.xxl;
+  const driverCancelledNoticeVisible =
+    transitionNotice !== null &&
+    transitionNotice.kind === 'driver_cancelled_searching' &&
+    transitionNotice.tripRequestId === tripRequestId &&
+    !transitionNotice.toastShown;
   const degraded = networkStatus === 'offline' || (isError && Boolean(data));
   const fareTotal = data?.fare.total ?? quote?.fare.total ?? null;
   const bodies = searchBodies(variant);
@@ -355,6 +391,15 @@ export default function SearchingScreen(): React.JSX.Element {
             />
           </View>
 
+          {notifications.banner && (
+            <NotificationsBanner
+              variant={notifications.banner.variant}
+              onAction={notifications.banner.onAction}
+              onDismiss={notifications.banner.onDismiss}
+              onHeightChange={setBannerHeight}
+            />
+          )}
+
           {origin && destination && fareTotal !== null && (
             <StageTicket
               originAddress={origin.address}
@@ -383,6 +428,24 @@ export default function SearchingScreen(): React.JSX.Element {
         tone="neutral"
         visible={toastVisible}
         onHide={() => setToastVisible(false)}
+      />
+
+      <Toast
+        message={notificationsCopy.foreground.driverCancelledSearching}
+        tone="neutral"
+        visible={driverCancelledNoticeVisible}
+        bottomOffset={cancelClearance}
+        onHide={() => {
+          if (transitionNotice !== null) markToastShown(transitionNotice.id);
+        }}
+        testID="driver-cancelled-toast"
+      />
+
+      <NotificationsPromptSheet
+        visible={notifications.sheet.visible}
+        loading={notifications.sheet.loading}
+        onAccept={notifications.sheet.onAccept}
+        onDecline={notifications.sheet.onDecline}
       />
     </View>
   );

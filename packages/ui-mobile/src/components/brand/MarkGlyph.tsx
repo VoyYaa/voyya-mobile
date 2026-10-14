@@ -8,7 +8,8 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedG = Animated.createAnimatedComponent(G);
 
-export type MarkGlyphName = 'empty' | 'clock' | 'error' | 'offline' | 'success' | 'pin' | 'search';
+export type MarkGlyphName =
+  'empty' | 'clock' | 'error' | 'offline' | 'success' | 'pin' | 'search' | 'bell' | 'bell_off';
 
 export interface MarkGlyphProps {
   glyph: MarkGlyphName;
@@ -20,7 +21,11 @@ export interface MarkGlyphProps {
 
 const RING_RADIUS = 24;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-const DASHED_RING_GLYPHS: readonly MarkGlyphName[] = ['empty', 'pin', 'error'];
+const DASHED_RING_GLYPHS: readonly MarkGlyphName[] = ['empty', 'pin', 'error', 'bell_off'];
+
+const BELL_BODY_PATH =
+  'M23 40 C26.5 37 27.5 34 27.5 29.5 a4.5 4.5 0 0 1 9 0 c0 4.5 1 7.5 4.5 10.5 Z';
+const BELL_CLAPPER_PATH = 'M29 43.5 a3 3 0 0 0 6 0';
 
 function useGlyphColor(glyph: MarkGlyphName, override?: string): string {
   const { colors } = useTheme();
@@ -33,8 +38,32 @@ function useGlyphColor(glyph: MarkGlyphName, override?: string): string {
     success: colors.successInk,
     pin: colors.brandInk,
     search: colors.brandInk,
+    bell: colors.brandInk,
+    bell_off: colors.infoInk,
   };
   return byGlyph[glyph];
+}
+
+function BellShape({ color }: { color: string }): React.JSX.Element {
+  return (
+    <>
+      <Path
+        d={BELL_BODY_PATH}
+        stroke={color}
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <Path
+        d={BELL_CLAPPER_PATH}
+        stroke={color}
+        strokeWidth={3}
+        strokeLinecap="round"
+        fill="none"
+      />
+    </>
+  );
 }
 
 function GlyphDetails({
@@ -108,6 +137,21 @@ function GlyphDetails({
           <Circle cx={30} cy={30} r={8} stroke={color} strokeWidth={4} fill="none" />
           <Path
             d="M36 36 L44 44"
+            stroke={color}
+            strokeWidth={4}
+            strokeLinecap="round"
+            fill="none"
+          />
+        </>
+      );
+    case 'bell':
+      return <BellShape color={color} />;
+    case 'bell_off':
+      return (
+        <>
+          <BellShape color={color} />
+          <Path
+            d="M18 18 L46 46"
             stroke={color}
             strokeWidth={4}
             strokeLinecap="round"

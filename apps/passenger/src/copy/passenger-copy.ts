@@ -2,6 +2,7 @@ import { formatCOP } from '@voyyaa/ui-mobile';
 import { DATA_CONTROLLER, TRIP_COORDINATES_RETENTION_DAYS } from '@voyyaa/shared';
 import { FREE_CANCELLATION_WINDOW_MIN } from '../constants/parameters';
 import { CAN_PIN_DROP } from '../constants/platform';
+import { notificationsCopy } from './notifications-copy';
 
 export const passengerCopy = {
   auth: {
@@ -191,8 +192,7 @@ export const passengerCopy = {
     backHome: 'Volver al inicio',
     statusErrorTitle: 'No pudimos ver el estado de tu viaje',
     noDriverTitle: 'No hay taxis disponibles ahora',
-    noDriverBody:
-      'Todos los conductores cercanos están ocupados. Intenta de nuevo en unos minutos.',
+    noDriverBody: 'No encontramos un taxi disponible por ahora. Intenta de nuevo en unos minutos.',
     retry: 'Reintentar',
     retryFailedTitle: 'No pudimos volver a buscar',
     retryFailedBody: 'Revisa tu conexión e inténtalo de nuevo.',
@@ -224,7 +224,7 @@ export const passengerCopy = {
     stepsLabel: (current: string): string => `Progreso del viaje: ${current}`,
     enRouteTitle: 'Tu conductor va en camino',
     assignedTitle: 'Conductor asignado',
-    arrivedTitle: 'Tu conductor llegó',
+    arrivedTitle: 'Tu conductor dice que llegó',
     arrivedAccent: 'llegó',
     arrivedBody: 'Te está esperando en el punto de encuentro.',
     inProgressTitle: 'Tu viaje está en curso',
@@ -250,7 +250,7 @@ export const passengerCopy = {
       'El conductor no te encontró en el punto de encuentro. Puedes solicitar un nuevo viaje cuando quieras.',
     noShowAction: 'Pedir un nuevo viaje',
     cancelledByDriverTitle: 'El conductor canceló este viaje',
-    cancelledByDriverBody: 'Puedes solicitar uno nuevo; te asignaremos otro conductor disponible.',
+    cancelledByDriverBody: 'Puedes pedir otro taxi cuando quieras.',
     cancelledByDriverAction: 'Pedir un nuevo viaje',
     cancelledByYouTitle: 'Cancelaste este viaje',
     cancelledByYouBody: 'Viaje cancelado · quedó registrado.',
@@ -403,4 +403,5 @@ export const passengerCopy = {
     openError: 'No pudimos abrir tu viaje.',
     openOffline: 'Sin conexión. Reintenta cuando vuelva la señal.',
   },
+  notifications: notificationsCopy,
 } as const;

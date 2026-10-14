@@ -11,7 +11,7 @@
     "ios": "expo start --dev-client --ios",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
-    "test": "node --test src/lib/consent-phase.spec.ts src/lib/active-trip-route.spec.ts src/lib/format-date.spec.ts src/lib/free-cancellation.spec.ts src/lib/company-selection.spec.ts src/lib/no-driver-decision.spec.ts src/lib/driver-change.spec.ts src/lib/coarse-coordinate.spec.ts src/lib/verified-places.spec.ts src/lib/start-code-store.spec.ts src/lib/pickup-origin-store.spec.ts src/lib/start-code-view.spec.ts src/lib/driver-tracking-presentation.spec.ts src/lib/trip-status-policy.spec.ts",
+    "test": "node --test --import ../../packages/app-runtime/test-support/resolve-ts-extension.mjs src/lib/consent-phase.spec.ts src/lib/active-trip-route.spec.ts src/lib/format-date.spec.ts src/lib/free-cancellation.spec.ts src/lib/company-selection.spec.ts src/lib/no-driver-decision.spec.ts src/lib/driver-change.spec.ts src/lib/coarse-coordinate.spec.ts src/lib/verified-places.spec.ts src/lib/start-code-store.spec.ts src/lib/pickup-origin-store.spec.ts src/lib/start-code-view.spec.ts src/lib/driver-tracking-presentation.spec.ts src/lib/trip-status-policy.spec.ts src/lib/notification-target.spec.ts src/lib/notifications-prompt-policy.spec.ts src/lib/notifications-prompt-store.spec.ts src/lib/notifications-prompt-cleanup.spec.ts src/lib/notifications-banner.spec.ts src/lib/trip-phase.spec.ts src/lib/trip-transition.spec.ts src/lib/foreground-policy.spec.ts src/lib/notification-tap-state.spec.ts src/components/notifications-a11y.spec.ts src/copy/passenger-copy-claims.spec.ts",
     "eas-build-post-install": "cd ../.. && pnpm run build",
     "web": "expo start --web"
   },
@@ -31,6 +31,7 @@
     "expo-font": "~12.0.10",
     "expo-linking": "~6.3.1",
     "expo-location": "~17.0.1",
+    "expo-notifications": "~0.28.19",
     "expo-router": "~3.5.23",
     "expo-secure-store": "~13.0.2",
     "expo-splash-screen": "0.27.7",

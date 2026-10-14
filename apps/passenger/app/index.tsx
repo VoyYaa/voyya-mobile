@@ -35,7 +35,7 @@ import { useLocationConsentGate } from '../src/hooks/useLocationConsentGate';
 import type { LocationConsentPhase } from '../src/lib/consent-phase';
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
-import { TRIP_ENDED_NOTICE } from '../src/constants/notices';
+import { TRIP_ENDED_NOTICE, TRIP_NOT_FOUND_NOTICE } from '../src/constants/notices';
 import { DEFAULT_MAP_CENTER } from '../src/constants/demo-places';
 import { POIS_YARUMAL } from '../src/constants/pois-yarumal';
 import { activeTripRoute } from '../src/lib/active-trip-route';
@@ -87,6 +87,7 @@ export default function HomeScreen(): React.JSX.Element {
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [accountVisible, setAccountVisible] = useState(false);
   const [endedToast, setEndedToast] = useState(false);
+  const [notFoundToast, setNotFoundToast] = useState(false);
   const lastPhase = useRef<LocationConsentPhase | null>(null);
   const trip = activeTrip.data ?? null;
 
@@ -100,6 +101,10 @@ export default function HomeScreen(): React.JSX.Element {
   useEffect(() => {
     if (notice === TRIP_ENDED_NOTICE) {
       setEndedToast(true);
+      router.setParams({ notice: undefined });
+    }
+    if (notice === TRIP_NOT_FOUND_NOTICE) {
+      setNotFoundToast(true);
       router.setParams({ notice: undefined });
     }
   }, [notice]);
@@ -401,6 +406,7 @@ export default function HomeScreen(): React.JSX.Element {
         onClose={() => setAccountVisible(false)}
         onLogout={() => logout.mutate()}
         loggingOut={logout.isPending}
+        confirmNote={trip ? passengerCopy.notifications.logout.activeTripNote : undefined}
         name={user ? `${user.first_name} ${user.last_name}`.trim() : undefined}
         onPrivacy={handleOpenPrivacy}
       />
@@ -411,6 +417,14 @@ export default function HomeScreen(): React.JSX.Element {
         visible={endedToast}
         onHide={() => setEndedToast(false)}
         testID="home-trip-ended-toast"
+      />
+
+      <Toast
+        message={passengerCopy.notifications.tap.notFound}
+        tone="info"
+        visible={notFoundToast}
+        onHide={() => setNotFoundToast(false)}
+        testID="home-trip-not-found-toast"
       />
 
       <LocationConsentSheet

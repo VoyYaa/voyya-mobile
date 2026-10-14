@@ -27,6 +27,7 @@ import { StartCodeCard } from '../src/components/StartCodeCard';
 import { startCodeCardView } from '../src/lib/start-code-view';
 import { useCancelTripRequest } from '../src/hooks/useCancelTripRequest';
 import { useFreeCancellation } from '../src/hooks/useFreeCancellation';
+import { useTripTransitionNotice } from '../src/hooks/useTripTransitionNotice';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
@@ -60,6 +61,7 @@ export default function DriverAssignedScreen(): React.JSX.Element {
   const { data, isLoading, isError, dataUpdatedAt, refetch } = useTripRequestStatus(tripRequestId);
   const showLoader = useDelayedLoading(isLoading);
   usePersistStartCode(data);
+  useTripTransitionNotice(data);
   usePickupOriginPersistence(tripRequestId);
   const savedStartCode = useSavedStartCode(tripRequestId, !data);
 

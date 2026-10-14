@@ -40,7 +40,6 @@ import { useNewOfferAlert } from '../src/hooks/useNewOfferAlert';
 import { usePendingCashTrips } from '../src/hooks/usePendingCashTrips';
 import { useBestEffortLocationReport } from '../src/hooks/useReportLocation';
 import { useLocationIssueStore } from '../src/state/useLocationIssueStore';
-import { revokeCurrentPushToken } from '../src/notifications/push-registration';
 import { driverCopy } from '../src/copy/driver-copy';
 import {
   SEARCH_RADIUS_FALLBACK_KM,
@@ -168,7 +167,7 @@ export default function HomeScreen(): React.JSX.Element {
   const driverName = user?.first_name ?? undefined;
 
   const handleLogout = (): void => {
-    void revokeCurrentPushToken().finally(() => logout.mutate());
+    logout.mutate();
   };
 
   const handleShiftAction = (): void => {

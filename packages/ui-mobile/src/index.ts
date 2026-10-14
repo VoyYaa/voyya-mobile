@@ -7,6 +7,7 @@ export * from './utils/trip-status-tone';
 export * from './hooks/useReducedMotion';
 export * from './hooks/useCountdown';
 export * from './hooks/useDelayedLoading';
+export * from './hooks/useFocusState';
 export * from './hooks/useKeyboardHeight';
 export * from './motion/useLoopValue';
 export * from './fonts/brand-font-families';

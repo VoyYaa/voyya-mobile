@@ -16,12 +16,15 @@ import {
 } from '@voyyaa/ui-mobile';
 import type { Location, TripRequestStatus } from '@voyyaa/shared';
 import { useDriverChangeNotice } from '../hooks/useDriverChangeNotice';
+import { usePassengerNotifications } from '../hooks/usePassengerNotifications';
 import { useSavedStartCode } from '../hooks/useStartCodePersistence';
 import { formatEta } from '../lib/eta';
 import { startCodeCardView, startCodeShouldAnnounceStart } from '../lib/start-code-view';
+import { tripPhaseOf } from '../lib/trip-phase';
 import { passengerCopy } from '../copy/passenger-copy';
 import { DriverCard } from './DriverCard';
 import { DriverTrackingCard } from './DriverTrackingCard';
+import { NotificationsBanner } from './NotificationsBanner';
 import { StartCodeCard } from './StartCodeCard';
 import { FreeCancelRail } from './FreeCancelRail';
 import { TripStepRail, type TripStep } from './TripStepRail';
@@ -133,6 +136,10 @@ export function ActiveTripView({
   const inProgress = step === 3;
   const arrived = step === 2;
   const driverChange = useDriverChangeNotice(data.trip_request_id, data.driver);
+  const { banner } = usePassengerNotifications({
+    tripRequestId: data.trip_request_id,
+    phase: tripPhaseOf(data),
+  });
   const saved = useSavedStartCode(data.trip_request_id, offline || isStale);
   const codeView = startCodeCardView({
     response: data,
@@ -172,6 +179,13 @@ export function ActiveTripView({
         >
           <TripStepRail current={step} />
           <StageSummary data={data} step={step} />
+          {banner && (
+            <NotificationsBanner
+              variant={banner.variant}
+              onAction={banner.onAction}
+              onDismiss={banner.onDismiss}
+            />
+          )}
         </View>
       </Stage>
 

@@ -66,6 +66,7 @@ export interface AccountSheetProps {
   phoneMasked?: string;
   onPrivacy?: () => void;
   loggingOut?: boolean;
+  confirmNote?: string;
   testID?: string;
 }
 
@@ -77,6 +78,7 @@ export function AccountSheet({
   phoneMasked,
   onPrivacy,
   loggingOut = false,
+  confirmNote,
   testID,
 }: AccountSheetProps): React.JSX.Element {
   const theme = useTheme();
@@ -98,6 +100,14 @@ export function AccountSheet({
           <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
             {uiCopy.logoutConfirmBody}
           </Text>
+          {confirmNote ? (
+            <Text
+              style={{ ...theme.typography.body, color: theme.colors.text }}
+              testID="account-logout-note"
+            >
+              {confirmNote}
+            </Text>
+          ) : null}
           <View style={{ gap: theme.spacing.sm }}>
             <Button
               label={uiCopy.logout}

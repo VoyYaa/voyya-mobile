@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { TripRequestStatus } from '@voyyaa/shared';
 
-import { activeTripRoute } from './active-trip-route.ts';
+import { activeTripRoute, isSameTripRoute } from './active-trip-route.ts';
 
 function trip(status: TripRequestStatus['status']): TripRequestStatus {
   return {
@@ -36,5 +36,20 @@ describe('activeTripRoute', () => {
   it('never routes a terminal trip', () => {
     assert.equal(activeTripRoute(trip('completed')), null);
     assert.equal(activeTripRoute(trip('cancelled_by_passenger')), null);
+  });
+});
+
+describe('isSameTripRoute', () => {
+  const route = { pathname: '/searching', params: { id: '77' } } as const;
+
+  it('is the same when the pathname and the trip id match, so nothing is navigated or restarted', () => {
+    assert.equal(isSameTripRoute({ pathname: '/searching', id: '77' }, route), true);
+  });
+
+  it('is different for another screen or another trip', () => {
+    assert.equal(isSameTripRoute({ pathname: '/driver-assigned', id: '77' }, route), false);
+    assert.equal(isSameTripRoute({ pathname: '/searching', id: '78' }, route), false);
+    assert.equal(isSameTripRoute({ pathname: '/searching', id: undefined }, route), false);
+    assert.equal(isSameTripRoute({ pathname: '/', id: undefined }, route), false);
   });
 });
