@@ -122,8 +122,29 @@ const rows: Row[] = [
   },
   {
     row: 8,
-    name: '403 ACCOUNT_SUSPENDED, which has no row of its own (gap U-5)',
-    error: http(403, 'ACCOUNT_SUSPENDED'),
+    name: '403 without code',
+    error: http(403),
+    verify: { kind: 'server' },
+    request: { kind: 'server' },
+  },
+  {
+    row: 8,
+    name: '403 FORBIDDEN, which is not a suspension',
+    error: http(403, 'FORBIDDEN'),
+    verify: { kind: 'server' },
+    request: { kind: 'server' },
+  },
+  {
+    row: 8,
+    name: '401 with ACCOUNT_SUSPENDED, a status that does not belong to that code',
+    error: http(401, 'ACCOUNT_SUSPENDED'),
+    verify: { kind: 'server' },
+    request: { kind: 'server' },
+  },
+  {
+    row: 8,
+    name: '409 with ACCOUNT_SUSPENDED, a status that does not belong to that code',
+    error: http(409, 'ACCOUNT_SUSPENDED'),
     verify: { kind: 'server' },
     request: { kind: 'server' },
   },
@@ -183,6 +204,13 @@ const rows: Row[] = [
     verify: { kind: 'server' },
     request: { kind: 'server' },
   },
+  {
+    row: 9,
+    name: '403 ACCOUNT_SUSPENDED (suspended when verifying, server when requesting)',
+    error: http(403, 'ACCOUNT_SUSPENDED'),
+    verify: { kind: 'suspended' },
+    request: { kind: 'server' },
+  },
 ];
 
 describe('classifyOtpFailure', () => {
@@ -218,5 +246,31 @@ describe('classifyOtpFailure', () => {
         },
       );
     }
+  });
+
+  it('decides a suspension only by status and code, whatever the message says', () => {
+    for (const message of ['Cuenta suspendida', '', 'empresa']) {
+      assert.deepEqual(classifyOtpFailure(http(403, 'ACCOUNT_SUSPENDED', { message }), 'verify'), {
+        kind: 'suspended',
+      });
+      assert.deepEqual(classifyOtpFailure(http(403, 'ACCOUNT_SUSPENDED', { message }), 'request'), {
+        kind: 'server',
+      });
+    }
+  });
+
+  it('does not take a network failure or a non-http failure for a suspension', () => {
+    const lookalike = Object.assign(new Error('x'), {
+      kind: 'validation',
+      status: 403,
+      code: 'ACCOUNT_SUSPENDED',
+    });
+    assert.deepEqual(classifyOtpFailure(lookalike, 'verify'), { kind: 'server' });
+    const offline = Object.assign(new Error('x'), {
+      kind: 'network',
+      status: 403,
+      code: 'ACCOUNT_SUSPENDED',
+    });
+    assert.deepEqual(classifyOtpFailure(offline, 'verify'), { kind: 'offline' });
   });
 });

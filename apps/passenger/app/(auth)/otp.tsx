@@ -24,6 +24,7 @@ import { useWaitDeadline, type WaitDeadline } from '../../src/hooks/useWaitDeadl
 import { passengerCopy } from '../../src/copy/passenger-copy';
 import { classifyOtpFailure } from '../../src/lib/otp-errors';
 import {
+  canResendCode,
   sendNoticeView,
   shouldClearOutcome,
   verifyView,
@@ -130,7 +131,7 @@ export default function OtpScreen(): React.JSX.Element {
   const resendRemaining = useCountdown(resendDeadline);
 
   const view = verifyView(outcome, shaking);
-  const canResend = !rateLimit.active && (outcome === 'expired' || resendRemaining <= 0);
+  const canResend = canResendCode(outcome, rateLimit.active, resendRemaining);
   const messageHeight =
     (theme.typography.smallStrong.lineHeight ?? FALLBACK_LINE_HEIGHT) * MESSAGE_LINES;
 
@@ -189,6 +190,7 @@ export default function OtpScreen(): React.JSX.Element {
         return;
       case 'expired':
       case 'max_attempts':
+      case 'suspended':
         setValue('');
         setOutcome(failure.kind);
         return;
@@ -209,6 +211,8 @@ export default function OtpScreen(): React.JSX.Element {
       { onSuccess: completeSession, onError: handleVerifyFailure },
     );
   };
+
+  const handleBack = (): void => router.back();
 
   const handleRetry = (): void => {
     if (value.length === OTP_LENGTH) handleComplete(value);
@@ -258,7 +262,7 @@ export default function OtpScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <ScreenHeader title={copy.otpHeader} onBack={() => router.back()} />
+      <ScreenHeader title={copy.otpHeader} onBack={handleBack} />
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: theme.spacing.xl, gap: theme.spacing.xl }}
@@ -310,10 +314,18 @@ export default function OtpScreen(): React.JSX.Element {
                 testID="retry-verify-button"
               />
             )}
+            {view.showBack && (
+              <Button
+                label={copy.otpSuspendedBack}
+                variant="ghost"
+                onPress={handleBack}
+                testID="back-from-suspended-button"
+              />
+            )}
           </View>
         </Reveal>
 
-        {outcome !== 'verifying' && outcome !== 'success' && (
+        {outcome !== 'verifying' && outcome !== 'success' && outcome !== 'suspended' && (
           <Reveal index={2}>
             <ResendArea
               wait={rateLimit}

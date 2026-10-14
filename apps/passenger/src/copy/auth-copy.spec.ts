@@ -106,6 +106,23 @@ describe('auth copy keeps the texts that the matrix of errors fixes', () => {
     assert.equal(authCopy.otpOffline, 'Sin conexión · no pudimos verificar tu código.');
   });
 
+  it('words the suspension as a stop that a new code does not solve, with one way out', () => {
+    assert.equal(
+      authCopy.otpSuspended,
+      'Tu acceso a VoyYa está suspendido. Un código nuevo no lo soluciona.',
+    );
+    assert.equal(authCopy.otpSuspendedBack, 'Volver');
+    assert.match(authCopy.otpSuspended, /código nuevo no lo soluciona/);
+    assert.doesNotMatch(authCopy.otpSuspended, /reenv|solicita|inténtalo/i);
+  });
+
+  it('gives the suspension no reason, no date, no one to blame and no channel that does not exist', () => {
+    assert.doesNotMatch(
+      authCopy.otpSuspended,
+      /soporte|escr[ií]benos|contacta|motivo|\bhasta\b|pasajero|cuenta/i,
+    );
+  });
+
   it('uses the final text of every notice of the phone screen and of the resend', () => {
     assert.equal(
       authCopy.phoneInvalid,

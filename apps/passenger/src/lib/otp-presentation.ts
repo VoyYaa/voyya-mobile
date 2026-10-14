@@ -7,6 +7,7 @@ export type VerifyOutcome =
   | 'incorrect'
   | 'expired'
   | 'max_attempts'
+  | 'suspended'
   | 'throttled'
   | 'server'
   | 'offline'
@@ -28,6 +29,7 @@ export interface VerifyView {
   message: MessageView | null;
   announcement: string | null;
   showRetry: boolean;
+  showBack: boolean;
   clearsDigits: boolean;
   closesKeyboard: boolean;
 }
@@ -38,6 +40,7 @@ const IDLE_VIEW: VerifyView = {
   message: null,
   announcement: null,
   showRetry: false,
+  showBack: false,
   clearsDigits: false,
   closesKeyboard: false,
 };
@@ -84,6 +87,13 @@ export function verifyView(outcome: VerifyOutcome, shaking: boolean): VerifyView
         message: dangerMessage(authCopy.otpTooManyAttempts),
         announcement: authCopy.otpTooManyAttempts,
       };
+    case 'suspended':
+      return {
+        ...DEAD_END_VIEW,
+        showBack: true,
+        message: dangerMessage(authCopy.otpSuspended),
+        announcement: authCopy.otpSuspended,
+      };
     case 'throttled':
       return {
         ...RETRYABLE_VIEW,
@@ -129,6 +139,15 @@ export function shouldClearOutcome(
     default:
       return false;
   }
+}
+
+export function canResendCode(
+  outcome: VerifyOutcome,
+  waitActive: boolean,
+  resendRemaining: number,
+): boolean {
+  if (outcome === 'suspended' || waitActive) return false;
+  return outcome === 'expired' || resendRemaining <= 0;
 }
 
 export function sendNoticeView(kind: SendNoticeKind): MessageView {

@@ -58,11 +58,51 @@ describe('code screen', () => {
     assert.match(otp, /if \(view\.closesKeyboard\) Keyboard\.dismiss\(\)/);
   });
 
-  it('empties the boxes when the code expired or ran out of attempts', () => {
+  it('empties the boxes when the code expired, ran out of attempts or was spent on a suspension', () => {
     assert.match(
       otp,
-      /case 'expired':\s+case 'max_attempts':\s+setValue\(''\);\s+setOutcome\(failure\.kind\);/,
+      /case 'expired':\s+case 'max_attempts':\s+case 'suspended':\s+setValue\(''\);\s+setOutcome\(failure\.kind\);/,
     );
+  });
+
+  it('does nothing else after a suspension: no request, no navigation, no timer', () => {
+    const branch = otp.slice(otp.indexOf("case 'expired':"), otp.indexOf("case 'throttled':"));
+    assert.match(branch, /case 'suspended':/);
+    assert.doesNotMatch(branch, /router|\.mutate\(|setTimeout|verifyThrottle|rateLimit|Resend/);
+  });
+
+  it('takes the right to resend from the pure rule, which a suspension never satisfies', () => {
+    assert.match(
+      otp,
+      /const canResend = canResendCode\(outcome, rateLimit\.active, resendRemaining\);/,
+    );
+    assert.doesNotMatch(otp, /const canResend = !rateLimit\.active/);
+  });
+
+  it('does not draw the resend area while verifying, after success or after a suspension', () => {
+    assert.match(
+      otp,
+      /\{outcome !== 'verifying' && outcome !== 'success' && outcome !== 'suspended' && \(\s+<Reveal index=\{2\}>/,
+    );
+  });
+
+  it('offers a single way out after a suspension: a 52 dp ghost button that goes back like the header arrow', () => {
+    assert.match(
+      otp,
+      /\{view\.showBack && \(\s+<Button\s+label=\{copy\.otpSuspendedBack\}\s+variant="ghost"\s+onPress=\{handleBack\}\s+testID="back-from-suspended-button"\s+\/>\s+\)\}/,
+    );
+    assert.match(otp, /const handleBack = \(\): void => router\.back\(\);/);
+    assert.match(otp, /<ScreenHeader title=\{copy\.otpHeader\} onBack=\{handleBack\} \/>/);
+  });
+
+  it('moves no focus by code and adds no second announcer for the suspension', () => {
+    assert.doesNotMatch(otp, /accessibilityLiveRegion/);
+    assert.doesNotMatch(otp, /accessibilityRole="alert"/);
+    assert.equal(
+      otp.match(/AccessibilityInfo\.announceForAccessibility\(view\.announcement\)/g)?.length,
+      1,
+    );
+    assert.equal(otp.match(/setFocusRequest\(/g)?.length, 1);
   });
 
   it('focuses the field again after a successful resend, once the boxes are enabled', () => {

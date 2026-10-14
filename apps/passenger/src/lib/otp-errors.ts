@@ -3,6 +3,7 @@ export type OtpVerifyFailure =
   | { kind: 'incorrect' }
   | { kind: 'expired' }
   | { kind: 'max_attempts' }
+  | { kind: 'suspended' }
   | { kind: 'throttled' }
   | { kind: 'server' };
 
@@ -24,6 +25,7 @@ interface FailureSignal {
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_UNAUTHORIZED = 401;
+const HTTP_FORBIDDEN = 403;
 const HTTP_GONE = 410;
 const HTTP_TOO_MANY_REQUESTS = 429;
 
@@ -52,6 +54,7 @@ function classifyVerify(signal: FailureSignal): OtpVerifyFailure {
   if (is(signal, HTTP_GONE, 'OTP_EXPIRED')) return { kind: 'expired' };
   if (is(signal, HTTP_TOO_MANY_REQUESTS, 'OTP_MAX_ATTEMPTS')) return { kind: 'max_attempts' };
   if (is(signal, HTTP_TOO_MANY_REQUESTS, undefined)) return { kind: 'throttled' };
+  if (is(signal, HTTP_FORBIDDEN, 'ACCOUNT_SUSPENDED')) return { kind: 'suspended' };
   return { kind: 'server' };
 }
 

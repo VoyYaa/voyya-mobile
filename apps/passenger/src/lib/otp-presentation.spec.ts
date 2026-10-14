@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { authCopy } from '../copy/auth-copy.ts';
+import { classifyOtpFailure } from './otp-errors.ts';
 import {
+  canResendCode,
   sendNoticeView,
   shouldClearOutcome,
   verifyView,
@@ -15,6 +17,7 @@ const ALL_OUTCOMES: readonly VerifyOutcome[] = [
   'incorrect',
   'expired',
   'max_attempts',
+  'suspended',
   'throttled',
   'server',
   'offline',
@@ -29,6 +32,7 @@ describe('verifyView', () => {
       message: null,
       announcement: null,
       showRetry: false,
+      showBack: false,
       clearsDigits: false,
       closesKeyboard: false,
     });
@@ -73,6 +77,21 @@ describe('verifyView', () => {
       assert.equal(view.closesKeyboard, true);
       assert.equal(view.showRetry, false);
       assert.equal(view.announcement, text);
+    });
+  }
+
+  for (const shaking of [false, true]) {
+    it(`turns a suspension into a dead end with a single way out, without shaking (shaking ${shaking})`, () => {
+      assert.deepEqual(verifyView('suspended', shaking), {
+        inputStatus: 'editing',
+        inputDisabled: true,
+        message: { text: authCopy.otpSuspended, tone: 'danger', glyph: 'error' },
+        announcement: authCopy.otpSuspended,
+        showRetry: false,
+        showBack: true,
+        clearsDigits: true,
+        closesKeyboard: true,
+      });
     });
   }
 
@@ -121,9 +140,26 @@ describe('verifyView', () => {
     assert.deepEqual(withRetry, ['throttled', 'server', 'offline']);
   });
 
+  it('offers the way back only after a suspension', () => {
+    const withBack = ALL_OUTCOMES.filter((outcome) => verifyView(outcome, false).showBack);
+    assert.deepEqual(withBack, ['suspended']);
+  });
+
   it('closes the keyboard only in the states where typing again does not help', () => {
     const closing = ALL_OUTCOMES.filter((outcome) => verifyView(outcome, false).closesKeyboard);
-    assert.deepEqual(closing, ['expired', 'max_attempts', 'throttled', 'server', 'offline']);
+    assert.deepEqual(closing, [
+      'expired',
+      'max_attempts',
+      'suspended',
+      'throttled',
+      'server',
+      'offline',
+    ]);
+  });
+
+  it('empties the boxes only in the dead ends where the code is spent', () => {
+    const emptying = ALL_OUTCOMES.filter((outcome) => verifyView(outcome, false).clearsDigits);
+    assert.deepEqual(emptying, ['expired', 'max_attempts', 'suspended']);
   });
 
   it('never promises a number of attempts', () => {
@@ -162,6 +198,7 @@ describe('shouldClearOutcome', () => {
     for (const outcome of [
       'expired',
       'max_attempts',
+      'suspended',
       'throttled',
       'verifying',
       'success',
@@ -172,6 +209,62 @@ describe('shouldClearOutcome', () => {
 
   it('has nothing to clear when idle', () => {
     assert.equal(shouldClearOutcome('idle', false, '1', '123456'), false);
+  });
+});
+
+describe('canResendCode', () => {
+  const table: Array<{
+    outcome: VerifyOutcome;
+    waitActive: boolean;
+    resendRemaining: number;
+    expected: boolean;
+  }> = [
+    { outcome: 'idle', waitActive: false, resendRemaining: 22, expected: false },
+    { outcome: 'idle', waitActive: false, resendRemaining: 0, expected: true },
+    { outcome: 'idle', waitActive: true, resendRemaining: 0, expected: false },
+    { outcome: 'expired', waitActive: false, resendRemaining: 22, expected: true },
+    { outcome: 'expired', waitActive: true, resendRemaining: 0, expected: false },
+    { outcome: 'max_attempts', waitActive: false, resendRemaining: 22, expected: false },
+    { outcome: 'max_attempts', waitActive: false, resendRemaining: 0, expected: true },
+    { outcome: 'suspended', waitActive: false, resendRemaining: 22, expected: false },
+    { outcome: 'suspended', waitActive: false, resendRemaining: 0, expected: false },
+    { outcome: 'suspended', waitActive: true, resendRemaining: 0, expected: false },
+  ];
+
+  for (const { outcome, waitActive, resendRemaining, expected } of table) {
+    it(`says ${expected} for ${outcome} with the wait ${waitActive ? 'active' : 'inactive'} and ${resendRemaining} s left`, () => {
+      assert.equal(canResendCode(outcome, waitActive, resendRemaining), expected);
+    });
+  }
+
+  it('never lets a suspension resend, however long ago the code was sent', () => {
+    for (const resendRemaining of [30, 1, 0, -5]) {
+      assert.equal(canResendCode('suspended', false, resendRemaining), false);
+    }
+  });
+});
+
+describe('a suspended passenger who types the correct code', () => {
+  const forbidden = Object.assign(new Error('Cuenta suspendida'), {
+    kind: 'http',
+    status: 403,
+    code: 'ACCOUNT_SUSPENDED',
+  });
+
+  it('ends on the suspension screen with the boxes empty, no retry, no resend and one way out', () => {
+    const failure = classifyOtpFailure(forbidden, 'verify');
+    assert.equal(failure.kind, 'suspended');
+    const view = verifyView(failure.kind, false);
+    assert.equal(view.message?.text, authCopy.otpSuspended);
+    assert.equal(view.showRetry, false);
+    assert.equal(view.showBack, true);
+    assert.equal(canResendCode(failure.kind, false, 0), false);
+  });
+
+  it('announces the suspension and never the availability of a resend', () => {
+    const view = verifyView('suspended', false);
+    assert.equal(view.announcement, authCopy.otpSuspended);
+    assert.notEqual(view.announcement, authCopy.otpResendAvailable);
   });
 });
 
