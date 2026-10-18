@@ -11,6 +11,7 @@ import {
 } from '@voyyaa/ui-mobile';
 import type { ActiveTripStartup } from '../hooks/useActiveTripStartup';
 import type { NotificationTapState } from '../hooks/usePassengerNotificationRouting';
+import { startupGateView } from '../lib/startup-gate-view';
 import { passengerCopy } from '../copy/passenger-copy';
 
 const copy = passengerCopy.activeTrip;
@@ -25,20 +26,12 @@ export function ActiveTripStartupGate({
   tap,
 }: ActiveTripStartupGateProps): React.JSX.Element | null {
   const theme = useTheme();
-  const opening = tap.phase === 'resolving';
-  const checking = startup.phase === 'checking' || opening;
-  const showLoader = useDelayedLoading(checking);
+  const view = startupGateView(startup, tap);
+  const showLoader = useDelayedLoading(view.kind === 'veil');
 
-  const failedSource =
-    startup.phase === 'offline' || startup.phase === 'error'
-      ? { phase: startup.phase, retry: startup.retry, skip: startup.skip }
-      : tap.phase === 'offline' || tap.phase === 'error'
-        ? { phase: tap.phase, retry: tap.retry, skip: tap.skip }
-        : null;
+  if (view.kind === 'none') return null;
 
-  if (failedSource === null && !checking) return null;
-
-  if (failedSource === null) {
+  if (view.kind === 'veil') {
     return (
       <View
         testID="active-trip-checking"
@@ -52,11 +45,16 @@ export function ActiveTripStartupGate({
         }}
       >
         {showLoader && (
-          <BrandLoader variant="screen" label={opening ? copy.opening : copy.checking} />
+          <BrandLoader
+            variant="screen"
+            label={view.label === 'opening' ? copy.opening : copy.checking}
+          />
         )}
       </View>
     );
   }
+
+  const failedSource = view.source === 'startup' ? startup : tap;
 
   return (
     <SafeAreaView
@@ -71,7 +69,7 @@ export function ActiveTripStartupGate({
         justifyContent: 'center',
       }}
     >
-      {failedSource.phase === 'offline' ? (
+      {view.phase === 'offline' ? (
         <OfflineState
           title={copy.offlineTitle}
           body={copy.offlineBody}

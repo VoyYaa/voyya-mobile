@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
 import { AccessibilityInfo, Text, View } from 'react-native';
-import { Button, Card, MarkGlyph, Skeleton, useTheme } from '@voyyaa/ui-mobile';
+import { BrandSpinner, Button, Card, MarkGlyph, Skeleton, useTheme } from '@voyyaa/ui-mobile';
 import { START_CODE_LENGTH } from '@voyyaa/shared';
 import { passengerCopy } from '../copy/passenger-copy';
 import {
   spokenDigits,
   spokenPlate,
+  startCodeStatusLine,
   type StartCodeCardView,
-  type StartCodeNote,
+  type StartCodeStatusLine,
 } from '../lib/start-code-view';
 
 export interface StartCodeCardProps {
@@ -30,9 +31,45 @@ function instruction(plate: string | null, arrived: boolean): string {
   return arrived ? copy.instructionArrived(plate) : copy.instructionBeforeArrival(plate);
 }
 
-function noteText(note: StartCodeNote): string | null {
-  if (note === 'saved_offline') return copy.savedOffline;
-  return note === 'saved_refresh_failed' ? copy.savedRefreshFailed : null;
+function StatusLine({ line }: { line: StartCodeStatusLine }): React.JSX.Element {
+  const theme = useTheme();
+  const glyphColor = theme.colors.onStageMuted;
+
+  return (
+    <View
+      importantForAccessibility="no-hide-descendants"
+      testID="start-code-status"
+      style={{
+        flexDirection: 'row',
+        alignItems: line.plain ? 'center' : 'flex-start',
+        gap: theme.spacing.sm,
+      }}
+    >
+      <View style={{ paddingTop: line.plain ? 0 : 2 }}>
+        {line.glyph === 'checking' ? (
+          <BrandSpinner size={NOTE_GLYPH_SIZE} color={glyphColor} />
+        ) : (
+          <MarkGlyph glyph={line.glyph} size={NOTE_GLYPH_SIZE} color={glyphColor} animate={false} />
+        )}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={
+            line.plain
+              ? { ...theme.typography.small, color: theme.colors.onStageMuted }
+              : { ...theme.typography.smallStrong, color: theme.colors.onStage }
+          }
+        >
+          {line.title}
+        </Text>
+        {line.detail !== null && (
+          <Text style={{ ...theme.typography.small, color: theme.colors.onStageMuted }}>
+            {line.detail}
+          </Text>
+        )}
+      </View>
+    </View>
+  );
 }
 
 export function StartCodeCard({
@@ -142,10 +179,11 @@ export function StartCodeCard({
   }
 
   const digits = view.code.split('');
-  const note = noteText(view.note);
-  const spoken = copy.accessibility(
+  const statusLine = startCodeStatusLine(view.note, view.savedAt);
+  const spoken = copy.saved.accessibility(
     spokenDigits(view.code),
     instruction(plate === null ? null : spokenPlate(plate), arrived),
+    statusLine === null ? null : copy.saved.spokenStatus(statusLine.title, statusLine.detail),
   );
 
   return (
@@ -206,6 +244,8 @@ export function StartCodeCard({
           ))}
         </View>
 
+        {statusLine !== null && <StatusLine line={statusLine} />}
+
         <Text
           importantForAccessibility="no-hide-descendants"
           selectable={false}
@@ -213,34 +253,15 @@ export function StartCodeCard({
         >
           {instruction(plate, arrived)}
         </Text>
-        <Text
-          importantForAccessibility="no-hide-descendants"
-          style={{ ...theme.typography.small, color: theme.colors.onStageMuted }}
-        >
-          {copy.onlyDriverNote}
-        </Text>
-      </View>
-
-      {note !== null && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: theme.spacing.sm,
-            marginTop: theme.spacing.sm,
-          }}
-        >
-          <MarkGlyph
-            glyph={view.note === 'saved_offline' ? 'offline' : 'clock'}
-            size={NOTE_GLYPH_SIZE}
-            color={theme.colors.onStageMuted}
-            animate={false}
-          />
-          <Text style={{ ...theme.typography.small, color: theme.colors.onStageMuted, flex: 1 }}>
-            {note}
+        {statusLine === null && (
+          <Text
+            importantForAccessibility="no-hide-descendants"
+            style={{ ...theme.typography.small, color: theme.colors.onStageMuted }}
+          >
+            {copy.onlyDriverNote}
           </Text>
-        </View>
-      )}
+        )}
+      </View>
     </Card>
   );
 }

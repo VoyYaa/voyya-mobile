@@ -1,31 +1,51 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import type { TripRequestStatus } from '@voyyaa/shared';
-import { startCodeStore } from '../lib/start-code-runtime';
+import { useSessionStore } from '@voyyaa/app-runtime';
+import { START_CODE_RECORD_TTL_MS } from '../constants/parameters';
+import { isSessionFresh } from '../lib/session-freshness';
+import {
+  msUntilExpiry,
+  toServerStartCode,
+  usableRecord,
+  type StartCodeRecord,
+} from '../lib/start-code-record';
+import { startCodeRecordStore } from '../lib/start-code-runtime';
 
-export function usePersistStartCode(data: TripRequestStatus | undefined): void {
-  const tripRequestId = data?.trip_request_id;
-  const code = data?.start_code ?? null;
-  const state = data?.start_code_state;
+export function usePersistStartCode(
+  data: TripRequestStatus | undefined,
+  dataUpdatedAt: number,
+): void {
+  const userId = useSessionStore((s) => s.user?.user_id ?? null);
+  const sessionStartedAt = useSessionStore((s) => s.sessionStartedAt);
 
   useEffect(() => {
-    if (tripRequestId === undefined || state === undefined) return;
-    void startCodeStore.sync(tripRequestId, { start_code: code, start_code_state: state });
-  }, [tripRequestId, code, state]);
+    if (data === undefined || userId === null) return;
+    if (!isSessionFresh(dataUpdatedAt, sessionStartedAt)) return;
+    void startCodeRecordStore.sync(toServerStartCode(data), userId);
+  }, [dataUpdatedAt, userId, sessionStartedAt]);
 }
 
-export function useSavedStartCode(tripRequestId: number | null, enabled: boolean): string | null {
-  const [saved, setSaved] = useState<string | null>(null);
+export function useRestoredStartCode(tripRequestId: number | null): StartCodeRecord | null {
+  const snapshot = useSyncExternalStore(
+    startCodeRecordStore.subscribe,
+    startCodeRecordStore.getSnapshot,
+  );
+  const userId = useSessionStore((s) => s.user?.user_id ?? null);
+  const record = usableRecord(snapshot, {
+    tripRequestId,
+    userId,
+    now: Date.now(),
+    ttlMs: START_CODE_RECORD_TTL_MS,
+  });
 
   useEffect(() => {
-    if (!enabled || tripRequestId === null) return;
-    let cancelled = false;
-    void startCodeStore.read(tripRequestId).then((code) => {
-      if (!cancelled) setSaved(code);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [tripRequestId, enabled]);
+    if (record === null) return;
+    const timer = setTimeout(
+      () => void startCodeRecordStore.clear(),
+      msUntilExpiry(record, Date.now(), START_CODE_RECORD_TTL_MS),
+    );
+    return () => clearTimeout(timer);
+  }, [record]);
 
-  return saved;
+  return record;
 }

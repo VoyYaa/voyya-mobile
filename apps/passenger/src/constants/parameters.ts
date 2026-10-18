@@ -11,3 +11,13 @@ export const SERVICE_OPTIONS_STALE_MS = 30_000;
 export const RATE_LIMIT_LONG_WAIT_SEC = 3600;
 
 export const RATE_LIMIT_FALLBACK_SEC = 90;
+
+export const START_CODE_RECORD_TTL_MS = 6 * 60 * 60 * 1000;
+
+export const START_CODE_RECORD_REFRESH_MS = 60 * 1000;
+
+export const START_CODE_RECORD_READY_TIMEOUT_MS = 2000;
+
+export const SLOW_SIGNAL_THRESHOLD_MS = 4000;
+
+export const RETRY_FEEDBACK_MIN_MS = 600;

@@ -4,6 +4,7 @@ import type { TripRequestStatus } from '@voyyaa/shared';
 
 import {
   NOTIFICATION_STALE_AFTER_MS,
+  isNotOwnedOrMissing,
   resolveNotificationTarget,
   type NotificationTargetApi,
   type ResolveNotificationInput,
@@ -293,5 +294,27 @@ describe('resolveNotificationTarget', () => {
       );
       assert.deepEqual(target, { kind: 'unavailable', reason: 'error' });
     });
+  });
+});
+
+describe('isNotOwnedOrMissing', () => {
+  it('is true only for a 403 or a 404 from the server', () => {
+    assert.equal(isNotOwnedOrMissing(httpError(403)), true);
+    assert.equal(isNotOwnedOrMissing(httpError(404)), true);
+  });
+
+  it('is false for any other status, which must never clear the saved code', () => {
+    for (const status of [400, 401, 409, 422, 429, 500, 502, 503]) {
+      assert.equal(isNotOwnedOrMissing(httpError(status)), false, String(status));
+    }
+  });
+
+  it('is false for network failures, validation failures and anything unknown', () => {
+    assert.equal(isNotOwnedOrMissing({ kind: 'network' }), false);
+    assert.equal(isNotOwnedOrMissing({ kind: 'validation' }), false);
+    assert.equal(isNotOwnedOrMissing(new Error('boom')), false);
+    assert.equal(isNotOwnedOrMissing(null), false);
+    assert.equal(isNotOwnedOrMissing(undefined), false);
+    assert.equal(isNotOwnedOrMissing('404'), false);
   });
 });

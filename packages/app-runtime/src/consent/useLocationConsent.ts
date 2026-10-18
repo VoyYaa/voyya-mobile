@@ -7,7 +7,8 @@ import {
   revokeLocationConsent,
 } from './location-consent';
 
-export const LOCATION_CONSENT_QUERY_KEY = ['consents', 'location'] as const;
+export const CONSENT_QUERY_PREFIX = ['consents'] as const;
+export const LOCATION_CONSENT_QUERY_KEY = [...CONSENT_QUERY_PREFIX, 'location'] as const;
 
 export function useLocationConsentStatus() {
   const isAuthenticated = useSessionStore((s) => s.status === 'authenticated');

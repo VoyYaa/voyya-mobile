@@ -1,4 +1,4 @@
-import { getSecureStoragePort, onSessionCleared } from '@voyyaa/app-runtime';
+import { getSecureStoragePort } from '@voyyaa/app-runtime';
 import { createPickupOriginStore } from './pickup-origin-store';
 
 export const pickupOriginStore = createPickupOriginStore({
@@ -6,5 +6,3 @@ export const pickupOriginStore = createPickupOriginStore({
   setItem: (key, value, options) => getSecureStoragePort().setItem(key, value, options),
   deleteItem: (key) => getSecureStoragePort().deleteItem(key),
 });
-
-onSessionCleared(() => pickupOriginStore.clear());

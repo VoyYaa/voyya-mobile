@@ -162,6 +162,86 @@ describe('tapReducer', () => {
   });
 });
 
+describe('tapReducer with the startup already restored from the saved code (U-09)', () => {
+  const restoredOffline = {
+    type: 'resolved',
+    target: offlineTarget,
+    networkOffline: true,
+    startupRestored: true,
+  } as const;
+  const restoredError = {
+    type: 'resolved',
+    target: errorTarget,
+    networkOffline: false,
+    startupRestored: true,
+  } as const;
+
+  it('waits for the network in silence when a cold tap cannot be resolved without a connection', () => {
+    const state = run([{ type: 'tapped', tap: cold }, restoredOffline]);
+    assert.equal(tapPhase(state), 'idle');
+    assert.equal(state.waitingForNetwork, true);
+    assert.equal(state.failure, null);
+    assert.notEqual(state.pending, null);
+  });
+
+  it('waits in silence for a server failure too, instead of showing the failure panel over the code', () => {
+    for (const tap of [cold, background]) {
+      const state = run([{ type: 'tapped', tap }, restoredError]);
+      assert.equal(tapPhase(state), 'idle', tap.origin);
+      assert.equal(state.waitingForNetwork, true, tap.origin);
+      assert.equal(state.failure, null, tap.origin);
+    }
+  });
+
+  it('resolves again when the connection comes back', () => {
+    const state = run([
+      { type: 'tapped', tap: cold },
+      restoredOffline,
+      { type: 'network_restored' },
+    ]);
+    assert.equal(tapPhase(state), 'resolving');
+    assert.equal(state.waitingForNetwork, false);
+    assert.equal(state.attempt, 1);
+  });
+
+  it('never resolves while it waits, so it cannot loop without the network', () => {
+    const state = run([{ type: 'tapped', tap: cold }, restoredOffline]);
+    assert.equal(
+      canResolveTap(state, { authenticated: true, hydrating: false, startupSettled: true }),
+      false,
+    );
+  });
+
+  it('still clears the tap when the target resolves to a route', () => {
+    const target = {
+      kind: 'route',
+      route: { pathname: '/driver-assigned', params: { id: '1' } },
+      trip: {},
+    } as never;
+    const state = run([
+      { type: 'tapped', tap: cold },
+      { type: 'resolved', target, networkOffline: false, startupRestored: true },
+    ]);
+    assert.equal(state.pending, null);
+    assert.equal(tapPhase(state), 'idle');
+  });
+
+  it('keeps today behaviour when the startup was not restored', () => {
+    const state = run([
+      { type: 'tapped', tap: cold },
+      { type: 'resolved', target: offlineTarget, networkOffline: true, startupRestored: false },
+    ]);
+    assert.equal(tapPhase(state), 'offline');
+    assert.equal(state.waitingForNetwork, false);
+  });
+
+  it('forgets the waiting tap when the session ends', () => {
+    const state = run([{ type: 'tapped', tap: cold }, restoredOffline, { type: 'session_ended' }]);
+    assert.equal(state.pending, null);
+    assert.equal(state.waitingForNetwork, false);
+  });
+});
+
 describe('canResolveTap', () => {
   const ready = {
     authenticated: true,

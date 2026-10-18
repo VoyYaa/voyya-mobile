@@ -212,3 +212,114 @@ describe('apiRequest concurrent 401s', () => {
     assert.equal(expiredCalls, 0);
   });
 });
+
+describe('apiRequest 401 and the session that made the request', () => {
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  interface Probe {
+    refreshCalls: number;
+    expiredCalls: number;
+    fetchCalls: number;
+  }
+
+  function arrange(options: {
+    token: () => string | null;
+    refresh: () => Promise<string | null>;
+  }): Probe {
+    const probe: Probe = { refreshCalls: 0, expiredCalls: 0, fetchCalls: 0 };
+    configureApiClient({ baseUrl: 'http://api.test', defaultErrorSchema: ErrorBody });
+    configureAuthHandlers({
+      getAccessToken: options.token,
+      refreshAndRetry: () => {
+        probe.refreshCalls += 1;
+        return options.refresh();
+      },
+      onSessionExpired: () => {
+        probe.expiredCalls += 1;
+      },
+    });
+    return probe;
+  }
+
+  it('does not end a session because a request made without any session came back 401', async () => {
+    const probe = arrange({ token: () => null, refresh: async () => null });
+    globalThis.fetch = async () => {
+      probe.fetchCalls += 1;
+      return jsonResponse(401, { code: 'UNAUTHORIZED', message: 'x' });
+    };
+    await assert.rejects(
+      apiRequest({ method: 'GET', path: '/trips/6' }, OkBody),
+      (error: unknown) => error instanceof ApiError && error.status === 401,
+    );
+    assert.equal(probe.refreshCalls, 0);
+    assert.equal(probe.expiredCalls, 0);
+    assert.equal(probe.fetchCalls, 1);
+  });
+
+  it('does not end the new session when a request of the previous one came back 401', async () => {
+    let token: string | null = 'token-of-a';
+    const probe = arrange({ token: () => token, refresh: async () => null });
+    globalThis.fetch = async () => {
+      token = 'token-of-b';
+      return jsonResponse(401, { code: 'UNAUTHORIZED', message: 'x' });
+    };
+    await assert.rejects(apiRequest({ method: 'GET', path: '/trips/6' }, OkBody));
+    assert.equal(probe.expiredCalls, 0);
+  });
+
+  it('does not end a login in progress: no session when the stale 401 arrives', async () => {
+    let token: string | null = 'token-of-a';
+    const probe = arrange({ token: () => token, refresh: async () => null });
+    globalThis.fetch = async () => {
+      token = null;
+      return jsonResponse(401, { code: 'UNAUTHORIZED', message: 'x' });
+    };
+    await assert.rejects(apiRequest({ method: 'GET', path: '/trips/6' }, OkBody));
+    assert.equal(probe.expiredCalls, 0);
+  });
+
+  it('does not end the session a second time when the refresher already ended it', async () => {
+    let token: string | null = 'token';
+    const probe = arrange({
+      token: () => token,
+      refresh: async () => {
+        token = null;
+        return null;
+      },
+    });
+    globalThis.fetch = async () => jsonResponse(401, { code: 'UNAUTHORIZED', message: 'x' });
+    await assert.rejects(apiRequest({ method: 'GET', path: '/x' }, OkBody));
+    assert.equal(probe.refreshCalls, 1);
+    assert.equal(probe.expiredCalls, 0);
+  });
+
+  it('still ends the session when the token that failed is the current one and cannot be refreshed', async () => {
+    const probe = arrange({ token: () => 'token', refresh: async () => null });
+    globalThis.fetch = async () => jsonResponse(401, { code: 'UNAUTHORIZED', message: 'x' });
+    await assert.rejects(apiRequest({ method: 'GET', path: '/x' }, OkBody));
+    assert.equal(probe.refreshCalls, 1);
+    assert.equal(probe.expiredCalls, 1);
+  });
+
+  it('still refreshes and retries a request made with a token', async () => {
+    let token: string | null = 'old';
+    const probe = arrange({
+      token: () => token,
+      refresh: async () => {
+        token = 'fresh';
+        return token;
+      },
+    });
+    globalThis.fetch = async (_url, init) => {
+      probe.fetchCalls += 1;
+      return new Headers(init?.headers).get('Authorization') === 'Bearer fresh'
+        ? jsonResponse(200, { ok: true })
+        : jsonResponse(401, { code: 'UNAUTHORIZED', message: 'x' });
+    };
+    assert.deepEqual(await apiRequest({ method: 'GET', path: '/x' }, OkBody), { ok: true });
+    assert.equal(probe.fetchCalls, 2);
+    assert.equal(probe.expiredCalls, 0);
+  });
+});

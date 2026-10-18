@@ -35,6 +35,10 @@ function classifyLookupFailure(error: unknown): LookupFailure {
   return 'error';
 }
 
+export function isNotOwnedOrMissing(error: unknown): boolean {
+  return classifyLookupFailure(error) === 'not_owned_or_missing';
+}
+
 function unavailable(failure: Exclude<LookupFailure, 'not_owned_or_missing'>): NotificationTarget {
   return { kind: 'unavailable', reason: failure };
 }

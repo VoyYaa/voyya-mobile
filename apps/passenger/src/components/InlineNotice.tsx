@@ -11,6 +11,7 @@ export interface InlineNoticeProps {
   body?: string;
   actionLabel?: string;
   onAction?: () => void;
+  alert?: boolean;
   testID?: string;
 }
 
@@ -23,6 +24,7 @@ export function InlineNotice({
   body,
   actionLabel,
   onAction,
+  alert = tone === 'danger',
   testID,
 }: InlineNoticeProps): React.JSX.Element {
   const theme = useTheme();
@@ -32,11 +34,15 @@ export function InlineNotice({
     info: { bg: colors.infoTint, ink: colors.infoInk, glyph: colors.infoInk },
     brand: { bg: colors.brandTint, ink: colors.text, glyph: colors.brandInk },
   }[tone];
+  const hasAction = Boolean(actionLabel && onAction);
+  const grouped = alert && !hasAction;
 
   return (
     <View
       testID={testID}
-      accessibilityRole={tone === 'danger' ? 'alert' : undefined}
+      accessibilityRole={alert ? 'alert' : undefined}
+      accessible={grouped}
+      accessibilityLabel={grouped ? [title, body].filter(Boolean).join('. ') : undefined}
       style={{
         flexDirection: 'row',
         alignItems: 'flex-start',

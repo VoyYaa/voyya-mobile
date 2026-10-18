@@ -11,6 +11,13 @@ export const ACTIVE_TRIP_QUERY_OPTIONS = {
   refetchOnReconnect: 'always',
 } as const;
 
+export function tripStatusQueryEnabled(
+  tripRequestId: number | null,
+  authenticated: boolean,
+): boolean {
+  return tripRequestId !== null && authenticated;
+}
+
 export function tripStatusRefetchInterval(
   data: { status: TripStatus } | undefined,
 ): number | false {

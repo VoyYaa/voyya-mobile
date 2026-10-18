@@ -13,6 +13,7 @@ export interface DriverChangeNotice {
 export function useDriverChangeNotice(
   tripRequestId: number | null,
   driver: AssignedDriverSummary | null,
+  assumeChanged = false,
 ): DriverChangeNotice {
   const lastAssignedDriver = useTripDraftStore((s) => s.lastAssignedDriver);
   const setLastAssignedDriver = useTripDraftStore((s) => s.setLastAssignedDriver);
@@ -23,7 +24,7 @@ export function useDriverChangeNotice(
     const current = driverIdentity(driver);
     const previous =
       lastAssignedDriver?.tripRequestId === tripRequestId ? lastAssignedDriver.identity : null;
-    if (driverChanged(previous, current)) {
+    if (driverChanged(previous, current) || (assumeChanged && previous === null)) {
       const text = passengerCopy.trip.driverChanged(driver.name, driver.company.display_name);
       setMessage(text);
       AccessibilityInfo.announceForAccessibility(text);
@@ -38,6 +39,7 @@ export function useDriverChangeNotice(
     driver?.company.company_id,
     lastAssignedDriver,
     setLastAssignedDriver,
+    assumeChanged,
   ]);
 
   return { message, dismiss: () => setMessage(null) };

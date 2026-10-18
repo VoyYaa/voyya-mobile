@@ -45,6 +45,7 @@ function ageOf(response: NotificationResponse): number | null {
 
 export function usePassengerNotificationRouting(options: {
   startupSettled: boolean;
+  startupRestored: boolean;
 }): NotificationTapState {
   const router = useRouter();
   const pathname = usePathname();
@@ -58,6 +59,8 @@ export function usePassengerNotificationRouting(options: {
   const currentRoute = useRef<CurrentRoute>({ pathname, id });
   currentRoute.current = { pathname, id };
   const networkRef = useRef(network);
+  const startupRestoredRef = useRef(options.startupRestored);
+  startupRestoredRef.current = options.startupRestored;
 
   const accept = useCallback((response: NotificationResponse, origin: TapOrigin): void => {
     const responseKey = responseId(response);
@@ -127,7 +130,12 @@ export function usePassengerNotificationRouting(options: {
     }).then((target) => {
       if (current !== generation.current) return;
       navigateRef.current(target);
-      dispatch({ type: 'resolved', target, networkOffline: networkRef.current === 'offline' });
+      dispatch({
+        type: 'resolved',
+        target,
+        networkOffline: networkRef.current === 'offline',
+        startupRestored: startupRestoredRef.current,
+      });
     });
   }, [
     state.pending,
