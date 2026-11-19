@@ -61,7 +61,11 @@ describe('code screen', () => {
   it('empties the boxes when the code expired, ran out of attempts or was spent on a suspension', () => {
     assert.match(
       otp,
-      /case 'expired':\s+case 'max_attempts':\s+case 'suspended':\s+setValue\(''\);\s+setOutcome\(failure\.kind\);/,
+      /case 'expired':\s+case 'suspended':\s+setValue\(''\);\s+setOutcome\(failure\.kind\);/,
+    );
+    assert.match(
+      otp,
+      /case 'max_attempts': \{[\s\S]+?setStillBlocked\(block\.repeated\);\s+setValue\(''\);\s+setOutcome\('max_attempts'\);/,
     );
   });
 

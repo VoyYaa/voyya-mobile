@@ -24,6 +24,12 @@ import { useWaitDeadline, type WaitDeadline } from '../../src/hooks/useWaitDeadl
 import { passengerCopy } from '../../src/copy/passenger-copy';
 import { classifyOtpFailure } from '../../src/lib/otp-errors';
 import {
+  EMPTY_OTP_BLOCK_HISTORY,
+  recordOtpBlock,
+  recordOtpResend,
+  type OtpBlockHistory,
+} from '../../src/lib/otp-block-history';
+import {
   canResendCode,
   sendNoticeView,
   shouldClearOutcome,
@@ -118,19 +124,21 @@ export default function OtpScreen(): React.JSX.Element {
   const [resendNotice, setResendNotice] = useState<SendNoticeKind | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
+  const [stillBlocked, setStillBlocked] = useState(false);
 
   const otpRef = useRef<OtpInputHandle>(null);
   const submittedCode = useRef('');
   const previousOutcome = useRef<VerifyOutcome | null>(null);
   const canResendAnnounced = useRef(false);
   const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blockHistory = useRef<OtpBlockHistory>(EMPTY_OTP_BLOCK_HISTORY);
 
   const rateLimit = useWaitDeadline();
   const verifyThrottle = useWaitDeadline();
   const resendThrottle = useWaitDeadline();
   const resendRemaining = useCountdown(resendDeadline);
 
-  const view = verifyView(outcome, shaking);
+  const view = verifyView(outcome, shaking, stillBlocked);
   const canResend = canResendCode(outcome, rateLimit.active, resendRemaining);
   const messageHeight =
     (theme.typography.smallStrong.lineHeight ?? FALLBACK_LINE_HEIGHT) * MESSAGE_LINES;
@@ -188,8 +196,15 @@ export default function OtpScreen(): React.JSX.Element {
         setShaking(true);
         setOutcome('incorrect');
         return;
+      case 'max_attempts': {
+        const block = recordOtpBlock(blockHistory.current);
+        blockHistory.current = block.next;
+        setStillBlocked(block.repeated);
+        setValue('');
+        setOutcome('max_attempts');
+        return;
+      }
       case 'expired':
-      case 'max_attempts':
       case 'suspended':
         setValue('');
         setOutcome(failure.kind);
@@ -219,6 +234,8 @@ export default function OtpScreen(): React.JSX.Element {
   };
 
   const handleResendSuccess = (resendInSec: number): void => {
+    blockHistory.current = recordOtpResend(blockHistory.current);
+    setStillBlocked(false);
     setValue('');
     setOutcome('idle');
     setShaking(false);

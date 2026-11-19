@@ -5,6 +5,7 @@ import { ApiError } from '../api/errors.ts';
 import {
   endSessionByRejection,
   noticeForEndedSession,
+  sessionEndedBodyOf,
   useSessionEndedNoticeStore,
   type SessionEndedNotice,
 } from './session-ended-notice.ts';
@@ -120,5 +121,14 @@ describe('a rejected refresh on an ended session', () => {
     await assert.rejects(() => server('a'));
     assert.deepEqual(raised, []);
     assert.equal(clears, 0);
+  });
+});
+
+describe('sessionEndedBodyOf', () => {
+  const copy = { body: 'plain', demoBody: 'demo' };
+
+  it('uses the demo body only when the session that ended was a demo one', () => {
+    assert.equal(sessionEndedBodyOf({ demo: true }, copy), 'demo');
+    assert.equal(sessionEndedBodyOf({ demo: false }, copy), 'plain');
   });
 });

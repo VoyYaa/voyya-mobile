@@ -8,6 +8,7 @@ import { authCopy } from './auth-copy.ts';
 const REVEALING_WORDS =
   /conductor|empresa|personal|administrador|cuenta|usuario|registr|existe|\brol\b|autorizad|pasajero/i;
 const ORIENTATION_KEYS = ['orientationLead', 'orientationBody'];
+const DEMO_ONLY_KEYS = ['sessionEnded.demoBody'];
 
 function textsOf(copy: Record<string, unknown>): Array<readonly [string, string]> {
   const sampleArguments: Record<string, unknown[]> = {
@@ -17,11 +18,16 @@ function textsOf(copy: Record<string, unknown>): Array<readonly [string, string]
     otpResendIn: [22],
     otpResendInSpoken: [22],
   };
-  return Object.entries(copy).map(([key, value]) => {
-    if (typeof value === 'string') return [key, value] as const;
+  return Object.entries(copy).flatMap(([key, value]): Array<readonly [string, string]> => {
+    if (typeof value === 'string') return [[key, value]];
+    if (typeof value === 'object' && value !== null) {
+      return textsOf(value as Record<string, unknown>).map(
+        ([nested, text]) => [`${key}.${nested}`, text] as const,
+      );
+    }
     assert.equal(typeof value, 'function', key);
     const call = value as (...args: unknown[]) => string;
-    return [key, call(...(sampleArguments[key] ?? []))] as const;
+    return [[key, call(...(sampleArguments[key] ?? []))]];
   });
 }
 
@@ -46,14 +52,16 @@ describe('auth copy takes the length of the code from the contract', () => {
 
 describe('auth copy never reveals a role or the existence of an account (HU-EO-08)', () => {
   for (const [key, text] of allTexts) {
-    if (ORIENTATION_KEYS.includes(key)) continue;
+    if (ORIENTATION_KEYS.includes(key) || DEMO_ONLY_KEYS.includes(key)) continue;
     it(`keeps ${key} free of words that reveal who someone is`, () => {
       assert.doesNotMatch(text, REVEALING_WORDS, text);
     });
   }
 
   it('names a role only in the two fixed orientation texts, which everyone sees', () => {
-    const naming = allTexts.filter(([, text]) => REVEALING_WORDS.test(text)).map(([key]) => key);
+    const naming = allTexts
+      .filter(([key, text]) => !DEMO_ONLY_KEYS.includes(key) && REVEALING_WORDS.test(text))
+      .map(([key]) => key);
     assert.deepEqual(naming, ['orientationBody']);
   });
 });
@@ -171,5 +179,26 @@ describe('auth copy keeps the texts that the matrix of errors fixes', () => {
     for (const retired of ['otpRateLimited', 'otpRateLimitedUnknown', 'rateLimitWaitUnknown']) {
       assert.equal(retired in authCopy, false, retired);
     }
+  });
+});
+
+describe('auth copy for a session that ended and for a repeated block', () => {
+  it('words the ended session the same for everyone, with one extra text for a demo session', () => {
+    assert.equal(authCopy.sessionEnded.title, 'Tu sesión terminó');
+    assert.equal(authCopy.sessionEnded.body, 'Por seguridad, vuelve a iniciar sesión para seguir.');
+    assert.match(authCopy.sessionEnded.demoBody, /demostración/);
+  });
+
+  it('reads the demo text only from the local notice of an ended session, never before signing in', () => {
+    const phone = readFileSync(new URL('../../app/(auth)/phone.tsx', import.meta.url), 'utf8');
+    const otp = readFileSync(new URL('../../app/(auth)/otp.tsx', import.meta.url), 'utf8');
+    assert.match(phone, /useSessionEndedNotice\(\)/);
+    assert.match(phone, /sessionEndedBodyOf\(endedNotice, copy\.sessionEnded\)/);
+    assert.doesNotMatch(otp, /demoBody|sessionEnded|useDemoSession/);
+  });
+
+  it('keeps the repeated block text neutral: it says nothing about why', () => {
+    assert.equal(authCopy.otpStillBlocked, 'Sigue sin dejarte entrar. Inténtalo más tarde.');
+    assert.doesNotMatch(authCopy.otpStillBlocked, /24|hora|revis|demostraci|cuenta|tienda/i);
   });
 });

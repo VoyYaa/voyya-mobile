@@ -34,6 +34,7 @@ export const authCopy = {
   otpIncorrect: 'Código incorrecto. Inténtalo de nuevo.',
   otpExpired: 'Este código venció. Solicita uno nuevo.',
   otpTooManyAttempts: 'Demasiados intentos con este código. Solicita uno nuevo.',
+  otpStillBlocked: 'Sigue sin dejarte entrar. Inténtalo más tarde.',
   otpSuspended: 'Tu acceso a VoyYa está suspendido. Un código nuevo no lo soluciona.',
   otpThrottled: 'Demasiados intentos seguidos. Espera un momento e inténtalo de nuevo.',
   otpServerError: 'No pudimos verificar tu código. Inténtalo de nuevo.',
@@ -49,4 +50,10 @@ export const authCopy = {
     `Reenviar código en ${seconds} ${seconds === 1 ? 'segundo' : 'segundos'}`,
   otpResendAvailable: 'Ya puedes reenviar el código.',
   otpResent: 'Código reenviado.',
+  sessionEnded: {
+    title: 'Tu sesión terminó',
+    body: 'Por seguridad, vuelve a iniciar sesión para seguir.',
+    demoBody:
+      'Esta cuenta de demostración ya no está activa. Si estás revisando la app, usa los datos de acceso que te dieron y, si no funcionan, escribe a quien te los envió.',
+  },
 } as const;

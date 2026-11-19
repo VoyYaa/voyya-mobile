@@ -293,3 +293,28 @@ describe('sendNoticeView', () => {
     }
   });
 });
+
+describe('verifyView for a code blocked again after a resend (CA-DX-14)', () => {
+  it('shows today text the first time', () => {
+    assert.equal(verifyView('max_attempts', false).message?.text, authCopy.otpTooManyAttempts);
+    assert.equal(
+      verifyView('max_attempts', false, false).announcement,
+      authCopy.otpTooManyAttempts,
+    );
+  });
+
+  it('shows the repeated block text, and announces it, when it comes back', () => {
+    const view = verifyView('max_attempts', false, true);
+    assert.equal(view.message?.text, authCopy.otpStillBlocked);
+    assert.equal(view.announcement, authCopy.otpStillBlocked);
+    assert.equal(view.inputDisabled, true);
+    assert.equal(view.showRetry, false);
+  });
+
+  it('changes no other outcome', () => {
+    for (const outcome of ALL_OUTCOMES) {
+      if (outcome === 'max_attempts') continue;
+      assert.deepEqual(verifyView(outcome, false, true), verifyView(outcome, false, false));
+    }
+  });
+});

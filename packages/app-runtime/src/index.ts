@@ -10,6 +10,7 @@ export * from './session/useProactiveRefresh';
 export * from './session/useLogout';
 export * from './session/session-cleanup';
 export * from './session/session-ended-notice';
+export * from './session/useSessionEndedNotice';
 export * from './demo/demo-session';
 export * from './demo/useDemoSession';
 export * from './query/query-client';

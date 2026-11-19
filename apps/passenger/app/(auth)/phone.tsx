@@ -15,11 +15,17 @@ import {
   Button,
   Reveal,
   Stage,
+  StatusBanner,
   authStageMinHeight,
   TextField,
   useTheme,
 } from '@voyyaa/ui-mobile';
-import { rateLimitWaitSec, useNetworkStatus } from '@voyyaa/app-runtime';
+import {
+  rateLimitWaitSec,
+  sessionEndedBodyOf,
+  useNetworkStatus,
+  useSessionEndedNotice,
+} from '@voyyaa/app-runtime';
 import { AuthMessage } from '../../src/components/AuthMessage';
 import { WaitCard } from '../../src/components/WaitCard';
 import { useRequestOtp } from '../../src/hooks/useRequestOtp';
@@ -38,6 +44,7 @@ export default function PhoneScreen(): React.JSX.Element {
   const networkStatus = useNetworkStatus();
   const requestOtp = useRequestOtp();
   const copy = passengerCopy.auth;
+  const { notice: endedNotice, dismiss: dismissEndedNotice } = useSessionEndedNotice();
 
   const [digits, setDigits] = useState('');
   const [fieldError, setFieldError] = useState<string | undefined>(undefined);
@@ -152,6 +159,18 @@ export default function PhoneScreen(): React.JSX.Element {
             gap: theme.spacing.lg,
           }}
         >
+          {endedNotice !== null && (
+            <StatusBanner
+              tone="info"
+              icon="clock"
+              title={copy.sessionEnded.title}
+              body={sessionEndedBodyOf(endedNotice, copy.sessionEnded)}
+              onDismiss={dismissEndedNotice}
+              role="status"
+              testID="session-ended-banner"
+            />
+          )}
+
           <View style={{ gap: theme.spacing.sm }}>
             <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
               {copy.phoneIntro}

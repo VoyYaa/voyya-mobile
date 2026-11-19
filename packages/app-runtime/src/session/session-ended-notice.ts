@@ -39,3 +39,12 @@ export async function endSessionByRejection(deps: EndSessionByRejectionDeps): Pr
   deps.raise(noticeForEndedSession(deps.getUser()));
   await deps.clear();
 }
+
+export interface SessionEndedCopy {
+  body: string;
+  demoBody: string;
+}
+
+export function sessionEndedBodyOf(notice: SessionEndedNotice, copy: SessionEndedCopy): string {
+  return notice.demo ? copy.demoBody : copy.body;
+}

@@ -56,7 +56,11 @@ const RETRYABLE_VIEW: VerifyView = { ...IDLE_VIEW, showRetry: true, closesKeyboa
 
 const dangerMessage = (text: string): MessageView => ({ text, tone: 'danger', glyph: 'error' });
 
-export function verifyView(outcome: VerifyOutcome, shaking: boolean): VerifyView {
+export function verifyView(
+  outcome: VerifyOutcome,
+  shaking: boolean,
+  stillBlocked = false,
+): VerifyView {
   switch (outcome) {
     case 'idle':
       return IDLE_VIEW;
@@ -81,12 +85,10 @@ export function verifyView(outcome: VerifyOutcome, shaking: boolean): VerifyView
         message: dangerMessage(authCopy.otpExpired),
         announcement: authCopy.otpExpired,
       };
-    case 'max_attempts':
-      return {
-        ...DEAD_END_VIEW,
-        message: dangerMessage(authCopy.otpTooManyAttempts),
-        announcement: authCopy.otpTooManyAttempts,
-      };
+    case 'max_attempts': {
+      const text = stillBlocked ? authCopy.otpStillBlocked : authCopy.otpTooManyAttempts;
+      return { ...DEAD_END_VIEW, message: dangerMessage(text), announcement: text };
+    }
     case 'suspended':
       return {
         ...DEAD_END_VIEW,
