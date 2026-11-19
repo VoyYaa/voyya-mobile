@@ -27,7 +27,7 @@ describe('shift status copy', () => {
       text.body ?? '',
       shiftSwitchHint({ consentPending: true }) ?? '',
       homeCopy.emptyBodyConsentPending,
-      issuesCopy.locationPermission,
+      issuesCopy.banner.permission_denied.body,
       issuesCopy.consentRequired,
     ];
     for (const line of pendingCopy) {
@@ -47,8 +47,8 @@ describe('shift status copy', () => {
 
   it('words the issue banners without saying requests already stopped', () => {
     assert.equal(
-      issuesCopy.locationPermission,
-      'Revisa el permiso de ubicación: pronto dejarás de recibir solicitudes.',
+      issuesCopy.banner.permission_denied.body,
+      'Sin él dejarás de recibir solicitudes.',
     );
     assert.equal(
       issuesCopy.consentRequired,
