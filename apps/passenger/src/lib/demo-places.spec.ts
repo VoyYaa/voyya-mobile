@@ -11,7 +11,9 @@ const hookSource = readFileSync(
 
 describe('demoPlaceToVerifiedPlace', () => {
   it('prefixes the key, keeps the name and always carries a coordinate', () => {
-    assert.deepEqual(demoPlaceToVerifiedPlace(DEMO_FIXTURE.places[0]!), {
+    const [first] = DEMO_FIXTURE.places;
+    assert.ok(first);
+    assert.deepEqual(demoPlaceToVerifiedPlace(first), {
       id: 'demo-plaza-demo',
       title: 'Plaza Demo',
       category: 'general',
