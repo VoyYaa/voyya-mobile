@@ -81,13 +81,18 @@ export function estimateFitZoom(
     if (point.lng < west.lng) west = point;
   }
   const midLat = (north.lat + south.lat) / 2;
-  const spanY = distanceMeters({ lat: north.lat, lng: first.lng }, { lat: south.lat, lng: first.lng });
+  const spanY = distanceMeters(
+    { lat: north.lat, lng: first.lng },
+    { lat: south.lat, lng: first.lng },
+  );
   const spanX = distanceMeters({ lat: midLat, lng: west.lng }, { lat: midLat, lng: east.lng });
   const availableWidth = Math.max(1, viewport.width - insets.left - insets.right);
   const availableHeight = Math.max(1, viewport.height - insets.top - insets.bottom);
   const metersPerPixel = Math.max(spanX / availableWidth, spanY / availableHeight);
   if (metersPerPixel <= 0) return range.max;
-  const zoom = Math.log2((MAP_TILE_METERS_PER_DP_AT_ZOOM_0 * Math.cos((midLat * Math.PI) / 180)) / metersPerPixel);
+  const zoom = Math.log2(
+    (MAP_TILE_METERS_PER_DP_AT_ZOOM_0 * Math.cos((midLat * Math.PI) / 180)) / metersPerPixel,
+  );
   return Math.min(range.max, Math.max(range.min, zoom));
 }
 
@@ -98,8 +103,10 @@ export interface LabelContext {
 
 function offsetDp(from: MapLatLng, to: MapLatLng, zoom: number): { dx: number; dy: number } {
   const perDp = metersPerDp(from.lat, zoom);
-  const dx = distanceMeters({ lat: from.lat, lng: from.lng }, { lat: from.lat, lng: to.lng }) / perDp;
-  const dy = distanceMeters({ lat: from.lat, lng: from.lng }, { lat: to.lat, lng: from.lng }) / perDp;
+  const dx =
+    distanceMeters({ lat: from.lat, lng: from.lng }, { lat: from.lat, lng: to.lng }) / perDp;
+  const dy =
+    distanceMeters({ lat: from.lat, lng: from.lng }, { lat: to.lat, lng: from.lng }) / perDp;
   return { dx, dy };
 }
 

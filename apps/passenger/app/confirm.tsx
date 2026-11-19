@@ -354,7 +354,6 @@ export default function ConfirmScreen(): React.JSX.Element {
             {copy.freeCancellation}
           </Text>
         </View>
-
       </ScrollView>
 
       <View

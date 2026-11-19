@@ -13,10 +13,7 @@ export interface BannerA11y {
 
 const BANNER_PRIORITY: readonly BannerKind[] = ['offline', 'location', 'notice'];
 
-export function resolveBannerA11y(
-  tone: StatusBannerTone,
-  role?: StatusBannerRole,
-): BannerA11y {
+export function resolveBannerA11y(tone: StatusBannerTone, role?: StatusBannerRole): BannerA11y {
   const resolved: StatusBannerRole = role ?? (tone === 'danger' ? 'alert' : 'status');
   return { role: resolved, liveRegion: resolved === 'alert' ? 'assertive' : 'polite' };
 }

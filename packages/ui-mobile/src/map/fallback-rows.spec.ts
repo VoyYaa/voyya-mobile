@@ -15,7 +15,12 @@ const DESTINATION: MapMarker = {
   coord: { lat: 6.97, lng: -75.42 },
   label: 'Hospital',
 };
-const CAR: MapMarker = { id: 'c', kind: 'car', coord: { lat: 6.96, lng: -75.41 }, label: 'Hace 1 min' };
+const CAR: MapMarker = {
+  id: 'c',
+  kind: 'car',
+  coord: { lat: 6.96, lng: -75.41 },
+  label: 'Hace 1 min',
+};
 
 describe('fallbackRows', () => {
   it('writes one row per labeled marker with its role', () => {
@@ -27,7 +32,10 @@ describe('fallbackRows', () => {
   });
 
   it('omits a marker without a label and never prints coordinates', () => {
-    const rows = fallbackRows([{ ...ORIGIN, label: undefined }, { ...DESTINATION, label: '  ' }]);
+    const rows = fallbackRows([
+      { ...ORIGIN, label: undefined },
+      { ...DESTINATION, label: '  ' },
+    ]);
     assert.deepEqual(rows, []);
     for (const row of fallbackRows([ORIGIN, DESTINATION, CAR])) {
       assert.doesNotMatch(row.text, /-?\d+\.\d{3,}/);

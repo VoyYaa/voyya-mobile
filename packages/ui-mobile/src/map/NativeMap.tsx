@@ -1,11 +1,5 @@
 import React, { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type LayoutChangeEvent,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import Mapbox, { Camera, MapView, type MapState } from '@rnmapbox/maps';
 import type { Feature } from 'geojson';
 import { Skeleton } from '../components/Skeleton';

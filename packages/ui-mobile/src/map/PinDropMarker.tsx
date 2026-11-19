@@ -2,7 +2,11 @@ import React from 'react';
 import { View } from 'react-native';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { BRAND_COLORS } from '../tokens';
-import { DESTINATION_MARKER_HEIGHT, DESTINATION_MARKER_WIDTH, DestinationMarker } from './DestinationMarker';
+import {
+  DESTINATION_MARKER_HEIGHT,
+  DESTINATION_MARKER_WIDTH,
+  DestinationMarker,
+} from './DestinationMarker';
 import { ORIGIN_MARKER_SIZE, OriginMarker } from './OriginMarker';
 
 export type PinDropKind = 'origin' | 'destination';

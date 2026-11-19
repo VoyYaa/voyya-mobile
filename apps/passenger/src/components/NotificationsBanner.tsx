@@ -2,10 +2,7 @@ import React from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import { Reveal, StatusBanner, type StatusBannerTone } from '@voyyaa/ui-mobile';
 import { notificationsCopy } from '../copy/notifications-copy';
-import {
-  bannerPresentation,
-  type NotificationsBannerVariant,
-} from '../lib/notifications-banner';
+import { bannerPresentation, type NotificationsBannerVariant } from '../lib/notifications-banner';
 
 export interface NotificationsBannerProps {
   variant: NotificationsBannerVariant;

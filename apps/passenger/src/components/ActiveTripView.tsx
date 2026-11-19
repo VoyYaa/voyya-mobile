@@ -226,7 +226,6 @@ export function ActiveTripView({
           onRetry={onRefresh}
         />
 
-
         {data.driver ? (
           <DriverCard driver={data.driver} />
         ) : (
@@ -237,7 +236,10 @@ export function ActiveTripView({
           <Card>
             <PointRoute
               origin={{ label: copy.pickupLabel, value: presentAddress(origin.address) }}
-              destination={{ label: copy.destinationLabel, value: presentAddress(destination.address) }}
+              destination={{
+                label: copy.destinationLabel,
+                value: presentAddress(destination.address),
+              }}
             />
           </Card>
         )}

@@ -344,7 +344,11 @@ export default function HomeScreen(): React.JSX.Element {
         {!trip && origin && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
             <View style={{ flex: 1 }}>
-              <PointRow kind="origin" label={copy.originLabel} value={presentAddress(origin.address)} />
+              <PointRow
+                kind="origin"
+                label={copy.originLabel}
+                value={presentAddress(origin.address)}
+              />
             </View>
             <LinkButton
               label={copy.changeOrigin}

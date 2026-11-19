@@ -16,7 +16,10 @@ export interface TripRequestInput {
 
 export function toCreateTripRequestDTO(input: TripRequestInput): CreateTripRequestDTO {
   return {
-    origin: { ...input.origin, address: composeAddress(input.origin.address, input.pickupReference) },
+    origin: {
+      ...input.origin,
+      address: composeAddress(input.origin.address, input.pickupReference),
+    },
     destination: {
       ...input.destination,
       address: composeAddress(input.destination.address, input.dropoffReference),

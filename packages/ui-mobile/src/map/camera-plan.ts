@@ -71,7 +71,8 @@ export function fitMarkersChanged(
   next: readonly MapMarker[],
 ): boolean {
   const sameIds =
-    previous.length === next.length && previous.every((marker, index) => marker.id === next[index]?.id);
+    previous.length === next.length &&
+    previous.every((marker, index) => marker.id === next[index]?.id);
   if (!sameIds) return true;
   return haveMarkersMoved(
     previous.map((marker) => marker.coord),

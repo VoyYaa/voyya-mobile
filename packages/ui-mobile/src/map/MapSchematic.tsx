@@ -10,7 +10,10 @@ export interface MapSchematicProps {
 const VIEW_WIDTH = 120;
 const VIEW_HEIGHT = 56;
 
-export function MapSchematic({ withRoute, width = VIEW_WIDTH }: MapSchematicProps): React.JSX.Element {
+export function MapSchematic({
+  withRoute,
+  width = VIEW_WIDTH,
+}: MapSchematicProps): React.JSX.Element {
   const { colors } = useTheme();
   const height = (width * VIEW_HEIGHT) / VIEW_WIDTH;
 
@@ -32,7 +35,14 @@ export function MapSchematic({ withRoute, width = VIEW_WIDTH }: MapSchematicProp
           strokeLinecap="round"
         />
       )}
-      <Circle cx={22} cy={38} r={9} fill="#FFFFFF" stroke={colors.mapMarkerRing} strokeWidth={2.5} />
+      <Circle
+        cx={22}
+        cy={38}
+        r={9}
+        fill="#FFFFFF"
+        stroke={colors.mapMarkerRing}
+        strokeWidth={2.5}
+      />
       <Circle cx={22} cy={38} r={4} fill={colors.brand} />
       {withRoute && (
         <>
