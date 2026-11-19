@@ -21,6 +21,7 @@ import { AssignmentRulesCard } from '../../src/components/AssignmentRulesCard';
 import { useDriverHome } from '../../src/hooks/useDriverHome';
 import { useNearbyOffers } from '../../src/hooks/useNearbyOffers';
 import { driverCopy } from '../../src/copy/driver-copy';
+import { formatMeters } from '../../src/copy/format-distance';
 import {
   SEARCH_RADIUS_FALLBACK_KM,
   ACCEPTANCE_TIMEOUT_FALLBACK_SEC,
@@ -154,7 +155,7 @@ export default function RequestsScreen(): React.JSX.Element {
               <RequestRow
                 originLabel={item.origin.address}
                 destinationLabel={item.dropoff_neighborhood}
-                distanceToPickup={`${item.distance_to_origin_m} m`}
+                distanceToPickup={formatMeters(item.distance_to_origin_m)}
                 price={item.total_fare}
                 isNearest={index === 0}
                 onPress={() =>

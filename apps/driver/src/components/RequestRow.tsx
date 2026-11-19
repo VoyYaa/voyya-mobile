@@ -3,6 +3,8 @@ import { Text, View } from 'react-native';
 import { Card, Chip, PriceTag, formatCOP, useTheme } from '@voyyaa/ui-mobile';
 import { driverCopy } from '../copy/driver-copy';
 
+const ROW_TEXT_LINES = 3;
+
 export interface RequestRowProps {
   passengerName?: string;
   originLabel: string;
@@ -64,13 +66,13 @@ export function RequestRow({
           </View>
           <Text
             style={{ ...theme.typography.small, color: theme.colors.textMuted }}
-            numberOfLines={1}
+            numberOfLines={ROW_TEXT_LINES}
           >
             {originLabel} → {destinationLabel}
           </Text>
           <Text
             style={{ ...theme.typography.small, color: theme.colors.textMuted }}
-            numberOfLines={1}
+            numberOfLines={ROW_TEXT_LINES}
           >
             Recoger a {distanceToPickup}
             {distanceKm !== undefined ? ` · ${distanceKm.toFixed(1)} km` : ''}

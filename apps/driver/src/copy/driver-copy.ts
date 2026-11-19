@@ -1,3 +1,4 @@
+import { formatMeters } from './format-distance';
 import { homeCopy } from './home-copy';
 import { issuesCopy } from './issues-copy';
 import { DRIVER_LOCATION_RETENTION_MAX_HOURS, DRIVER_PIN_LENGTH } from '@voyyaa/shared';
@@ -155,13 +156,14 @@ export const driverCopy = {
   offer: {
     title: 'Nueva solicitud',
     banner: (distanceM: number, neighborhood: string) =>
-      `Recoger a ${distanceM} m · ${neighborhood}`,
+      `Recoger a ${formatMeters(distanceM)} · ${neighborhood}`,
     bannerAnnouncement: (distanceM: number, seconds: number) =>
       `Nueva solicitud. ${distanceM} metros. ${seconds} segundos para responder.`,
     detailEyebrow: 'Nueva solicitud',
     fareCaption: 'Tarifa de este viaje',
     pickupLabel: 'Recoger en',
-    pickupValue: (address: string, distanceM: number) => `${address} · a ${distanceM} m`,
+    pickupValue: (address: string, distanceM: number) =>
+      `${address} · a ${formatMeters(distanceM)}`,
     destinationLabel: 'Destino',
     accept: 'Aceptar',
     accepting: 'Aceptando…',
