@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 
 import { homeCopy } from '../copy/home-copy.ts';
 import { issuesCopy } from '../copy/issues-copy.ts';
-import { shiftHeroText, shiftSwitchHint } from './shift-status-copy.ts';
+import { emptyOffersBody, shiftHeroText, shiftSwitchHint } from './shift-status-copy.ts';
 
 describe('shift status copy', () => {
   it('says each fact once while waiting for requests', () => {
@@ -59,5 +59,17 @@ describe('shift status copy', () => {
   it('ignores a pending notice when off shift', () => {
     const text = shiftHeroText({ onShift: false, consentPending: true });
     assert.deepEqual(text, shiftHeroText({ onShift: false, consentPending: false }));
+  });
+
+  it('does not claim visibility under a location banner', () => {
+    assert.equal(emptyOffersBody({ consentPending: false, hasLocationIssue: true }), undefined);
+    assert.equal(
+      emptyOffersBody({ consentPending: false, hasLocationIssue: false }),
+      'Sigues visible para los pasajeros.',
+    );
+    assert.equal(
+      emptyOffersBody({ consentPending: true, hasLocationIssue: true }),
+      homeCopy.emptyBodyConsentPending,
+    );
   });
 });

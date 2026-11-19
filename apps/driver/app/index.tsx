@@ -21,6 +21,7 @@ import {
   useLogout,
   useSessionStore,
 } from '@voyyaa/app-runtime';
+import { emptyOffersBody } from '../src/home/shift-status-copy';
 import { ShiftHero } from '../src/components/ShiftHero';
 import { ShiftSwitch } from '../src/components/ShiftSwitch';
 import { ShiftIssuePanel, type ShiftIssueKind } from '../src/components/ShiftIssuePanel';
@@ -39,8 +40,10 @@ import { useNearbyOffers } from '../src/hooks/useNearbyOffers';
 import { useNewOfferAlert } from '../src/hooks/useNewOfferAlert';
 import { usePendingCashTrips } from '../src/hooks/usePendingCashTrips';
 import { useBestEffortLocationReport } from '../src/hooks/useReportLocation';
+import { useLocationIssueWatch } from '../src/hooks/useLocationIssueWatch';
 import { useLocationIssueStore } from '../src/state/useLocationIssueStore';
 import { driverCopy } from '../src/copy/driver-copy';
+import { formatMeters } from '../src/copy/format-distance';
 import {
   SEARCH_RADIUS_FALLBACK_KM,
   ACCEPTANCE_TIMEOUT_FALLBACK_SEC,
@@ -86,6 +89,7 @@ export default function HomeScreen(): React.JSX.Element {
   const storedLocationIssue = useLocationIssueStore((s) => s.issue);
   const locationIssue = consentPending ? 'consent_required' : storedLocationIssue;
   const setLocationIssue = useLocationIssueStore((s) => s.setIssue);
+  useLocationIssueWatch(isOnShift);
 
   const [consentVisible, setConsentVisible] = useState(false);
   const [readNoticeVisible, setReadNoticeVisible] = useState(false);
@@ -307,9 +311,10 @@ export default function HomeScreen(): React.JSX.Element {
               <EmptyState
                 glyph="empty"
                 title={driverCopy.home.emptyTitle}
-                body={
-                  consentPending ? driverCopy.home.emptyBodyConsentPending : driverCopy.home.emptyBody
-                }
+                body={emptyOffersBody({
+                  consentPending,
+                  hasLocationIssue: locationIssue !== null,
+                })}
               />
             )}
 
@@ -318,7 +323,7 @@ export default function HomeScreen(): React.JSX.Element {
                 <RequestRow
                   originLabel={firstOffer.origin.address}
                   destinationLabel={firstOffer.dropoff_neighborhood}
-                  distanceToPickup={`${firstOffer.distance_to_origin_m} m`}
+                  distanceToPickup={formatMeters(firstOffer.distance_to_origin_m)}
                   price={firstOffer.total_fare}
                   isNearest
                   onPress={() => openOffer(firstOffer.assignment_id)}

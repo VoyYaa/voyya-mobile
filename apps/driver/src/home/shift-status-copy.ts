@@ -23,3 +23,12 @@ export function shiftSwitchHint({
 }: Pick<ShiftStatusInput, 'consentPending'>): string | null {
   return consentPending ? homeCopy.consentPendingHint : null;
 }
+
+export function emptyOffersBody({
+  consentPending,
+  hasLocationIssue,
+}: Pick<ShiftStatusInput, 'consentPending'> & { hasLocationIssue: boolean }): string | undefined {
+  if (consentPending) return homeCopy.emptyBodyConsentPending;
+  if (hasLocationIssue) return undefined;
+  return homeCopy.emptyBody;
+}
