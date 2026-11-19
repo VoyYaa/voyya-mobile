@@ -15,6 +15,7 @@ import {
   Button,
   Reveal,
   Stage,
+  authStageMinHeight,
   TextField,
   useTheme,
 } from '@voyyaa/ui-mobile';
@@ -105,7 +106,11 @@ export default function PhoneScreen(): React.JSX.Element {
       style={{ flex: 1, backgroundColor: theme.colors.stage }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Stage style={{ flex: 1 }} topInset={insets.top} testID="phone-stage">
+      <Stage
+        style={{ flex: 1, minHeight: authStageMinHeight(insets.top) }}
+        topInset={insets.top}
+        testID="phone-stage"
+      >
         <View
           style={{
             flex: 1,

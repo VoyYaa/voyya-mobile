@@ -9,6 +9,7 @@ import {
   MarkGlyph,
   Reveal,
   Stage,
+  authStageMinHeight,
   TextField,
   formatMMSS,
   useTheme,
@@ -109,7 +110,11 @@ export default function LoginScreen(): React.JSX.Element {
       style={{ flex: 1, backgroundColor: theme.colors.stage }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Stage style={{ flex: 1 }} topInset={insets.top} testID="login-stage">
+      <Stage
+        style={{ flex: 1, minHeight: authStageMinHeight(insets.top) }}
+        topInset={insets.top}
+        testID="login-stage"
+      >
         <View
           style={{
             flex: 1,
