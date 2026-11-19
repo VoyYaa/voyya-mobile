@@ -6,6 +6,7 @@ import { USE_NATIVE_DRIVER, motion } from '../tokens';
 import { uiCopy } from '../copy';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { withAlpha } from '../utils/color';
+import { countdownRingMetrics } from '../utils/countdown-ring-metrics';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -246,7 +247,7 @@ export function CountdownRing({
   const labelColor = onStage ? colors.onStageMuted : colors.textMuted;
   const checkColor = onStage ? colors.success : colors.successInk;
   const showHead = status === 'counting' || status === 'frozen';
-  const numberSize = Math.round(size * 0.29);
+  const { numberSize, showUnit, fontScaleCap } = countdownRingMetrics(size);
   const arcOpacity = dimmed ? 0.3 : 1;
 
   return (
@@ -359,6 +360,7 @@ export function CountdownRing({
           style={{ alignItems: 'center', transform: [{ scale: popScale }] }}
         >
           <Text
+            maxFontSizeMultiplier={fontScaleCap}
             style={{
               ...theme.typography.timer,
               fontSize: numberSize,
@@ -368,7 +370,14 @@ export function CountdownRing({
           >
             {clampedRemaining}
           </Text>
-          <Text style={{ ...theme.typography.small, color: labelColor }}>{uiCopy.seconds}</Text>
+          {showUnit && (
+            <Text
+              maxFontSizeMultiplier={fontScaleCap}
+              style={{ ...theme.typography.small, color: labelColor }}
+            >
+              {uiCopy.seconds}
+            </Text>
+          )}
         </Animated.View>
       )}
     </View>
