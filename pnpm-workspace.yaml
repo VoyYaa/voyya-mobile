@@ -10,6 +10,11 @@ overrides:
   postcss: ^8.5.18
   '@expo/plist>@xmldom/xmldom': ^0.8.15
 
+packageExtensions:
+  expo-router@4:
+    dependencies:
+      query-string: ^7.1.3
+
 auditConfig:
   ignoreGhsas:
     - GHSA-34x7-hfp2-rc4v

@@ -9,13 +9,16 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "icon": "./assets/icon.png",
-    "splash": {
-      "backgroundColor": "#2A2018",
-      "image": "./assets/splash-mark.png",
-      "resizeMode": "contain"
-    },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#2A2018",
+          "image": "./assets/splash-mark.png",
+          "resizeMode": "contain"
+        }
+      ],
       "expo-secure-store",
       [
         "expo-location",

@@ -9,7 +9,7 @@ export function useRouteGuard(): void {
   const status = useSessionStore((s) => s.status);
   const pinRequired = usePinChangeRequired();
   const celebrating = usePinGateStore((s) => s.celebrating);
-  const segments = useSegments();
+  const segments: string[] = useSegments();
   const router = useRouter();
 
   useEffect(() => {

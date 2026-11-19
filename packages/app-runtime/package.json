@@ -39,18 +39,18 @@
     "expo-constants": ">=16.0.0"
   },
   "devDependencies": {
-    "@react-native-community/netinfo": "11.3.1",
+    "@react-native-community/netinfo": "11.4.1",
     "@tanstack/react-query": "^5.51.0",
     "@types/node": "^20.16.10",
-    "@types/react": "~18.2.79",
-    "expo-secure-store": "~13.0.2",
-    "expo-location": "~17.0.1",
-    "react": "18.2.0",
-    "react-native": "0.74.5",
+    "@types/react": "~18.3.12",
+    "expo-secure-store": "~14.0.1",
+    "expo-location": "~18.0.10",
+    "react": "18.3.1",
+    "react-native": "0.76.9",
     "typescript": "^5.5.4",
     "zod": "^3.23.8",
     "zustand": "^4.5.4",
-    "expo-notifications": "~0.28.19",
-    "expo-constants": "~16.0.2"
+    "expo-notifications": "~0.29.14",
+    "expo-constants": "~17.0.8"
   }
 }
