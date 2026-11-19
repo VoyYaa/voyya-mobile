@@ -37,10 +37,3 @@ export function shouldSeedDemoOrigin(input: DemoOriginSeedInput): boolean {
     !input.hasActiveTrip
   );
 }
-
-export function shouldAnnounceDemo(
-  lastAnnouncedSession: number | null,
-  sessionStartedAt: number | null,
-): boolean {
-  return sessionStartedAt !== null && lastAnnouncedSession !== sessionStartedAt;
-}

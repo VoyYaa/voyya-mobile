@@ -14,12 +14,11 @@ import {
   useTheme,
 } from '@voyyaa/ui-mobile';
 import type { PaymentMethod } from '@voyyaa/shared';
-import { domainErrorCode, isNetworkError, useNetworkStatus } from '@voyyaa/app-runtime';
+import { DemoNote, domainErrorCode, isNetworkError, useNetworkStatus } from '@voyyaa/app-runtime';
 import {
   ActiveTripConflictSheet,
   type ActiveTripConflictFailure,
 } from '../src/components/ActiveTripConflictSheet';
-import { DemoNote } from '../src/components/DemoNote';
 import { DemoTag } from '../src/components/DemoTag';
 import { InlineNotice } from '../src/components/InlineNotice';
 import { ServiceCompanyBlock } from '../src/components/ServiceCompanyBlock';

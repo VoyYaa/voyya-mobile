@@ -1,11 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import {
-  demoReferenceOrigin,
-  isDemoReferenceOrigin,
-  shouldAnnounceDemo,
-  shouldSeedDemoOrigin,
-} from './demo-origin.ts';
+import { demoReferenceOrigin, isDemoReferenceOrigin, shouldSeedDemoOrigin } from './demo-origin.ts';
 import { DEMO_FIXTURE } from './demo-fixtures.ts';
 
 const SOME_ORIGIN = { address: 'Otro', lat: 1, lng: 2 };
@@ -56,17 +51,5 @@ describe('shouldSeedDemoOrigin', () => {
   it('waits for the active trip and skips it when there is one', () => {
     assert.equal(shouldSeedDemoOrigin({ ...base, activeTripKnown: false }), false);
     assert.equal(shouldSeedDemoOrigin({ ...base, hasActiveTrip: true }), false);
-  });
-});
-
-describe('shouldAnnounceDemo', () => {
-  it('announces once per session', () => {
-    assert.equal(shouldAnnounceDemo(null, 100), true);
-    assert.equal(shouldAnnounceDemo(100, 100), false);
-    assert.equal(shouldAnnounceDemo(100, 200), true);
-  });
-
-  it('does not announce without a session', () => {
-    assert.equal(shouldAnnounceDemo(null, null), false);
   });
 });

@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { createDemoAnnouncementGate } from './demo-announcement.ts';
 import { callAction, trackingUnavailableDetail, tripCompletedBody } from './demo-variants.ts';
 
 describe('callAction', () => {
@@ -30,18 +29,5 @@ describe('copy variants', () => {
     const tracking = trackingUnavailableDetail('real', true);
     assert.doesNotMatch(tracking, /llamar/i);
     assert.equal(tripCompletedBody('real', true), 'Viaje de demostración: no se cobró dinero.');
-  });
-});
-
-describe('createDemoAnnouncementGate', () => {
-  it('lets one announcement through per session', () => {
-    const gate = createDemoAnnouncementGate();
-    assert.equal(gate.claim(10), true);
-    assert.equal(gate.claim(10), false);
-    assert.equal(gate.claim(20), true);
-  });
-
-  it('lets nothing through without a session', () => {
-    assert.equal(createDemoAnnouncementGate().claim(null), false);
   });
 });

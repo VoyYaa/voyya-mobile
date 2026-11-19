@@ -28,6 +28,7 @@ import {
   useTheme,
 } from '@voyyaa/ui-mobile';
 import {
+  createSessionOnceGate,
   useDemoSession,
   useGrantLocationConsent,
   useLogout,
@@ -53,7 +54,6 @@ import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { TRIP_ENDED_NOTICE, TRIP_NOT_FOUND_NOTICE } from '../src/constants/notices';
 import { activeTripRoute } from '../src/lib/active-trip-route';
 import { DEMO_MAP_ZOOM } from '../src/constants/parameters';
-import { demoAnnouncementGate } from '../src/lib/demo-announcement';
 import {
   demoReferenceOrigin,
   isDemoReferenceOrigin,
@@ -62,6 +62,7 @@ import {
 import { passengerCopy } from '../src/copy/passenger-copy';
 
 import { presentAddress } from '../src/lib/address-presentation';
+const demoAnnouncementGate = createSessionOnceGate();
 const MAP_HEIGHT_RATIO = 0.58;
 const MAP_MIN_HEIGHT = 200;
 const SHEET_MIN_HEIGHT = 340;

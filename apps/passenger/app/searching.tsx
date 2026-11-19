@@ -15,9 +15,8 @@ import {
   useTheme,
 } from '@voyyaa/ui-mobile';
 import type { PassengerUiState } from '@voyyaa/shared';
-import { useNetworkStatus } from '@voyyaa/app-runtime';
+import { DemoNote, useNetworkStatus } from '@voyyaa/app-runtime';
 import { CrossFadeText } from '../src/components/CrossFadeText';
-import { DemoNote } from '../src/components/DemoNote';
 import { DemoTag } from '../src/components/DemoTag';
 import { NotificationsBanner } from '../src/components/NotificationsBanner';
 import { NotificationsPromptSheet } from '../src/components/NotificationsPromptSheet';
