@@ -9,7 +9,7 @@ export type CompanyRowValue =
 export interface CompanyPickerRowProps {
   value: CompanyRowValue;
   disabled?: boolean;
-  rowRef?: React.RefObject<View>;
+  rowRef?: React.RefObject<View | null>;
   onOpen: () => void;
   onUseAny: () => void;
 }
