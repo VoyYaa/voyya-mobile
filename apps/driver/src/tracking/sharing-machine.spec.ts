@@ -138,10 +138,7 @@ describe('sharingReducer stops', () => {
 
   it('does not stop when idle for events that carry no stop signal', () => {
     assert.deepEqual(sharingReducer(INITIAL_SHARING_STATE, { type: 'foreground' }).effects, []);
-    assert.deepEqual(
-      sharingReducer(INITIAL_SHARING_STATE, { type: 'tick', now: T0 }).effects,
-      [],
-    );
+    assert.deepEqual(sharingReducer(INITIAL_SHARING_STATE, { type: 'tick', now: T0 }).effects, []);
   });
 });
 

@@ -171,7 +171,9 @@ export function Button({
         style={{
           ...theme.typography.button,
           color: palette.fg,
-          ...(wrapLabel ? { textAlign: 'center', flexShrink: 1, paddingVertical: theme.spacing.xs } : null),
+          ...(wrapLabel
+            ? { textAlign: 'center', flexShrink: 1, paddingVertical: theme.spacing.xs }
+            : null),
         }}
         numberOfLines={wrapLabel ? undefined : 1}
       >

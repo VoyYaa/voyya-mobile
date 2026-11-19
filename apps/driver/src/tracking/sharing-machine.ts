@@ -3,12 +3,7 @@ export const SHARING_NO_FIX_INTERVALS = 3;
 
 export type SharingStatus = 'idle' | 'running' | 'capped' | 'precise_needed' | 'failed';
 export type StopReason =
-  | 'server_signal'
-  | 'trip_started'
-  | 'forbidden'
-  | 'cap'
-  | 'precise_lost'
-  | 'orphan_cleanup';
+  'server_signal' | 'trip_started' | 'forbidden' | 'cap' | 'precise_lost' | 'orphan_cleanup';
 export type LocationAccuracy = 'fine' | 'coarse' | 'none' | 'unknown';
 
 export interface SharingTarget {
