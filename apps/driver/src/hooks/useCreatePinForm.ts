@@ -93,6 +93,10 @@ export function useCreatePinForm(): CreatePinForm {
               setServerCurrentError(driverCopy.createPin.wrongCurrent);
               setOutcome('idle');
               return;
+            case 'forbidden':
+              setServerNextError(driverCopy.demo.pinForbidden);
+              setOutcome('idle');
+              return;
             case 'too_weak':
               setServerNextError(driverCopy.createPin.tooWeak);
               setOutcome('idle');

@@ -6,6 +6,7 @@ export type ChangePinFailure =
   | { kind: 'blocked'; retryInSec: number | undefined }
   | { kind: 'wrong_current' }
   | { kind: 'too_weak' }
+  | { kind: 'forbidden' }
   | { kind: 'invalid_data'; next: string | undefined; current: string | undefined }
   | { kind: 'server' };
 
@@ -58,6 +59,8 @@ export function classifyChangePinError(error: unknown): ChangePinFailure {
       return { kind: 'wrong_current' };
     case 'PIN_TOO_WEAK':
       return { kind: 'too_weak' };
+    case 'FORBIDDEN':
+      return shape.status === 403 ? { kind: 'forbidden' } : { kind: 'server' };
     case INVALID_DATA_CODE:
       return classifyInvalidData(shape.body);
     default:

@@ -9,6 +9,7 @@ import {
   MarkGlyph,
   Reveal,
   Stage,
+  StatusBanner,
   authStageMinHeight,
   TextField,
   formatMMSS,
@@ -19,7 +20,9 @@ import {
   domainErrorCode,
   isNetworkError,
   retryInSecOf,
+  sessionEndedBodyOf,
   useNetworkStatus,
+  useSessionEndedNotice,
   useSessionStore,
 } from '@voyyaa/app-runtime';
 import { useDriverLogin } from '../../src/hooks/useDriverLogin';
@@ -38,6 +41,7 @@ export default function LoginScreen(): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const networkStatus = useNetworkStatus();
   const login = useDriverLogin();
+  const { notice: endedNotice, dismiss: dismissEndedNotice } = useSessionEndedNotice();
   const setSession = useSessionStore((s) => s.setSession);
 
   const [nationalId, setNationalId] = useState('');
@@ -152,6 +156,18 @@ export default function LoginScreen(): React.JSX.Element {
             gap: theme.spacing.lg,
           }}
         >
+          {endedNotice !== null && (
+            <StatusBanner
+              tone="info"
+              icon="clock"
+              title={driverCopy.login.sessionEnded.title}
+              body={sessionEndedBodyOf(endedNotice, driverCopy.login.sessionEnded)}
+              onDismiss={dismissEndedNotice}
+              role="status"
+              testID="session-ended-banner"
+            />
+          )}
+
           <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
             {driverCopy.login.subtitle}
           </Text>

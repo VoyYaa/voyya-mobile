@@ -120,3 +120,28 @@ describe('isPinChangeRequiredError', () => {
     assert.equal(isPinChangeRequiredError(undefined), false);
   });
 });
+
+describe('classifyChangePinError for a demo account (CA-DX-15)', () => {
+  it('maps 403 FORBIDDEN to its own failure, so the screen can say the PIN cannot change', () => {
+    assert.deepEqual(classifyChangePinError({ kind: 'http', status: 403, code: 'FORBIDDEN' }), {
+      kind: 'forbidden',
+    });
+  });
+
+  it('does not take a FORBIDDEN code under another status for it', () => {
+    assert.deepEqual(classifyChangePinError({ kind: 'http', status: 500, code: 'FORBIDDEN' }), {
+      kind: 'server',
+    });
+  });
+
+  it('leaves the pending PIN change error as it was', () => {
+    assert.equal(
+      isPinChangeRequiredError({ kind: 'http', status: 403, code: 'PIN_CHANGE_REQUIRED' }),
+      true,
+    );
+    assert.deepEqual(
+      classifyChangePinError({ kind: 'http', status: 403, code: 'PIN_CHANGE_REQUIRED' }),
+      { kind: 'server' },
+    );
+  });
+});
