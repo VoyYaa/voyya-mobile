@@ -42,7 +42,7 @@
       ]
     ],
     "android": {
-      "package": "co.voyya.passenger",
+      "package": "com.voyya.passenger",
       "allowBackup": false,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -56,7 +56,7 @@
       }
     },
     "ios": {
-      "bundleIdentifier": "co.voyya.passenger",
+      "bundleIdentifier": "com.voyya.passenger",
       "supportsTablet": false,
       "infoPlist": {
         "NSLocalNetworkUsageDescription": "VoyYa usa la red local para conectarse al servidor de pruebas durante el desarrollo."

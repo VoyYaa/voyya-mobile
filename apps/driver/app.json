@@ -38,7 +38,7 @@
       ]
     ],
     "android": {
-      "package": "co.voyya.driver",
+      "package": "com.voyya.driver",
       "allowBackup": false,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -52,7 +52,7 @@
       }
     },
     "ios": {
-      "bundleIdentifier": "co.voyya.driver",
+      "bundleIdentifier": "com.voyya.driver",
       "supportsTablet": false,
       "infoPlist": {
         "LSApplicationQueriesSchemes": ["comgooglemaps", "waze"],
