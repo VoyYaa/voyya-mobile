@@ -23,8 +23,7 @@
       [
         "@rnmapbox/maps",
         {
-          "RNMapboxMapsImpl": "mapbox",
-          "RNMapboxMapsVersion": "11.10.0"
+          "RNMapboxMapsImpl": "mapbox"
         }
       ],
       [
