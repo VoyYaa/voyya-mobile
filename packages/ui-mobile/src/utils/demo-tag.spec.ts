@@ -116,8 +116,8 @@ describe('LocationConsentSheet demo note', () => {
   );
 
   it('adds one muted line under the notice rows without touching the legal text or the buttons', () => {
-    assert.match(source, /demoNote?: string/);
-    assert.match(source, /demoNote ? (/);
+    assert.match(source, /demoNote\?: string/);
+    assert.match(source, /demoNote \? \(/);
     assert.match(source, /secondaryLabel && onSecondary/);
   });
 });
