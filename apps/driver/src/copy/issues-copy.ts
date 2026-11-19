@@ -1,3 +1,5 @@
+const CONSENT_REQUIRED = 'Si no lo aceptas, pronto dejarás de recibir solicitudes.';
+
 export const issuesCopy = {
   permissionDenied: 'Necesitamos tu ubicación para activar el turno.',
   permissionDeniedAction: 'Cómo habilitarlo',
@@ -7,10 +9,29 @@ export const issuesCopy = {
   offline: 'Sin conexión · no pudimos activar tu turno.',
   serverError: 'No pudimos activar tu turno.',
   retry: 'Reintentar',
-  blockedByTrip:
-    'No puedes salir de turno con un viaje en curso. Finalízalo o cancélalo primero.',
-  locationPermission: 'Revisa el permiso de ubicación: pronto dejarás de recibir solicitudes.',
-  consentRequired: 'Si no lo aceptas, pronto dejarás de recibir solicitudes.',
+  blockedByTrip: 'No puedes salir de turno con un viaje en curso. Finalízalo o cancélalo primero.',
+  consentRequired: CONSENT_REQUIRED,
   consentRequiredAction: 'Leer y aceptar',
-  preciseLocationNeeded: 'Activa la ubicación precisa para que tu pasajero te vea.',
+  banner: {
+    gps_disabled: {
+      title: 'Ubicación apagada',
+      body: 'Actívala para recibir solicitudes.',
+      action: 'Abrir ajustes',
+    },
+    permission_denied: {
+      title: 'Falta el permiso de ubicación',
+      body: 'Sin él dejarás de recibir solicitudes.',
+      action: 'Abrir ajustes',
+    },
+    consent_required: {
+      title: 'Falta aceptar el aviso de ubicación',
+      body: CONSENT_REQUIRED,
+      action: 'Leer y aceptar',
+    },
+    precise_location_needed: {
+      title: 'Activa la ubicación precisa',
+      body: 'Así tu pasajero te ve en el mapa.',
+      action: 'Abrir ajustes',
+    },
+  },
 } as const;
