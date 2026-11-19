@@ -29,6 +29,9 @@ jobs:
           node-version: '20'
           cache: pnpm
 
+      - name: Assert EAS pnpm version matches packageManager
+        run: node tools/assert-eas-pnpm-version.mjs
+
       - name: Assert pnpm linker setting
         run: |
           linker="$(pnpm config get node-linker)"

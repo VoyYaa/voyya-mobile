@@ -8,6 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "environment": "development",
+      "pnpm": "10.24.0",
       "android": {
         "buildType": "apk"
       },
@@ -24,6 +25,7 @@
     "preview": {
       "distribution": "internal",
       "environment": "preview",
+      "pnpm": "10.24.0",
       "android": {
         "buildType": "apk"
       },
@@ -34,6 +36,7 @@
     "production": {
       "autoIncrement": true,
       "environment": "production",
+      "pnpm": "10.24.0",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://voyyaapi-production.up.railway.app"
       }
