@@ -1,6 +1,6 @@
 export type StatusBannerTone = 'info' | 'warning' | 'danger';
 
-export type StatusBannerIcon = 'pin' | 'clock' | 'alert' | 'bell';
+export type StatusBannerIcon = 'pin' | 'clock' | 'alert' | 'bell' | 'bell_off' | 'spinner';
 
 export type StatusBannerRole = 'alert' | 'status';
 

@@ -8,42 +8,47 @@ function source(file: string): string {
 
 describe('NotificationsBanner accessibility contract', () => {
   const banner = source('NotificationsBanner.tsx');
+  const statusBanner = readFileSync(
+    new URL('../../../../packages/ui-mobile/src/components/StatusBanner.tsx', import.meta.url),
+    'utf8',
+  );
 
-  it('makes the dismiss control at least 44 dp in both directions, from the token', () => {
-    assert.match(banner, /width: theme\.touch\.min/);
-    assert.match(banner, /height: theme\.touch\.min/);
+  it('is built on the shared StatusBanner, not on its own card', () => {
+    assert.match(banner, /<StatusBanner/);
+    assert.doesNotMatch(banner, /<Card/);
   });
 
-  it('labels the dismiss control and gives it the button role', () => {
-    assert.match(banner, /accessibilityRole="button"/);
-    assert.match(banner, /accessibilityLabel=\{notificationsCopy\.banner\.dismiss\}/);
+  it('makes the dismiss control at least 44 dp in both directions, from the token', () => {
+    assert.match(statusBanner, /width: touch\.min/);
+    assert.match(statusBanner, /height: touch\.min/);
+  });
+
+  it('labels the dismiss control with its own copy and gives it the button role', () => {
+    assert.match(banner, /dismissLabel=\{notificationsCopy\.banner\.dismiss\}/);
+    assert.match(statusBanner, /accessibilityRole="button"/);
   });
 
   it('shows a focus ring on the dismiss control for keyboard users', () => {
-    assert.match(banner, /theme\.colors\.focusRing/);
-  });
-
-  it('hides the decorative glyph from the screen reader', () => {
-    assert.match(banner, /accessibilityElementsHidden/);
-    assert.match(banner, /importantForAccessibility="no-hide-descendants"/);
+    assert.match(statusBanner, /colors\.focusRing/);
   });
 
   it('reads title and body as a single element', () => {
-    assert.match(banner, /accessible accessibilityLabel=\{view\.accessibilityLabel\}/);
+    assert.match(statusBanner, /accessible accessibilityLabel=\{body \?/);
   });
 
-  it('is information, not an emergency, so it never uses the alert role', () => {
-    assert.doesNotMatch(banner, /accessibilityRole="alert"/);
+  it('is information, not an emergency: it asks for a polite status and never the alert role', () => {
+    assert.match(banner, /role="status"/);
+    assert.doesNotMatch(banner, /role="alert"/);
   });
 
-  it('uses a 44 dp action button on the dark surface, where the default link text would vanish', () => {
-    assert.match(banner, /size="sm"/);
-    assert.match(banner, /variant="ghostOnStage"/);
+  it('keeps an explicit text action instead of a bare chevron', () => {
+    assert.match(banner, /actionLabel=\{view\.actionLabel/);
+    assert.match(statusBanner, /<LinkButton/);
   });
 
-  it('is built on the stage card, with no literal colors', () => {
-    assert.match(banner, /tone="stage"/);
+  it('has no literal colors', () => {
     assert.doesNotMatch(banner, /#[0-9a-fA-F]{3,8}\b/);
+    assert.doesNotMatch(statusBanner, /#[0-9a-fA-F]{3,8}\b/);
   });
 });
 

@@ -9,6 +9,7 @@ import {
   type StatusBannerRole,
   type StatusBannerTone,
 } from '../utils/status-banner';
+import { BrandSpinner } from './brand/BrandSpinner';
 import { MarkGlyph, type MarkGlyphName } from './brand/MarkGlyph';
 import { LinkButton } from './LinkButton';
 
@@ -18,6 +19,7 @@ export interface StatusBannerProps {
   title: string;
   body?: string;
   actionLabel?: string;
+  actionHint?: string;
   onAction?: () => void;
   onDismiss?: () => void;
   dismissLabel?: string;
@@ -27,11 +29,12 @@ export interface StatusBannerProps {
 
 const ICON_SIZE = 24;
 
-const GLYPH_BY_ICON: Record<StatusBannerIcon, MarkGlyphName> = {
+const GLYPH_BY_ICON: Record<Exclude<StatusBannerIcon, 'spinner'>, MarkGlyphName> = {
   pin: 'pin',
   clock: 'clock',
   alert: 'error',
   bell: 'bell',
+  bell_off: 'bell_off',
 };
 
 export function StatusBanner({
@@ -40,6 +43,7 @@ export function StatusBanner({
   title,
   body,
   actionLabel,
+  actionHint,
   onAction,
   onDismiss,
   dismissLabel = uiCopy.close,
@@ -73,23 +77,40 @@ export function StatusBanner({
       }}
     >
       <View style={{ paddingTop: 2 }}>
-        <MarkGlyph glyph={GLYPH_BY_ICON[icon]} size={ICON_SIZE} color={palette.ink} />
+        {icon === 'spinner' ? (
+          <BrandSpinner size={ICON_SIZE} color={palette.ink} />
+        ) : (
+          <MarkGlyph glyph={GLYPH_BY_ICON[icon]} size={ICON_SIZE} color={palette.ink} />
+        )}
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ ...typography.bodyStrong, color: palette.ink }}>{title}</Text>
-        {body && (
-          <Text style={{ ...typography.small, color: colors.textMuted, marginTop: spacing.xxs }}>
-            {body}
+        <View accessible accessibilityLabel={body ? `${title}. ${body}` : title}>
+          <Text
+            testID={testID && `${testID}-title`}
+            style={{ ...typography.bodyStrong, color: palette.ink }}
+          >
+            {title}
           </Text>
-        )}
+          {body && (
+            <Text style={{ ...typography.small, color: colors.textMuted, marginTop: spacing.xxs }}>
+              {body}
+            </Text>
+          )}
+        </View>
         {showAction && actionLabel && onAction && (
-          <LinkButton label={actionLabel} onPress={onAction} testID={testID && `${testID}-action`} />
+          <LinkButton
+            label={actionLabel}
+            accessibilityHint={actionHint}
+            onPress={onAction}
+            testID={testID && `${testID}-action`}
+          />
         )}
       </View>
       {onDismiss && (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={dismissLabel}
+          testID={testID && `${testID}-dismiss`}
           onPress={onDismiss}
           onFocus={onFocus}
           onBlur={onBlur}

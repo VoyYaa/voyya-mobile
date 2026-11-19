@@ -37,6 +37,11 @@ export const passengerCopy = {
     coverageErrorTitle: 'No pudimos verificar tu zona',
     coverageErrorBody: 'Puedes seguir e intentarlo; te avisaremos si tu viaje no se puede cotizar.',
     offlineNote: 'Sin conexión · algunas acciones no estarán disponibles.',
+    locationOff: {
+      title: 'Ubicación apagada',
+      body: 'Marcaste tu punto a mano. Con la ubicación activa es más rápido.',
+      action: 'Activar ubicación',
+    },
   },
   destination: {
     header: 'Tu viaje',

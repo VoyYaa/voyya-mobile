@@ -20,6 +20,7 @@ export type { ConnectivityBanner as ConnectivityBannerState } from './connectivi
 export * from './connectivity/ConnectivityBanner';
 export * from './location/device-location-port';
 export * from './location/device-location';
+export * from './location/services-enabled';
 export * from './dev/silence-known-web-warnings';
 export * from './dev/silence-push-dev-warnings';
 export * from './consent/consent.api';

@@ -13,7 +13,9 @@ import {
   MapPlaceholder,
   PointRow,
   Skeleton,
+  StatusBanner,
   Toast,
+  selectBanner,
   uiCopy,
   useTheme,
 } from '@voyyaa/ui-mobile';
@@ -31,6 +33,8 @@ import { LocationConsentSheet } from '../src/components/LocationConsentSheet';
 import { NoOriginPanel } from '../src/components/NoOriginPanel';
 import { useActiveTrip, useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useCoverageGate } from '../src/hooks/useCoverageGate';
+import { useLocationServices } from '../src/hooks/useLocationServices';
+import { isLocationOffWithManualOrigin } from '../src/lib/location-off-banner';
 import { usePickupPlaces } from '../src/hooks/usePlacesAvailability';
 import { useLocationConsentGate } from '../src/hooks/useLocationConsentGate';
 import { noticeToastVisible, type LocationConsentPhase } from '../src/lib/consent-phase';
@@ -72,6 +76,7 @@ export default function HomeScreen(): React.JSX.Element {
   const networkStatus = useNetworkStatus();
   const user = useSessionStore((s) => s.user);
   const origin = useTripDraftStore((s) => s.origin);
+  const originSource = useTripDraftStore((s) => s.originSource);
   const destination = useTripDraftStore((s) => s.destination);
   const setOrigin = useTripDraftStore((s) => s.setOrigin);
   const clearOrigin = useTripDraftStore((s) => s.clearOrigin);
@@ -90,6 +95,17 @@ export default function HomeScreen(): React.JSX.Element {
   const [notFoundToast, setNotFoundToast] = useState(false);
   const lastPhase = useRef<LocationConsentPhase | null>(null);
   const trip = activeTrip.data ?? null;
+  const servicesEnabled = useLocationServices(origin !== null && originSource === 'manual');
+  const locationOff = isLocationOffWithManualOrigin({
+    originSource,
+    hasOrigin: origin !== null,
+    servicesEnabled,
+    tripActive: trip !== null,
+  });
+  const banner = selectBanner([
+    ...(networkStatus === 'offline' ? (['offline'] as const) : []),
+    ...(locationOff ? (['location'] as const) : []),
+  ]);
 
   const { refetch: refetchActiveTrip } = activeTrip;
   useFocusEffect(
@@ -396,7 +412,19 @@ export default function HomeScreen(): React.JSX.Element {
           </Text>
         )}
 
-        {networkStatus === 'offline' && (
+        {banner === 'location' && (
+          <StatusBanner
+            tone="warning"
+            icon="pin"
+            title={copy.locationOff.title}
+            body={copy.locationOff.body}
+            actionLabel={copy.locationOff.action}
+            onAction={() => void Linking.openSettings()}
+            testID="home-location-off-banner"
+          />
+        )}
+
+        {banner === 'offline' && (
           <Text style={{ ...theme.typography.small, color: theme.colors.infoInk }}>
             {copy.offlineNote}
           </Text>
