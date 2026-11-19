@@ -39,6 +39,7 @@ import {
   useStartTrip,
 } from '../../src/hooks/useTripActions';
 import { useCancelAssignmentByDriver } from '../../src/hooks/useCancelAssignmentByDriver';
+import { useLocationIssueWatch } from '../../src/hooks/useLocationIssueWatch';
 import { useBestEffortLocationReport } from '../../src/hooks/useReportLocation';
 import { dispatchSharing } from '../../src/tracking/sharing-runtime';
 import { isStartCodeRequiredError } from '../../src/trip/start-code-flow';
@@ -78,6 +79,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
   const activeTrip = home.data?.active_trip ?? null;
   const activeTripRequestId = activeTrip?.trip_request_id ?? null;
   const reportLocationBestEffort = useBestEffortLocationReport();
+  useLocationIssueWatch(true);
 
   const enRoute = useMarkTripEnRoute(activeTripRequestId);
   const arrived = useMarkTripArrived(activeTripRequestId);
@@ -377,6 +379,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
   const towardsDropoff = subState === 'en_curso';
   const routeTarget = towardsDropoff ? activeTrip.dropoff_location : activeTrip.pickup_location;
   const startBlocked = activeTrip.start_blocked && subState !== 'en_curso';
+  const hasPrimaryAction = subState === 'en_curso' || !startBlocked;
   const blockedNoShow: BlockedNoShow =
     subState === 'en_camino'
       ? { kind: 'needs_arrival', loading: arrived.isPending }
@@ -425,7 +428,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
         <ScrollView
           contentContainerStyle={{
             padding: theme.spacing.gutter,
-            paddingBottom: insets.bottom + theme.spacing.xl,
+            paddingBottom: hasPrimaryAction ? theme.spacing.lg : insets.bottom + theme.spacing.xl,
             gap: theme.spacing.md,
             flexGrow: 1,
           }}
@@ -485,43 +488,8 @@ export default function ActiveTripScreen(): React.JSX.Element {
           )}
 
           <View style={{ gap: theme.spacing.lg }}>
-            {!startBlocked && subState === 'en_camino' && (
-              <Button
-                label={
-                  isAssignedNotYetMoving ? driverCopy.trip.startEnRoute : driverCopy.trip.arrived
-                }
-                size="lg"
-                loading={isAssignedNotYetMoving ? enRoute.isPending : arrived.isPending}
-                onPress={isAssignedNotYetMoving ? handleVoyEnCamino : handleLlegue}
-                testID="trip-primary"
-              />
-            )}
-
-            {!startBlocked && subState === 'esperando' && (
-              <>
-                <Button
-                  label={driverCopy.trip.startTrip}
-                  size="lg"
-                  loading={start.isPending}
-                  accessibilityHint={
-                    activeTrip.start_code_required ? driverCopy.trip.startTripHint : undefined
-                  }
-                  onPress={handleIniciar}
-                  testID="trip-primary"
-                />
-                {!noShowEnabled && (
-                  <NoShowWait remainingSec={noShowRemainingSec} totalSec={noShowTotalSec} />
-                )}
-              </>
-            )}
-
-            {subState === 'en_curso' && (
-              <Button
-                label={driverCopy.trip.finishTrip}
-                size="lg"
-                onPress={() => setSheet('finish')}
-                testID="trip-primary"
-              />
+            {subState === 'esperando' && !startBlocked && !noShowEnabled && (
+              <NoShowWait remainingSec={noShowRemainingSec} totalSec={noShowTotalSec} />
             )}
 
             {!startBlocked && subState !== 'en_curso' && (
@@ -561,6 +529,49 @@ export default function ActiveTripScreen(): React.JSX.Element {
             )}
           </View>
         </ScrollView>
+        {hasPrimaryAction && (
+          <View
+            testID="trip-primary-footer"
+            style={{
+              paddingHorizontal: theme.spacing.gutter,
+              paddingTop: theme.spacing.md,
+              paddingBottom: insets.bottom + theme.spacing.md,
+              backgroundColor: theme.colors.bg,
+            }}
+          >
+            {!startBlocked && subState === 'en_camino' && (
+              <Button
+                label={
+                  isAssignedNotYetMoving ? driverCopy.trip.startEnRoute : driverCopy.trip.arrived
+                }
+                size="lg"
+                loading={isAssignedNotYetMoving ? enRoute.isPending : arrived.isPending}
+                onPress={isAssignedNotYetMoving ? handleVoyEnCamino : handleLlegue}
+                testID="trip-primary"
+              />
+            )}
+            {!startBlocked && subState === 'esperando' && (
+              <Button
+                label={driverCopy.trip.startTrip}
+                size="lg"
+                loading={start.isPending}
+                accessibilityHint={
+                  activeTrip.start_code_required ? driverCopy.trip.startTripHint : undefined
+                }
+                onPress={handleIniciar}
+                testID="trip-primary"
+              />
+            )}
+            {subState === 'en_curso' && (
+              <Button
+                label={driverCopy.trip.finishTrip}
+                size="lg"
+                onPress={() => setSheet('finish')}
+                testID="trip-primary"
+              />
+            )}
+          </View>
+        )}
       </View>
 
       <StartCodeSheet

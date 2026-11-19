@@ -93,9 +93,9 @@ export function LocationIssueBanner({
         backgroundColor: tone.background,
         borderRadius: theme.radius.card,
         paddingHorizontal: theme.spacing.lg,
-        paddingTop: theme.spacing.md,
-        paddingBottom: theme.spacing.xs,
-        gap: theme.spacing.xs,
+        paddingTop: context === 'trip' ? theme.spacing.sm : theme.spacing.md,
+        paddingBottom: 0,
+        gap: 0,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacing.md }}>

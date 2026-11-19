@@ -4,7 +4,7 @@ import * as Location from 'expo-location';
 
 export type SystemLocationPermission = 'denied' | 'allowed' | 'unknown';
 
-async function readPermission(): Promise<SystemLocationPermission> {
+export async function readSystemLocationPermission(): Promise<SystemLocationPermission> {
   try {
     const { status } = await Location.getForegroundPermissionsAsync();
     if (status === 'denied') return 'denied';
@@ -20,7 +20,7 @@ export function useSystemLocationPermission(): SystemLocationPermission {
   useEffect(() => {
     let active = true;
     const refresh = (): void => {
-      void readPermission().then((next) => {
+      void readSystemLocationPermission().then((next) => {
         if (active) setPermission(next);
       });
     };
