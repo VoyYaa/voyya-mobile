@@ -18,7 +18,13 @@ import {
   useCountdown,
   useTheme,
 } from '@voyyaa/ui-mobile';
-import { ApiError, isNetworkError, useLocationConsentStatus } from '@voyyaa/app-runtime';
+import {
+  ApiError,
+  isNetworkError,
+  useDemoSession,
+  useLocationConsentStatus,
+  useSessionStore,
+} from '@voyyaa/app-runtime';
 import { PassengerSummaryRow } from '../../src/components/PassengerSummaryRow';
 import { DriverStepRail } from '../../src/components/DriverStepRail';
 import { NoShowWait } from '../../src/components/NoShowWait';
@@ -29,7 +35,12 @@ import { StartedConfirmSheet } from '../../src/components/StartedConfirmSheet';
 import { StartCodeSheet } from '../../src/components/StartCodeSheet';
 import { StartBlockedPanel, type BlockedNoShow } from '../../src/components/StartBlockedPanel';
 import { RouteButton } from '../../src/components/RouteButton';
+import { DemoTag } from '../../src/components/DemoTag';
+import { LocationConsentSheet } from '../../src/components/LocationConsentSheet';
+import { SharingDisclosureSheet } from '../../src/components/SharingDisclosureSheet';
 import { SharingStatusBadge } from '../../src/components/SharingStatusBadge';
+import { demoAnnouncementGate, demoConsentGate } from '../../src/demo/demo-gates';
+import { useSharingDisclosure } from '../../src/hooks/useSharingDisclosure';
 import { useDriverHome } from '../../src/hooks/useDriverHome';
 import {
   useCompleteTrip,
@@ -116,6 +127,25 @@ export default function ActiveTripScreen(): React.JSX.Element {
     }
     previousConsentRequired.current = consentRequired;
   }, [consentRequired]);
+
+  const demo = useDemoSession();
+  const isDemo = demo !== null;
+  const sessionStartedAt = useSessionStore((s) => s.sessionStartedAt);
+  const disclosure = useSharingDisclosure();
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [readNoticeOpen, setReadNoticeOpen] = useState(false);
+
+  useEffect(() => {
+    if (isDemo && demoAnnouncementGate.claim(sessionStartedAt)) {
+      AccessibilityInfo.announceForAccessibility(driverCopy.demo.announce);
+    }
+  }, [isDemo, sessionStartedAt]);
+
+  useEffect(() => {
+    if (isDemo && consentRequired && demoConsentGate.claim(sessionStartedAt)) {
+      setConsentOpen(true);
+    }
+  }, [isDemo, consentRequired, sessionStartedAt]);
 
   const startBlockedNow = activeTrip?.start_blocked ?? false;
   useEffect(() => {
@@ -433,6 +463,8 @@ export default function ActiveTripScreen(): React.JSX.Element {
             flexGrow: 1,
           }}
         >
+          <DemoTag />
+
           <SharingStatusBadge
             sharing={activeTrip.location_sharing}
             consentRequired={consentRequired}
@@ -612,6 +644,30 @@ export default function ActiveTripScreen(): React.JSX.Element {
         errorMessage={sheetError}
         onConfirm={handleCancelConfirm}
         onKeepGoing={closeSheet}
+      />
+
+      <LocationConsentSheet
+        visible={consentOpen}
+        mode="accept"
+        onAccepted={() => {
+          setConsentOpen(false);
+          void disclosure.showIfUnseen({ force: isDemo });
+        }}
+        onDismiss={() => setConsentOpen(false)}
+      />
+      <LocationConsentSheet
+        visible={readNoticeOpen}
+        mode="read"
+        onAccepted={() => setReadNoticeOpen(false)}
+        onDismiss={() => setReadNoticeOpen(false)}
+      />
+      <SharingDisclosureSheet
+        visible={disclosure.visible}
+        onDismiss={disclosure.dismiss}
+        onReadFullNotice={() => {
+          disclosure.dismiss();
+          setReadNoticeOpen(true);
+        }}
       />
 
       <Toast

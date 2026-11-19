@@ -1,5 +1,6 @@
 import { formatMeters } from './format-distance';
 import { homeCopy } from './home-copy';
+import { demoCopy } from './demo-copy';
 import { issuesCopy } from './issues-copy';
 import { DRIVER_LOCATION_RETENTION_MAX_HOURS, DRIVER_PIN_LENGTH } from '@voyyaa/shared';
 
@@ -26,6 +27,12 @@ export const driverCopy = {
     suspendedFallback:
       'Tu empresa suspendió tu acceso. Contacta a tu empresa para más información.',
     suspendedBack: 'Probar con otra cuenta',
+    sessionEnded: {
+      title: 'Tu sesión terminó',
+      body: 'Por seguridad, vuelve a iniciar sesión para seguir.',
+      demoBody:
+        'Esta cuenta de demostración ya no está activa. Si estás revisando la app, usa los datos de acceso que te dieron y, si no funcionan, escribe a quien te los envió.',
+    },
     footer: 'La cuenta la crea tu empresa. Si no la tienes, contáctala directamente.',
   },
   createPin: {
@@ -342,4 +349,5 @@ export const driverCopy = {
     addressRemoved: 'Dirección eliminada por política de retención.',
   },
   issues: issuesCopy,
+  demo: demoCopy,
 } as const;

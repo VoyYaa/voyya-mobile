@@ -1,6 +1,7 @@
 import React from 'react';
 import { Linking, Text, View } from 'react-native';
 import { Button, Card, LinkButton, MarkGlyph, formatMMSS, useTheme } from '@voyyaa/ui-mobile';
+import { useDemoSession } from '@voyyaa/app-runtime';
 import { driverCopy } from '../copy/driver-copy';
 
 export type BlockedNoShow =
@@ -27,6 +28,7 @@ export function StartBlockedPanel({
   onCancel,
 }: StartBlockedPanelProps): React.JSX.Element {
   const theme = useTheme();
+  const demo = useDemoSession() !== null;
 
   return (
     <Card tone="danger" testID="start-blocked-panel">
@@ -52,7 +54,7 @@ export function StartBlockedPanel({
           />
         ) : (
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-            {copy.noPhone}
+            {demo ? driverCopy.demo.callUnavailable : copy.noPhone}
           </Text>
         )}
 

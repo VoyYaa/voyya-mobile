@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { LocationConsentSheet as BaseLocationConsentSheet } from '@voyyaa/ui-mobile';
 import { LOCATION_NOTICES } from '@voyyaa/shared';
-import { useGrantLocationConsent } from '@voyyaa/app-runtime';
+import { useDemoSession, useGrantLocationConsent } from '@voyyaa/app-runtime';
 import { driverCopy } from '../copy/driver-copy';
 
 export type LocationConsentSheetMode = 'shift' | 'accept' | 'read';
@@ -29,6 +29,7 @@ export function LocationConsentSheet({
 }: LocationConsentSheetProps): React.JSX.Element {
   const copy = driverCopy.consentNotice;
   const grant = useGrantLocationConsent();
+  const demo = useDemoSession();
   const reset = grant.reset;
   const isRead = mode === 'read';
   const noticeRows = isRead ? NOTICE_ROWS : [...FACT_ROWS, ...NOTICE_ROWS];
@@ -58,6 +59,7 @@ export function LocationConsentSheet({
       title={NOTICE.title}
       rows={grant.isError ? [ERROR_ROW, ...noticeRows] : noticeRows}
       primaryLabel={primaryLabel}
+      demoNote={demo ? driverCopy.demo.consentNote : undefined}
       secondaryLabel={isRead || grant.isPending ? undefined : copy.secondary}
       onPrimary={isRead ? onDismiss : handleAccept}
       onSecondary={isRead || grant.isPending ? undefined : onDismiss}

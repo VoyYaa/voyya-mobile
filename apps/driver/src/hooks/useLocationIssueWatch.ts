@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
-import { areLocationServicesEnabled } from '@voyyaa/app-runtime';
+import { areLocationServicesEnabled, useDemoSession } from '@voyyaa/app-runtime';
 import { nextLocationIssue } from '../home/location-issue-probe';
 import { useLocationIssueStore } from '../state/useLocationIssueStore';
 import { readSystemLocationPermission } from './useSystemLocationPermission';
@@ -8,8 +8,9 @@ import { readSystemLocationPermission } from './useSystemLocationPermission';
 export const LOCATION_ISSUE_WATCH_MS = 5000;
 
 export function useLocationIssueWatch(enabled: boolean): void {
+  const demo = useDemoSession() !== null;
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (!enabled || demo) return undefined;
     let active = true;
     const probe = (): void => {
       void Promise.all([readSystemLocationPermission(), areLocationServicesEnabled()]).then(
@@ -31,5 +32,5 @@ export function useLocationIssueWatch(enabled: boolean): void {
       clearInterval(interval);
       subscription.remove();
     };
-  }, [enabled]);
+  }, [enabled, demo]);
 }

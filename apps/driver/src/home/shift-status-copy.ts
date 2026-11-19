@@ -1,3 +1,4 @@
+import { demoCopy } from '../copy/demo-copy';
 import { homeCopy } from '../copy/home-copy';
 
 export interface ShiftStatusInput {
@@ -27,8 +28,13 @@ export function shiftSwitchHint({
 export function emptyOffersBody({
   consentPending,
   hasLocationIssue,
-}: Pick<ShiftStatusInput, 'consentPending'> & { hasLocationIssue: boolean }): string | undefined {
+  demo = false,
+}: Pick<ShiftStatusInput, 'consentPending'> & {
+  hasLocationIssue: boolean;
+  demo?: boolean;
+}): string | undefined {
   if (consentPending) return homeCopy.emptyBodyConsentPending;
+  if (demo) return demoCopy.emptyOffersHint;
   if (hasLocationIssue) return undefined;
   return homeCopy.emptyBody;
 }

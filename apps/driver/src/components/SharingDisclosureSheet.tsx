@@ -1,6 +1,7 @@
 import React from 'react';
 import { Platform, Text, View } from 'react-native';
 import { BottomSheet, Button, LinkButton, useTheme } from '@voyyaa/ui-mobile';
+import { DemoNote } from '@voyyaa/app-runtime';
 import { driverCopy } from '../copy/driver-copy';
 
 export interface SharingDisclosureSheetProps {
@@ -46,6 +47,9 @@ export function SharingDisclosureSheet({
             </Text>
           </View>
         ))}
+      </View>
+      <View style={{ marginTop: theme.spacing.md }}>
+        <DemoNote text={driverCopy.demo.disclosureNote} testID="disclosure-demo-note" />
       </View>
       {Platform.OS === 'ios' && (
         <Text

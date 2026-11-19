@@ -1,7 +1,13 @@
 import React from 'react';
-import { Linking, Text, View } from 'react-native';
+import { Linking, Platform, Text, View } from 'react-native';
 import { BrandSpinner, LinkButton, StatusBadge, useTheme } from '@voyyaa/ui-mobile';
 import type { DriverLocationSharing } from '@voyyaa/shared';
+import { useDemoSession } from '@voyyaa/app-runtime';
+import {
+  sharingDisplayKind,
+  showIosForegroundNote,
+  showNotificationsOff,
+} from '../tracking/demo-sharing-view';
 import { useSharingIndicator } from '../hooks/useSharingIndicator';
 import { useResumeSharing } from '../hooks/useTripLocationSharing';
 import { driverCopy } from '../copy/driver-copy';
@@ -27,13 +33,15 @@ export function SharingStatusBadge({
     consentRequired,
   );
   const resume = useResumeSharing();
+  const demo = useDemoSession() !== null;
+  const display = sharingDisplayKind(indicator, demo);
 
-  if (indicator.kind === 'none') return null;
+  if (display === 'none') return null;
 
-  if (indicator.kind === 'consent_required') {
+  if (display === 'consent_required') {
     return <LocationIssueBanner kind="consent_required" context="trip" onPress={onReadConsent} />;
   }
-  if (indicator.kind === 'location_issue') {
+  if (indicator.kind === 'location_issue' && display === 'location_issue') {
     return (
       <LocationIssueBanner
         kind={indicator.issue}
@@ -42,7 +50,7 @@ export function SharingStatusBadge({
       />
     );
   }
-  if (indicator.kind === 'precise_needed') {
+  if (display === 'precise_needed') {
     return (
       <LocationIssueBanner
         kind="precise_location_needed"
@@ -54,7 +62,7 @@ export function SharingStatusBadge({
 
   return (
     <View style={{ gap: theme.spacing.xs }} testID="sharing-status">
-      {indicator.kind === 'capped' && (
+      {display === 'capped' && (
         <>
           <StatusBadge tone="neutral" label={copy.capReached} />
           {resume.outcome === 'checking' ? (
@@ -81,15 +89,22 @@ export function SharingStatusBadge({
           )}
         </>
       )}
-      {indicator.kind === 'no_fix' && <StatusBadge tone="warning" label={copy.noGps} />}
-      {indicator.kind === 'offline' && <StatusBadge tone="warning" label={copy.offline} />}
-      {indicator.kind === 'active' && <StatusBadge tone="success" label={copy.active} />}
-      {iosForegroundOnly && (
+      {display === 'no_fix' && <StatusBadge tone="warning" label={copy.noGps} />}
+      {display === 'offline' && <StatusBadge tone="warning" label={copy.offline} />}
+      {display === 'active' && <StatusBadge tone="success" label={copy.active} />}
+      {display === 'demo_active' && (
+        <StatusBadge
+          tone="success"
+          label={driverCopy.demo.sharingActive}
+          testID="sharing-demo-active"
+        />
+      )}
+      {showIosForegroundNote(iosForegroundOnly, display, Platform.OS === 'ios') && (
         <Text style={{ ...theme.typography.small, color: theme.colors.infoInk }}>
           {copy.iosOnlyForeground}
         </Text>
       )}
-      {notificationsOff && (
+      {showNotificationsOff(notificationsOff, demo) && (
         <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
             {copy.notificationsOff}{' '}

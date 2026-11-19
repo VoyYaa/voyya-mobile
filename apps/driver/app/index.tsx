@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { AccessibilityInfo, Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -11,17 +11,21 @@ import {
   ProgressRail,
   Skeleton,
   SkeletonList,
+  uiCopy,
   useDelayedLoading,
   useTheme,
 } from '@voyyaa/ui-mobile';
 import {
   resolveLocationConsentConfirmed,
   isNetworkError,
+  useDemoSession,
   useLocationConsentStatus,
   useLogout,
   useSessionStore,
 } from '@voyyaa/app-runtime';
 import { emptyOffersBody } from '../src/home/shift-status-copy';
+import { DemoTag } from '../src/components/DemoTag';
+import { demoAnnouncementGate } from '../src/demo/demo-gates';
 import { ShiftHero } from '../src/components/ShiftHero';
 import { ShiftSwitch } from '../src/components/ShiftSwitch';
 import { ShiftIssuePanel, type ShiftIssueKind } from '../src/components/ShiftIssuePanel';
@@ -75,6 +79,8 @@ export default function HomeScreen(): React.JSX.Element {
   const logout = useLogout();
   const authenticated = useIsAuthenticated();
   const user = useSessionStore((s) => s.user);
+  const sessionStartedAt = useSessionStore((s) => s.sessionStartedAt);
+  const isDemo = useDemoSession() !== null;
 
   const home = useDriverHome();
   const shiftActivation = useShiftActivation();
@@ -104,6 +110,12 @@ export default function HomeScreen(): React.JSX.Element {
     (home.isRefetching || offers.isRefetching || pulling) && !home.isLoading,
     { delayMs: REFETCH_RAIL_DELAY_MS },
   );
+
+  useEffect(() => {
+    if (isDemo && demoAnnouncementGate.claim(sessionStartedAt)) {
+      AccessibilityInfo.announceForAccessibility(driverCopy.demo.announce);
+    }
+  }, [isDemo, sessionStartedAt]);
 
   useEffect(() => {
     if (activeTrip) {
@@ -190,7 +202,7 @@ export default function HomeScreen(): React.JSX.Element {
 
   const handleConsentAccepted = (): void => {
     setConsentVisible(false);
-    void disclosure.showIfUnseen();
+    void disclosure.showIfUnseen({ force: isDemo });
     if (isOnShift) {
       setLocationIssue(null);
       reportLocationBestEffort();
@@ -267,6 +279,8 @@ export default function HomeScreen(): React.JSX.Element {
           />
         }
       >
+        <DemoTag />
+
         {locationIssue && (
           <LocationIssueBanner kind={locationIssue} onPress={handleLocationIssuePress} />
         )}
@@ -314,6 +328,7 @@ export default function HomeScreen(): React.JSX.Element {
                 body={emptyOffersBody({
                   consentPending,
                   hasLocationIssue: locationIssue !== null,
+                  demo: isDemo,
                 })}
               />
             )}
@@ -371,6 +386,7 @@ export default function HomeScreen(): React.JSX.Element {
         onPrivacy={handleOpenPrivacy}
         onLogout={handleLogout}
         loggingOut={logout.isPending}
+        demoNote={isDemo ? uiCopy.demo.accountNote : undefined}
       />
     </View>
   );

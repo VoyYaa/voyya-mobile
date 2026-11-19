@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, Switch, Text, View } from 'react-native';
 import { BottomSheet, Button, PriceTag, useTheme } from '@voyyaa/ui-mobile';
+import { DemoNote } from '@voyyaa/app-runtime';
+import { driverCopy } from '../copy/driver-copy';
 
 export interface FinishTripSheetProps {
   visible: boolean;
@@ -60,6 +62,8 @@ export function FinishTripSheet({
           />
         </View>
       </Pressable>
+
+      <DemoNote text={driverCopy.demo.cashNote} testID="finish-demo-cash-note" />
 
       {errorMessage && (
         <Text

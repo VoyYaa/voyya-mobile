@@ -10,7 +10,7 @@ import {
   useTheme,
 } from '@voyyaa/ui-mobile';
 import { START_CODE_LENGTH } from '@voyyaa/shared';
-import { useNetworkStatus } from '@voyyaa/app-runtime';
+import { DemoNote, useNetworkStatus } from '@voyyaa/app-runtime';
 import { useStartCodeSubmission } from '../hooks/useStartCodeSubmission';
 import type { StartSheetMessage } from '../trip/start-code-flow';
 import { driverCopy } from '../copy/driver-copy';
@@ -136,6 +136,11 @@ export function StartCodeSheet({
         >
           {copy.helper}
         </Text>
+        <DemoNote
+          text={driverCopy.demo.startCodeHint}
+          align="center"
+          testID="start-code-demo-hint"
+        />
       </View>
 
       <View

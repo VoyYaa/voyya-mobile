@@ -6,14 +6,18 @@ const DISCLOSURE_SEEN_KEY = 'voyya_sharing_disclosure_seen';
 
 export interface SharingDisclosure {
   visible: boolean;
-  showIfUnseen: () => Promise<void>;
+  showIfUnseen: (options?: { force?: boolean }) => Promise<void>;
   dismiss: () => void;
 }
 
 export function useSharingDisclosure(): SharingDisclosure {
   const [visible, setVisible] = useState(false);
 
-  const showIfUnseen = useCallback(async (): Promise<void> => {
+  const showIfUnseen = useCallback(async (options?: { force?: boolean }): Promise<void> => {
+    if (options?.force) {
+      setVisible(true);
+      return;
+    }
     const seen = await getSecureStoragePort()
       .getItem(DISCLOSURE_SEEN_KEY)
       .catch(() => null);

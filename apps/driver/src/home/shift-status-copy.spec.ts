@@ -73,3 +73,28 @@ describe('shift status copy', () => {
     );
   });
 });
+
+describe('emptyOffersBody in a demo session (CA-DX-20)', () => {
+  it('explains where requests come from instead of promising visibility', () => {
+    const body = emptyOffersBody({ consentPending: false, hasLocationIssue: false, demo: true });
+    assert.match(body ?? '', /solo si alguien pide un taxi desde la app del pasajero/);
+  });
+
+  it('keeps the pending notice text first, because it is true in a demo session too', () => {
+    assert.equal(
+      emptyOffersBody({ consentPending: true, hasLocationIssue: false, demo: true }),
+      homeCopy.emptyBodyConsentPending,
+    );
+  });
+
+  it('changes nothing for a real session', () => {
+    assert.equal(
+      emptyOffersBody({ consentPending: false, hasLocationIssue: false }),
+      homeCopy.emptyBody,
+    );
+    assert.equal(
+      emptyOffersBody({ consentPending: false, hasLocationIssue: false, demo: false }),
+      homeCopy.emptyBody,
+    );
+  });
+});
