@@ -1,8 +1,10 @@
 import React from 'react';
 import { Linking, Text, View } from 'react-native';
 import { Button, Card, useTheme } from '@voyyaa/ui-mobile';
+import { useDemoSession } from '@voyyaa/app-runtime';
 import type { AssignedDriverSummary } from '@voyyaa/shared';
 import { passengerCopy } from '../copy/passenger-copy';
+import { callAction } from '../lib/demo-variants';
 import { PhoneIcon } from './PhoneIcon';
 import { PlateTag } from './PlateTag';
 
@@ -14,7 +16,8 @@ const AVATAR_SIZE = 52;
 
 export function DriverCard({ driver }: DriverCardProps): React.JSX.Element {
   const theme = useTheme();
-  const canCall = Boolean(driver.contact_phone);
+  const action = callAction(driver.contact_phone, useDemoSession() !== null);
+  const canCall = action === 'call';
   const model = driver.model ?? passengerCopy.trip.vehicleFallback;
 
   return (
@@ -71,21 +74,34 @@ export function DriverCard({ driver }: DriverCardProps): React.JSX.Element {
       <View style={{ marginTop: theme.spacing.md }}>
         <PlateTag plate={driver.plate} />
       </View>
-      <View style={{ marginTop: theme.spacing.lg }}>
-        <Button
-          label={passengerCopy.trip.callDriver}
-          leading={(color) => <PhoneIcon color={color} />}
-          variant={theme.mode === 'dark' ? 'ghost' : 'secondary'}
-          disabled={!canCall}
-          accessibilityHint={canCall ? undefined : passengerCopy.trip.callUnavailable}
-          onPress={() => {
-            if (driver.contact_phone) {
-              void Linking.openURL(`tel:${driver.contact_phone}`);
-            }
+      {action === 'hidden' ? (
+        <Text
+          style={{
+            ...theme.typography.small,
+            color: theme.colors.textMuted,
+            marginTop: theme.spacing.md,
           }}
-          testID="call-driver-button"
-        />
-      </View>
+          testID="call-driver-demo-note"
+        >
+          {passengerCopy.demo.callUnavailable}
+        </Text>
+      ) : (
+        <View style={{ marginTop: theme.spacing.lg }}>
+          <Button
+            label={passengerCopy.trip.callDriver}
+            leading={(color) => <PhoneIcon color={color} />}
+            variant={theme.mode === 'dark' ? 'ghost' : 'secondary'}
+            disabled={!canCall}
+            accessibilityHint={canCall ? undefined : passengerCopy.trip.callUnavailable}
+            onPress={() => {
+              if (driver.contact_phone) {
+                void Linking.openURL(`tel:${driver.contact_phone}`);
+              }
+            }}
+            testID="call-driver-button"
+          />
+        </View>
+      )}
     </Card>
   );
 }

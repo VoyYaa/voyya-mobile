@@ -17,6 +17,8 @@ import {
 import type { PassengerUiState } from '@voyyaa/shared';
 import { useNetworkStatus } from '@voyyaa/app-runtime';
 import { CrossFadeText } from '../src/components/CrossFadeText';
+import { DemoNote } from '../src/components/DemoNote';
+import { DemoTag } from '../src/components/DemoTag';
 import { NotificationsBanner } from '../src/components/NotificationsBanner';
 import { NotificationsPromptSheet } from '../src/components/NotificationsPromptSheet';
 import { SearchRadar } from '../src/components/SearchRadar';
@@ -285,6 +287,13 @@ export default function SearchingScreen(): React.JSX.Element {
               />
             )}
           </Reveal>
+          <View style={{ paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.md }}>
+            <DemoNote
+              tone="stage"
+              text={passengerCopy.demo.noDriverNote}
+              testID="no-driver-demo-note"
+            />
+          </View>
         </View>
         {retrying && (
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
@@ -339,6 +348,8 @@ export default function SearchingScreen(): React.JSX.Element {
             gap: theme.spacing.md,
           }}
         >
+          <DemoTag />
+
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
             <View
               style={{
@@ -389,6 +400,11 @@ export default function SearchingScreen(): React.JSX.Element {
                 textAlign: 'center',
               }}
               testID="search-body"
+            />
+            <DemoNote
+              tone="stage"
+              text={passengerCopy.demo.searchingNote}
+              testID="search-demo-note"
             />
           </View>
 

@@ -19,6 +19,8 @@ import {
   ActiveTripConflictSheet,
   type ActiveTripConflictFailure,
 } from '../src/components/ActiveTripConflictSheet';
+import { DemoNote } from '../src/components/DemoNote';
+import { DemoTag } from '../src/components/DemoTag';
 import { InlineNotice } from '../src/components/InlineNotice';
 import { ServiceCompanyBlock } from '../src/components/ServiceCompanyBlock';
 import { PointReference } from '../src/components/PointReference';
@@ -223,6 +225,7 @@ export default function ConfirmScreen(): React.JSX.Element {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md }}
       >
+        <DemoTag />
         {params[FARE_CHANGED_PARAM] === '1' && (
           <InlineNotice
             tone="info"
@@ -351,6 +354,7 @@ export default function ConfirmScreen(): React.JSX.Element {
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
             {copy.fareClosed}
           </Text>
+          <DemoNote text={passengerCopy.demo.fareNote} testID="confirm-demo-fare-note" />
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
             {copy.freeCancellation}
           </Text>

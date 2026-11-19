@@ -22,6 +22,7 @@ import { formatEta } from '../lib/eta';
 import { startCodeCardView, startCodeShouldAnnounceStart } from '../lib/start-code-view';
 import { tripPhaseOf } from '../lib/trip-phase';
 import { passengerCopy } from '../copy/passenger-copy';
+import { DemoTag } from './DemoTag';
 import { DriverCard } from './DriverCard';
 import { DriverTrackingCard } from './DriverTrackingCard';
 import { NotificationsBanner } from './NotificationsBanner';
@@ -185,6 +186,7 @@ export function ActiveTripView({
             gap: theme.spacing.lg,
           }}
         >
+          <DemoTag />
           <TripStepRail current={step} />
           <StageSummary data={data} step={step} />
           {banner && (

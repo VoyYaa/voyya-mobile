@@ -10,7 +10,9 @@ import {
   type MapMarker,
 } from '@voyyaa/ui-mobile';
 import type { DriverTracking, Location } from '@voyyaa/shared';
+import { useDemoSession } from '@voyyaa/app-runtime';
 import { passengerCopy } from '../copy/passenger-copy';
+import { trackingUnavailableDetail } from '../lib/demo-variants';
 import { presentAddress } from '../lib/address-presentation';
 import { useElapsedSince, useResumingAfterBackground } from '../hooks/useElapsedSince';
 import {
@@ -65,7 +67,7 @@ function lastKnown(model: TrackingModel, withClock: boolean): string | null {
   return copy.lastKnownAt(ago, formatClockTime(new Date(Date.now() - model.ageSec * 1000)));
 }
 
-export function trackingText(model: TrackingModel, arrived: boolean): TrackingText {
+export function trackingText(model: TrackingModel, arrived: boolean, demo = false): TrackingText {
   const updated = model.ageSec === null ? null : copy.updated(agoLabel(agoText(model.ageSec)));
   switch (model.kind) {
     case 'locating':
@@ -77,7 +79,10 @@ export function trackingText(model: TrackingModel, arrived: boolean): TrackingTe
     case 'stale':
       return { title: copy.frozenTitle, detail: lastKnown(model, true) };
     case 'unavailable':
-      return { title: copy.unavailableTitle, detail: copy.unavailableBody };
+      return {
+        title: copy.unavailableTitle,
+        detail: trackingUnavailableDetail(copy.unavailableBody, demo),
+      };
     case 'offline':
       return { title: copy.offlineTitle, detail: lastKnown(model, false) };
     case 'refresh_failed':
@@ -121,6 +126,7 @@ export function DriverTrackingCard({
   origin,
 }: DriverTrackingCardProps): React.JSX.Element | null {
   const theme = useTheme();
+  const demo = useDemoSession() !== null;
   const elapsedSec = useElapsedSince(dataUpdatedAt);
   const resuming = useResumingAfterBackground(dataUpdatedAt);
   const refreshFailed = isError || elapsedSec > NO_RESPONSE_AFTER_SEC;
@@ -140,7 +146,7 @@ export function DriverTrackingCard({
 
   if (model === null) return null;
 
-  const text = trackingText(model, arrived);
+  const text = trackingText(model, arrived, demo);
   const markers: MapMarker[] = [];
   const pickupAddress = origin ? presentAddress(origin.address) : null;
   if (origin && pickupAddress !== null) {

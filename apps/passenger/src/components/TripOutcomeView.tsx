@@ -2,7 +2,9 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, MarkGlyph, PriceTag, ScreenHeader, StatePanel, useTheme } from '@voyyaa/ui-mobile';
+import { useDemoSession } from '@voyyaa/app-runtime';
 import { passengerCopy } from '../copy/passenger-copy';
+import { tripCompletedBody } from '../lib/demo-variants';
 
 export type TripOutcomeKind = 'completed' | 'no_show' | 'cancelled_by_driver' | 'cancelled_by_you';
 
@@ -16,6 +18,7 @@ const copy = passengerCopy.trip;
 
 export function TripOutcomeView({ kind, total, onHome }: TripOutcomeViewProps): React.JSX.Element {
   const theme = useTheme();
+  const demo = useDemoSession() !== null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
@@ -45,7 +48,7 @@ export function TripOutcomeView({ kind, total, onHome }: TripOutcomeViewProps): 
                 textAlign: 'center',
               }}
             >
-              {copy.completedBody}
+              {tripCompletedBody(copy.completedBody, demo)}
             </Text>
             <View style={{ alignSelf: 'stretch', marginTop: theme.spacing.md }}>
               <Button
