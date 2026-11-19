@@ -63,3 +63,20 @@ describe('the app is not tied to one municipality (A-07)', () => {
     assert.ok(source.includes("'Lugares conocidos'"));
   });
 });
+
+describe('origin and destination do not read as empty (A-08, A-16)', () => {
+  it('asks for a destination as an instruction, not as a field to type in', () => {
+    assert.ok(source.includes("'Elige un lugar o marca el punto en el mapa'"));
+    assert.ok(source.includes("'Elige un lugar de la lista'"));
+    assert.equal(source.includes('Escribe tu destino…'), false);
+  });
+
+  it('reports how long the search has been going, not a time in the past', () => {
+    assert.ok(source.includes('Llevamos buscando ${mmss}'));
+    assert.equal(source.includes('`hace ${mmss}`'), false);
+  });
+
+  it('no longer hides the references behind a link at the foot of the screen', () => {
+    assert.equal(source.includes('Referencias (opcional)'), false);
+  });
+});

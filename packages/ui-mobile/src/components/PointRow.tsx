@@ -49,6 +49,7 @@ export interface PointRowProps {
   value: string;
   markerColor?: string;
   footer?: React.ReactNode;
+  placeholder?: boolean;
 }
 
 export function PointRow({
@@ -58,6 +59,7 @@ export function PointRow({
   value,
   markerColor,
   footer,
+  placeholder = false,
 }: PointRowProps): React.JSX.Element {
   const theme = useTheme();
   const resolvedKind: RoutePinKind = kind ?? (marker === '▼' ? 'destination' : 'origin');
@@ -68,13 +70,21 @@ export function PointRow({
         <RoutePin kind={resolvedKind} color={markerColor} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>{label}</Text>
-        <Text
-          style={{ ...theme.typography.bodyStrong, color: theme.colors.text }}
-          numberOfLines={1}
+        <View
+          accessible={placeholder}
+          accessibilityLabel={placeholder ? `${label}, ${uiCopy.pointUnset}. ${value}` : undefined}
         >
-          {value}
-        </Text>
+          <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>{label}</Text>
+          <Text
+            style={{
+              ...(placeholder ? theme.typography.body : theme.typography.bodyStrong),
+              color: placeholder ? theme.colors.textSubtle : theme.colors.text,
+            }}
+            numberOfLines={placeholder ? 2 : 1}
+          >
+            {value}
+          </Text>
+        </View>
         {footer}
       </View>
     </View>
@@ -86,6 +96,7 @@ export interface PointRouteStop {
   value: string;
   markerColor?: string;
   footer?: React.ReactNode;
+  placeholder?: boolean;
 }
 
 export interface PointRouteProps {
@@ -107,6 +118,7 @@ export function PointRoute({ origin, destination }: PointRouteProps): React.JSX.
         value={origin.value}
         markerColor={origin.markerColor}
         footer={origin.footer}
+        placeholder={origin.placeholder}
       />
       <View
         accessibilityElementsHidden
@@ -132,6 +144,7 @@ export function PointRoute({ origin, destination }: PointRouteProps): React.JSX.
         value={destination.value}
         markerColor={destination.markerColor}
         footer={destination.footer}
+        placeholder={destination.placeholder}
       />
     </View>
   );

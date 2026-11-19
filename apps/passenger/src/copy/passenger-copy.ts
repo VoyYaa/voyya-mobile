@@ -48,7 +48,9 @@ export const passengerCopy = {
     changeOrigin: 'Cambiar',
     originLabel: 'Origen',
     destinationLabel: 'Destino',
-    destinationPlaceholder: 'Escribe tu destino…',
+    destinationPlaceholder: CAN_PIN_DROP
+      ? 'Elige un lugar o marca el punto en el mapa'
+      : 'Elige un lugar de la lista',
     searchLabel: 'Buscar destino',
     searchPlaceholder: 'Buscar dirección, sitio o referencia',
     placesTitle,
@@ -154,7 +156,7 @@ export const passengerCopy = {
     body: 'Estamos contactando a los conductores cercanos.',
     prolongedBody: 'Seguimos buscando el conductor más cercano…',
     matchedBody: 'Te mostramos sus datos ahora.',
-    elapsed: (mmss: string): string => `hace ${mmss}`,
+    elapsed: (mmss: string): string => `Llevamos buscando ${mmss}`,
     cash: 'Efectivo · tarifa cerrada',
     cancel: 'Cancelar',
     cancelling: 'Cancelando…',

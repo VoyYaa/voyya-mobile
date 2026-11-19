@@ -31,6 +31,7 @@ export const uiCopy = {
   timeUp: 'Tiempo agotado',
   routeOrigin: 'Origen',
   routeDestination: 'Destino',
+  pointUnset: 'sin elegir',
 } as const;
 
 export const mapCopy = {

@@ -92,7 +92,7 @@ export default function DestinationScreen(): React.JSX.Element {
   const isFixingOrigin = origin === null;
   const offline = networkStatus === 'offline';
   const optionsPending = !isFixingOrigin && serviceOptions.isPending && !offline;
-  const deviceCenter = useDeviceCenter(isFixingOrigin && CAN_PIN_DROP);
+  const deviceCenter = useDeviceCenter(CAN_PIN_DROP && (isFixingOrigin || originSource === 'gps'));
   const pickupPlaces = usePickupPlaces();
   const pinPlaces = usePinPlaces(isFixingOrigin ? originPinCandidate : null);
   const places = isFixingOrigin ? pinPlaces : pickupPlaces;
@@ -230,6 +230,7 @@ export default function DestinationScreen(): React.JSX.Element {
               destination={{
                 label: copy.destinationLabel,
                 value: query || copy.destinationPlaceholder,
+                placeholder: !query,
               }}
             />
           </View>
@@ -246,6 +247,8 @@ export default function DestinationScreen(): React.JSX.Element {
       {CAN_PIN_DROP && mapCenter && (
         <Map
           pinDrop
+          pinKind={isFixingOrigin ? 'origin' : 'destination'}
+          myLocation={deviceCenter}
           center={mapCenter}
           markers={
             isFixingOrigin
