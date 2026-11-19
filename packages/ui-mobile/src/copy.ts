@@ -32,6 +32,14 @@ export const uiCopy = {
   routeOrigin: 'Origen',
   routeDestination: 'Destino',
   pointUnset: 'sin elegir',
+  demo: {
+    tagLabel: 'Cuenta de demostración',
+    tagAccessibility: 'Cuenta de demostración. Los datos son ficticios.',
+    tagHint: 'Abre una explicación',
+    infoTitle: 'Cuenta de demostración',
+    infoOk: 'Entendido',
+    accountNote: 'Estás en una cuenta de demostración. Los datos son ficticios.',
+  },
 } as const;
 
 export const mapCopy = {

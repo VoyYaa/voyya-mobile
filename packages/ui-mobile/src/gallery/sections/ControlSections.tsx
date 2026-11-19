@@ -6,6 +6,9 @@ import { Button, type ButtonSize, type ButtonVariant } from '../../components/Bu
 import { LinkButton } from '../../components/LinkButton';
 import { Chip } from '../../components/Chip';
 import { StatusBadge } from '../../components/StatusBadge';
+import { DemoSessionTag } from '../../components/DemoSessionTag';
+import { DemoInfoSheet } from '../../components/DemoInfoSheet';
+import { uiCopy } from '../../copy';
 import { Card, type CardTone } from '../../components/Card';
 import { TextField } from '../../components/TextField';
 import { OtpInput, type OtpInputStatus } from '../../components/OtpInput';
@@ -95,6 +98,28 @@ export function ButtonSection(): React.JSX.Element {
   );
 }
 
+function DemoTagExample(): React.JSX.Element {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <DemoSessionTag
+        label={uiCopy.demo.tagLabel}
+        accessibilityLabel={uiCopy.demo.tagAccessibility}
+        accessibilityHint={uiCopy.demo.tagHint}
+        onPress={() => setOpen(true)}
+      />
+      <DemoInfoSheet
+        visible={open}
+        onClose={() => setOpen(false)}
+        title={uiCopy.demo.infoTitle}
+        body="Ejemplo de cuerpo de la hoja."
+        bullets={['Primer punto de ejemplo.', 'Segundo punto de ejemplo.']}
+        okLabel={uiCopy.demo.infoOk}
+      />
+    </>
+  );
+}
+
 export function BadgeSection(): React.JSX.Element {
   return (
     <GallerySection title="Chips e insignias">
@@ -121,6 +146,10 @@ export function BadgeSection(): React.JSX.Element {
         })}
         <StatusBadge label="Llegó" tone="success" />
         <StatusBadge label="Sin conexión" tone="info" />
+      </GalleryRow>
+      <GalleryCaption label="DemoSessionTag" />
+      <GalleryRow>
+        <DemoTagExample />
       </GalleryRow>
     </GallerySection>
   );

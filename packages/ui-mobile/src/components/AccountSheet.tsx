@@ -67,6 +67,7 @@ export interface AccountSheetProps {
   onPrivacy?: () => void;
   loggingOut?: boolean;
   confirmNote?: string;
+  demoNote?: string;
   testID?: string;
 }
 
@@ -79,6 +80,7 @@ export function AccountSheet({
   onPrivacy,
   loggingOut = false,
   confirmNote,
+  demoNote,
   testID,
 }: AccountSheetProps): React.JSX.Element {
   const theme = useTheme();
@@ -131,7 +133,7 @@ export function AccountSheet({
         </View>
       ) : (
         <View style={{ gap: theme.spacing.lg }}>
-          {Boolean(name || phoneMasked) && (
+          {Boolean(name || phoneMasked || demoNote) && (
             <View style={{ gap: theme.spacing.xxs }}>
               {name ? (
                 <Text style={{ ...theme.typography.subtitle, color: theme.colors.text }}>
@@ -141,6 +143,14 @@ export function AccountSheet({
               {phoneMasked ? (
                 <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
                   {phoneMasked}
+                </Text>
+              ) : null}
+              {demoNote ? (
+                <Text
+                  style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+                  testID="account-demo-note"
+                >
+                  {demoNote}
                 </Text>
               ) : null}
             </View>
