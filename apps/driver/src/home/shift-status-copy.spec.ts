@@ -6,10 +6,12 @@ import { issuesCopy } from '../copy/issues-copy.ts';
 import { shiftHeroText, shiftSwitchHint } from './shift-status-copy.ts';
 
 describe('shift status copy', () => {
-  it('says the driver is visible only when the notice is accepted', () => {
+  it('says each fact once while waiting for requests', () => {
     const text = shiftHeroText({ onShift: true, consentPending: false });
-    assert.equal(text.body, 'Sigues visible para los pasajeros.');
-    assert.equal(shiftSwitchHint({ consentPending: false }), 'Recibiendo solicitudes cercanas.');
+    assert.equal(text.title, 'Esperando solicitudes');
+    assert.equal(text.body, null);
+    assert.equal(shiftSwitchHint({ consentPending: false }), null);
+    assert.equal(homeCopy.emptyBody, 'Sigues visible para los pasajeros.');
   });
 
   it('tells the truth while the new notice is pending', () => {
@@ -22,8 +24,8 @@ describe('shift status copy', () => {
     );
     const pendingCopy = [
       text.title,
-      text.body,
-      shiftSwitchHint({ consentPending: true }),
+      text.body ?? '',
+      shiftSwitchHint({ consentPending: true }) ?? '',
       homeCopy.emptyBodyConsentPending,
       issuesCopy.locationPermission,
       issuesCopy.consentRequired,
@@ -31,9 +33,9 @@ describe('shift status copy', () => {
     for (const line of pendingCopy) {
       assert.ok(!/pausa|no estás recibiendo|volver a recibir|no te ofrecemos/i.test(line));
     }
-    assert.ok(!text.body.includes('visible'));
+    assert.ok(!text.body?.includes('visible'));
     assert.ok(!text.title.includes('Esperando'));
-    assert.ok(!shiftSwitchHint({ consentPending: true }).includes('Recibiendo'));
+    assert.ok(!shiftSwitchHint({ consentPending: true })?.includes('Recibiendo'));
   });
 
   it('words the empty state without saying requests already stopped', () => {

@@ -35,6 +35,7 @@ export function ShiftSwitch({
   const theme = useTheme();
   const { colors } = theme;
   const stacked = useWindowDimensions().fontScale > STACK_FONT_SCALE;
+  const hint = busy ? driverCopy.home.shiftBusyOff : shiftSwitchHint({ consentPending });
 
   if (disabled) {
     return (
@@ -106,9 +107,9 @@ export function ShiftSwitch({
           <Text style={{ ...theme.typography.subtitle, color: colors.successInk }}>
             {driverCopy.home.onShiftEyebrow}
           </Text>
-          <Text style={{ ...theme.typography.small, color: colors.text }}>
-            {busy ? driverCopy.home.shiftBusyOff : shiftSwitchHint({ consentPending })}
-          </Text>
+          {hint !== null && (
+            <Text style={{ ...theme.typography.small, color: colors.text }}>{hint}</Text>
+          )}
         </View>
       </View>
       <LinkButton
