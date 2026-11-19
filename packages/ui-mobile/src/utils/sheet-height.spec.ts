@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { sheetMaxHeight } from './sheet-height.ts';
+import { sheetBottomPadding, sheetMaxHeight } from './sheet-height.ts';
 
 describe('sheetMaxHeight', () => {
   it('leaves room for the status bar and a margin above the sheet', () => {
@@ -29,5 +29,19 @@ describe('sheetMaxHeight', () => {
       sheetMaxHeight({ windowHeight: 100, keyboardHeight: 400, statusBarHeight: 30 }),
       0,
     );
+  });
+});
+
+describe('sheetBottomPadding', () => {
+  it('keeps the resting padding without a keyboard', () => {
+    assert.equal(sheetBottomPadding(0, 32, 8), 32);
+  });
+
+  it('tightens the padding while the keyboard is up so the button fits', () => {
+    assert.equal(sheetBottomPadding(300, 32, 8), 8);
+  });
+
+  it('never grows past the resting padding', () => {
+    assert.equal(sheetBottomPadding(300, 4, 8), 4);
   });
 });

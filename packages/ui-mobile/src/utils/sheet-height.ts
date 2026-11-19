@@ -15,3 +15,11 @@ export function sheetMaxHeight({
   const topClearance = (statusBarHeight ?? DEFAULT_STATUS_BAR_HEIGHT) + SHEET_TOP_MARGIN;
   return Math.max(0, windowHeight - Math.max(0, keyboardHeight) - topClearance);
 }
+
+export function sheetBottomPadding(
+  keyboardHeight: number,
+  restingPadding: number,
+  keyboardPadding: number,
+): number {
+  return keyboardHeight > 0 ? Math.min(restingPadding, keyboardPadding) : restingPadding;
+}

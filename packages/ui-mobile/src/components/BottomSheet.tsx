@@ -16,7 +16,7 @@ import { USE_NATIVE_DRIVER, motion } from '../tokens';
 import { uiCopy } from '../copy';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
-import { sheetMaxHeight } from '../utils/sheet-height';
+import { sheetBottomPadding, sheetMaxHeight } from '../utils/sheet-height';
 
 export interface BottomSheetProps {
   visible: boolean;
@@ -166,7 +166,7 @@ export function BottomSheet({
             borderTopLeftRadius: theme.radius.sheet,
             borderTopRightRadius: theme.radius.sheet,
             paddingHorizontal: theme.spacing.xl,
-            paddingBottom: theme.spacing.xxl,
+            paddingBottom: sheetBottomPadding(keyboardHeight, theme.spacing.xxl, theme.spacing.sm),
             opacity: reduced ? enter : 1,
             marginBottom: keyboardHeight,
             maxHeight: avoidKeyboard ? maxHeight : undefined,

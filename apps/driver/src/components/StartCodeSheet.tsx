@@ -31,7 +31,7 @@ export interface StartCodeSheetProps {
 const copy = driverCopy.startCode;
 const FOCUS_DELAY_MS = 320;
 const MESSAGE_GLYPH_SIZE = 16;
-const MESSAGE_RESERVED_HEIGHT = 40;
+const MESSAGE_RESERVED_HEIGHT = 24;
 
 function messageText(message: StartSheetMessage): string {
   switch (message.kind) {
@@ -115,7 +115,7 @@ export function StartCodeSheet({
         {alreadyStarted ? copy.alreadyStartedBody : copy.sheetBody}
       </Text>
 
-      <View style={{ marginTop: theme.spacing.lg, gap: theme.spacing.sm }}>
+      <View style={{ marginTop: theme.spacing.md, gap: theme.spacing.sm }}>
         <OtpInput
           length={START_CODE_LENGTH}
           value={digits}
@@ -142,7 +142,7 @@ export function StartCodeSheet({
         accessibilityRole={messageIsError ? 'alert' : undefined}
         accessibilityLiveRegion={messageIsError ? 'assertive' : 'polite'}
         style={{
-          marginTop: theme.spacing.md,
+          marginTop: theme.spacing.sm,
           minHeight: MESSAGE_RESERVED_HEIGHT,
           gap: theme.spacing.xs,
         }}
@@ -176,7 +176,7 @@ export function StartCodeSheet({
         )}
       </View>
 
-      <View style={{ marginTop: theme.spacing.md, gap: theme.spacing.sm }}>
+      <View style={{ marginTop: theme.spacing.sm, gap: theme.spacing.sm }}>
         <Button
           label={alreadyStarted ? copy.alreadyStartedConfirm : copy.confirm}
           loadingLabel={copy.verifying}
