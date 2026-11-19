@@ -6,7 +6,6 @@ import {
   BrandSpinner,
   Button,
   Card,
-  LinkButton,
   Map,
   PointRoute,
   PriceTag,
@@ -22,13 +21,14 @@ import {
 } from '../src/components/ActiveTripConflictSheet';
 import { InlineNotice } from '../src/components/InlineNotice';
 import { ServiceCompanyBlock } from '../src/components/ServiceCompanyBlock';
-import { LocationReferenceField } from '../src/components/LocationReferenceField';
+import { PointReference } from '../src/components/PointReference';
 import { useActiveTripCache } from '../src/hooks/useActiveTrip';
 import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useCreateTripRequest } from '../src/hooks/useCreateTripRequest';
 import { usePickupServiceOptions } from '../src/hooks/useServiceOptions';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
-import { composeAddress } from '../src/lib/address';
+import { pointTag, presentAddress } from '../src/lib/address-presentation';
+import { toCreateTripRequestDTO } from '../src/lib/trip-request-dto';
 import { activeTripRoute } from '../src/lib/active-trip-route';
 import {
   findServiceOption,
@@ -42,8 +42,12 @@ import { TRIP_ENDED_NOTICE } from '../src/constants/notices';
 import { CHOOSE_COMPANY_PARAM, FARE_CHANGED_PARAM } from '../src/constants/route-params';
 
 const PAYMENT_METHOD: PaymentMethod = 'cash';
-const MAP_HEIGHT = 120;
+const MAP_HEIGHT = 192;
 const copy = passengerCopy.confirm;
+
+function pointLabel(base: string, tag: string | null): string {
+  return tag ? `${base} · ${tag}` : base;
+}
 
 export default function ConfirmScreen(): React.JSX.Element {
   const theme = useTheme();
@@ -53,6 +57,7 @@ export default function ConfirmScreen(): React.JSX.Element {
 
   const origin = useTripDraftStore((s) => s.origin);
   const destination = useTripDraftStore((s) => s.destination);
+  const originSource = useTripDraftStore((s) => s.originSource);
   const companyPreference = useTripDraftStore((s) => s.companyPreference);
   const unavailableCompanyName = useTripDraftStore((s) => s.unavailableCompanyName);
   const setCompanyPreference = useTripDraftStore((s) => s.setCompanyPreference);
@@ -67,7 +72,6 @@ export default function ConfirmScreen(): React.JSX.Element {
 
   const [pickupReference, setPickupReference] = useState('');
   const [dropoffReference, setDropoffReference] = useState('');
-  const [referencesExpanded, setReferencesExpanded] = useState(false);
   const [conflictOpen, setConflictOpen] = useState(false);
   const [conflictLoading, setConflictLoading] = useState(false);
   const [conflictFailure, setConflictFailure] = useState<ActiveTripConflictFailure>(null);
@@ -119,18 +123,17 @@ export default function ConfirmScreen(): React.JSX.Element {
   const requestTrip = (): void => {
     if (municipalityId === null) return;
     createTripRequest.mutate(
-      {
-        origin: { ...origin, address: composeAddress(origin.address, pickupReference) },
-        destination: {
-          ...destination,
-          address: composeAddress(destination.address, dropoffReference),
-        },
-        municipality_id: municipalityId,
-        service_type: serviceType,
-        payment_method: PAYMENT_METHOD,
-        quote_token: quote.quote_token,
-        requested_company_id: requestedCompanyId(companyPreference, selectionRequired),
-      },
+      toCreateTripRequestDTO({
+        origin,
+        destination,
+        pickupReference,
+        dropoffReference,
+        municipalityId,
+        serviceType,
+        paymentMethod: PAYMENT_METHOD,
+        quote,
+        requestedCompanyId: requestedCompanyId(companyPreference, selectionRequired),
+      }),
       {
         onSuccess: (tripRequest) => {
           void activeTripCache.refresh().catch(() => undefined);
@@ -252,8 +255,32 @@ export default function ConfirmScreen(): React.JSX.Element {
         )}
         <Card testID="confirm-ticket" style={{ gap: theme.spacing.md }}>
           <PointRoute
-            origin={{ label: copy.origin, value: origin.address }}
-            destination={{ label: copy.destination, value: destination.address }}
+            origin={{
+              label: pointLabel(copy.origin, pointTag(origin.address, originSource)),
+              value: presentAddress(origin.address),
+              footer: (
+                <PointReference
+                  value={pickupReference}
+                  onChange={setPickupReference}
+                  fieldLabel={copy.pickupReferenceLabel}
+                  accessibilityLabel={copy.pickupReferenceAccessibility}
+                  testID="pickup-reference"
+                />
+              ),
+            }}
+            destination={{
+              label: pointLabel(copy.destination, pointTag(destination.address, null)),
+              value: presentAddress(destination.address),
+              footer: (
+                <PointReference
+                  value={dropoffReference}
+                  onChange={setDropoffReference}
+                  fieldLabel={copy.dropoffReferenceLabel}
+                  accessibilityLabel={copy.dropoffReferenceAccessibility}
+                  testID="dropoff-reference"
+                />
+              ),
+            }}
           />
           <Map
             center={{
@@ -265,19 +292,26 @@ export default function ConfirmScreen(): React.JSX.Element {
                 id: 'origin',
                 kind: 'origin',
                 coord: origin,
-                label: origin.address,
+                label: presentAddress(origin.address),
               },
               {
                 id: 'destination',
                 kind: 'destination',
                 coord: destination,
-                label: destination.address,
+                label: presentAddress(destination.address),
               },
             ]}
             route={{ points: [origin, destination] }}
             interactive={false}
+            expandable
             height={MAP_HEIGHT}
           />
+          <Text
+            style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+            testID="confirm-route-approximate"
+          >
+            {passengerCopy.place.routeApproximate}
+          </Text>
         </Card>
 
         <ServiceCompanyBlock
@@ -321,28 +355,6 @@ export default function ConfirmScreen(): React.JSX.Element {
           </Text>
         </View>
 
-        {referencesExpanded ? (
-          <View style={{ gap: theme.spacing.md }}>
-            <LocationReferenceField
-              label={copy.pickupReferenceLabel}
-              value={pickupReference}
-              onChangeText={setPickupReference}
-              accessibilityLabel={copy.pickupReferenceAccessibility}
-            />
-            <LocationReferenceField
-              label={copy.dropoffReferenceLabel}
-              value={dropoffReference}
-              onChangeText={setDropoffReference}
-              accessibilityLabel={copy.dropoffReferenceAccessibility}
-            />
-          </View>
-        ) : (
-          <LinkButton
-            label={copy.references}
-            onPress={() => setReferencesExpanded(true)}
-            testID="references-toggle"
-          />
-        )}
       </ScrollView>
 
       <View

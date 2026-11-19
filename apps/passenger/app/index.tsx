@@ -40,6 +40,7 @@ import { TRIP_ENDED_NOTICE, TRIP_NOT_FOUND_NOTICE } from '../src/constants/notic
 import { activeTripRoute } from '../src/lib/active-trip-route';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
+import { presentAddress } from '../src/lib/address-presentation';
 const MAP_HEIGHT_RATIO = 0.58;
 const MAP_MIN_HEIGHT = 200;
 const SHEET_MIN_HEIGHT = 340;
@@ -215,7 +216,7 @@ export default function HomeScreen(): React.JSX.Element {
                 id: 'current-location',
                 kind: 'origin',
                 coord: { lat: origin.lat, lng: origin.lng },
-                label: origin.address,
+                label: presentAddress(origin.address),
               },
             ]}
             interactive={false}
@@ -287,8 +288,8 @@ export default function HomeScreen(): React.JSX.Element {
         {trip ? (
           <ActiveTripCard
             trip={trip}
-            originAddress={origin?.address}
-            destinationAddress={destination?.address}
+            originAddress={origin ? presentAddress(origin.address) : undefined}
+            destinationAddress={destination ? presentAddress(destination.address) : undefined}
             onOpen={handleOpenTrip}
           />
         ) : (
@@ -327,7 +328,7 @@ export default function HomeScreen(): React.JSX.Element {
         {!trip && origin && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
             <View style={{ flex: 1 }}>
-              <PointRow kind="origin" label={copy.originLabel} value={origin.address} />
+              <PointRow kind="origin" label={copy.originLabel} value={presentAddress(origin.address)} />
             </View>
             <LinkButton
               label={copy.changeOrigin}

@@ -34,6 +34,7 @@ import { allVerifiedPlaces } from '../src/constants/verified-places/registry';
 import type { VerifiedPlace } from '../src/constants/verified-places/types';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
+import { presentAddress } from '../src/lib/address-presentation';
 interface SelectedPlace {
   id: string;
   title: string;
@@ -225,7 +226,7 @@ export default function DestinationScreen(): React.JSX.Element {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
           <View style={{ flex: 1 }}>
             <PointRoute
-              origin={{ label: copy.originLabel, value: origin.address }}
+              origin={{ label: copy.originLabel, value: presentAddress(origin.address) }}
               destination={{
                 label: copy.destinationLabel,
                 value: query || copy.destinationPlaceholder,
@@ -254,7 +255,7 @@ export default function DestinationScreen(): React.JSX.Element {
                     id: 'origin',
                     kind: 'origin',
                     coord: { lat: origin.lat, lng: origin.lng },
-                    label: origin.address,
+                    label: presentAddress(origin.address),
                   },
                 ]
           }

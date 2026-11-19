@@ -48,6 +48,7 @@ export interface PointRowProps {
   label: string;
   value: string;
   markerColor?: string;
+  footer?: React.ReactNode;
 }
 
 export function PointRow({
@@ -56,6 +57,7 @@ export function PointRow({
   label,
   value,
   markerColor,
+  footer,
 }: PointRowProps): React.JSX.Element {
   const theme = useTheme();
   const resolvedKind: RoutePinKind = kind ?? (marker === '▼' ? 'destination' : 'origin');
@@ -73,6 +75,7 @@ export function PointRow({
         >
           {value}
         </Text>
+        {footer}
       </View>
     </View>
   );
@@ -82,6 +85,7 @@ export interface PointRouteStop {
   label?: string;
   value: string;
   markerColor?: string;
+  footer?: React.ReactNode;
 }
 
 export interface PointRouteProps {
@@ -102,6 +106,7 @@ export function PointRoute({ origin, destination }: PointRouteProps): React.JSX.
         label={origin.label ?? uiCopy.routeOrigin}
         value={origin.value}
         markerColor={origin.markerColor}
+        footer={origin.footer}
       />
       <View
         accessibilityElementsHidden
@@ -126,6 +131,7 @@ export function PointRoute({ origin, destination }: PointRouteProps): React.JSX.
         label={destination.label ?? uiCopy.routeDestination}
         value={destination.value}
         markerColor={destination.markerColor}
+        footer={destination.footer}
       />
     </View>
   );

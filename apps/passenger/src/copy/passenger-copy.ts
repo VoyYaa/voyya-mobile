@@ -3,7 +3,9 @@ import { DATA_CONTROLLER, TRIP_COORDINATES_RETENTION_DAYS } from '@voyyaa/shared
 import { FREE_CANCELLATION_WINDOW_MIN } from '../constants/parameters';
 import { CAN_PIN_DROP } from '../constants/platform';
 import { authCopy } from './auth-copy';
+import { PIN_POINT_ADDRESS } from '../constants/pin-point';
 import { notificationsCopy } from './notifications-copy';
+import { placeCopy } from './place-copy';
 import { savedStartCodeCopy, savedTripCopy } from './saved-trip-copy';
 
 const placesTitle = (municipalityName: string | null): string =>
@@ -11,6 +13,7 @@ const placesTitle = (municipalityName: string | null): string =>
 
 export const passengerCopy = {
   auth: authCopy,
+  place: placeCopy,
   home: {
     whereTo: '¿A dónde vas?',
     whereToHint: 'Toca para escribir tu destino',
@@ -65,7 +68,7 @@ export const passengerCopy = {
         ? `${title}, ubicación pendiente de confirmar, márcalo en el mapa`
         : `${title}, ubicación pendiente de confirmar`,
     pendingBadge: 'Pendiente',
-    pinPoint: 'Punto marcado en el mapa',
+    pinPoint: PIN_POINT_ADDRESS,
     useAsOrigin: 'Usar este punto como origen',
     useAsDestination: 'Usar este punto como destino',
     verifying: 'Verificando…',
@@ -86,7 +89,6 @@ export const passengerCopy = {
     header: 'Confirmar viaje',
     origin: 'Origen',
     destination: 'Destino',
-    references: 'Referencias (opcional)',
     pickupReferenceLabel: '¿Alguna referencia para que te encuentren?',
     pickupReferenceAccessibility: 'Referencia para tu punto de recogida, opcional',
     dropoffReferenceLabel: 'Referencia del destino',

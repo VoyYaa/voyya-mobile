@@ -39,6 +39,7 @@ import { tripPhaseOf } from '../src/lib/trip-phase';
 import { notificationsCopy } from '../src/copy/notifications-copy';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
+import { presentAddress } from '../src/lib/address-presentation';
 const copy = passengerCopy.searching;
 
 const SEARCHING_UI: readonly PassengerUiState[] = ['searching', 'calculating_fare'];
@@ -402,8 +403,8 @@ export default function SearchingScreen(): React.JSX.Element {
 
           {origin && destination && fareTotal !== null && (
             <StageTicket
-              originAddress={origin.address}
-              destinationAddress={destination.address}
+              originAddress={presentAddress(origin.address)}
+              destinationAddress={presentAddress(destination.address)}
               total={fareTotal}
             />
           )}

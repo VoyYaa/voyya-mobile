@@ -29,6 +29,7 @@ import { StartCodeCard } from './StartCodeCard';
 import { FreeCancelRail } from './FreeCancelRail';
 import { TripStepRail, type TripStep } from './TripStepRail';
 
+import { presentAddress } from '../lib/address-presentation';
 export interface ActiveTripViewProps {
   data: TripRequestStatus;
   step: TripStep;
@@ -234,8 +235,8 @@ export function ActiveTripView({
         {origin && destination && (
           <Card>
             <PointRoute
-              origin={{ label: copy.pickupLabel, value: origin.address }}
-              destination={{ label: copy.destinationLabel, value: destination.address }}
+              origin={{ label: copy.pickupLabel, value: presentAddress(origin.address) }}
+              destination={{ label: copy.destinationLabel, value: presentAddress(destination.address) }}
             />
           </Card>
         )}
