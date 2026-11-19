@@ -69,4 +69,13 @@ describe('resetTripSessionState (CS-13)', () => {
     assert.equal(useTripDraftStore.getState().origin, null);
     assert.equal(useTripTransitionStore.getState().lastSeen, null);
   });
+
+  it('forgets that the demo origin was seeded, so the next demo session seeds it again (CA-DX-12)', () => {
+    useTripDraftStore.getState().markDemoOriginSeeded();
+    assert.equal(useTripDraftStore.getState().demoOriginSeeded, true);
+
+    resetTripSessionState();
+
+    assert.equal(useTripDraftStore.getState().demoOriginSeeded, false);
+  });
 });

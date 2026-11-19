@@ -21,3 +21,5 @@ export const START_CODE_RECORD_READY_TIMEOUT_MS = 2000;
 export const SLOW_SIGNAL_THRESHOLD_MS = 4000;
 
 export const RETRY_FEEDBACK_MIN_MS = 600;
+
+export const DEMO_MAP_ZOOM = 14;

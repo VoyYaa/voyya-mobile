@@ -23,6 +23,11 @@ describe('isLocationOffWithManualOrigin', () => {
     assert.equal(isLocationOffWithManualOrigin({ ...BASE, servicesEnabled: null }), false);
   });
 
+  it('never shows in a demo session, whatever the state of the GPS (CA-DX-7)', () => {
+    assert.equal(isLocationOffWithManualOrigin({ ...BASE, demo: true }), false);
+    assert.equal(isLocationOffWithManualOrigin({ ...BASE, demo: false }), true);
+  });
+
   it('does not show without an origin or with a trip in progress', () => {
     assert.equal(isLocationOffWithManualOrigin({ ...BASE, hasOrigin: false }), false);
     assert.equal(isLocationOffWithManualOrigin({ ...BASE, tripActive: true }), false);

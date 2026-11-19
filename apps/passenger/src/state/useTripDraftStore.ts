@@ -19,6 +19,7 @@ interface TripDraftState {
   companyPreference: CompanyPreference;
   unavailableCompanyName: string | null;
   lastAssignedDriver: LastAssignedDriver | null;
+  demoOriginSeeded: boolean;
 
   setOrigin: (origin: Location, source: OriginSource) => void;
   clearOrigin: () => void;
@@ -27,6 +28,7 @@ interface TripDraftState {
   setCompanyPreference: (preference: CompanyPreference) => void;
   markCompanyUnavailable: (companyName: string) => void;
   setLastAssignedDriver: (driver: LastAssignedDriver) => void;
+  markDemoOriginSeeded: () => void;
   reset: () => void;
 }
 
@@ -39,6 +41,7 @@ export const useTripDraftStore = create<TripDraftState>((set) => ({
   companyPreference: ANY_COMPANY,
   unavailableCompanyName: null,
   lastAssignedDriver: null,
+  demoOriginSeeded: false,
 
   setOrigin: (origin, originSource) => set({ origin, originSource }),
   clearOrigin: () => set({ origin: null, originSource: null }),
@@ -52,6 +55,7 @@ export const useTripDraftStore = create<TripDraftState>((set) => ({
   markCompanyUnavailable: (companyName) =>
     set({ companyPreference: null, unavailableCompanyName: companyName }),
   setLastAssignedDriver: (lastAssignedDriver) => set({ lastAssignedDriver }),
+  markDemoOriginSeeded: () => set({ demoOriginSeeded: true }),
   reset: () =>
     set({
       origin: null,
@@ -62,5 +66,6 @@ export const useTripDraftStore = create<TripDraftState>((set) => ({
       companyPreference: ANY_COMPANY,
       unavailableCompanyName: null,
       lastAssignedDriver: null,
+      demoOriginSeeded: false,
     }),
 }));

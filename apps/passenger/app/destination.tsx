@@ -18,7 +18,12 @@ import {
   type MapLatLng,
 } from '@voyyaa/ui-mobile';
 import type { Location } from '@voyyaa/shared';
-import { domainErrorCode, isNetworkError, useNetworkStatus } from '@voyyaa/app-runtime';
+import {
+  domainErrorCode,
+  isNetworkError,
+  useDemoSession,
+  useNetworkStatus,
+} from '@voyyaa/app-runtime';
 import { InlineNotice } from '../src/components/InlineNotice';
 import { LocatingPill } from '../src/components/LocatingPill';
 import { PlaceIcon } from '../src/components/PlaceIcon';
@@ -29,6 +34,7 @@ import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { usePickupServiceOptions, useVerifyPickup } from '../src/hooks/useServiceOptions';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
+import { DEMO_MAP_ZOOM } from '../src/constants/parameters';
 import { CAN_PIN_DROP } from '../src/constants/platform';
 import { allVerifiedPlaces } from '../src/constants/verified-places/registry';
 import type { VerifiedPlace } from '../src/constants/verified-places/types';
@@ -73,6 +79,8 @@ export default function DestinationScreen(): React.JSX.Element {
   const verifyPickup = useVerifyPickup();
   const { query: serviceOptions, municipalityId } = usePickupServiceOptions();
   const resolveOrigin = useResolveOrigin();
+  const demo = useDemoSession();
+  const isDemo = demo !== null;
 
   const origin = useTripDraftStore((s) => s.origin);
   const originSource = useTripDraftStore((s) => s.originSource);
@@ -107,7 +115,7 @@ export default function DestinationScreen(): React.JSX.Element {
 
   useEffect(() => {
     if (resolveOrigin.status === 'resolved' && resolveOrigin.origin) {
-      setOrigin(resolveOrigin.origin, 'gps');
+      setOrigin(resolveOrigin.origin, resolveOrigin.originSource);
     }
   }, [resolveOrigin.status, resolveOrigin.origin, setOrigin]);
 
@@ -141,7 +149,8 @@ export default function DestinationScreen(): React.JSX.Element {
 
   useEffect(() => {
     if (appliedPoi.current || !params.poi || !origin) return;
-    const poi = allVerifiedPlaces().find((candidate) => candidate.id === params.poi);
+    const knownPlaces = isDemo ? pickupPlaces.places : allVerifiedPlaces();
+    const poi = knownPlaces.find((candidate) => candidate.id === params.poi);
     appliedPoi.current = true;
     if (!poi) return;
     if (poi.coord) selectPoi(poi);
@@ -186,7 +195,7 @@ export default function DestinationScreen(): React.JSX.Element {
   };
 
   const retryUseMyLocation = (): void => {
-    if (!resolveOrigin.canAskAgain) {
+    if (!isDemo && !resolveOrigin.canAskAgain) {
       void Linking.openSettings();
       return;
     }
@@ -210,13 +219,13 @@ export default function DestinationScreen(): React.JSX.Element {
             {copy.noOriginTitle}
           </Text>
           <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-            {copy.noOriginBody}
+            {isDemo ? passengerCopy.demo.noOriginBody : copy.noOriginBody}
           </Text>
           {resolveOrigin.status === 'resolving' ? (
             <LocatingPill />
           ) : (
             <LinkButton
-              label={copy.useMyLocation}
+              label={isDemo ? passengerCopy.demo.useReferencePoint : copy.useMyLocation}
               onPress={retryUseMyLocation}
               testID="use-my-location-link"
             />
@@ -249,7 +258,8 @@ export default function DestinationScreen(): React.JSX.Element {
           pinDrop
           online={networkStatus !== 'offline'}
           pinKind={isFixingOrigin ? 'origin' : 'destination'}
-          myLocation={deviceCenter}
+          myLocation={isDemo ? null : deviceCenter}
+          zoomLevel={isDemo ? DEMO_MAP_ZOOM : undefined}
           center={mapCenter}
           markers={
             isFixingOrigin

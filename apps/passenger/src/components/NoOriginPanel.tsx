@@ -6,6 +6,7 @@ import { passengerCopy } from '../copy/passenger-copy';
 export interface NoOriginPanelProps {
   onPickPoint: () => void;
   onUseLocation: () => void;
+  demo?: boolean;
 }
 
 const copy = passengerCopy.home;
@@ -13,6 +14,7 @@ const copy = passengerCopy.home;
 export function NoOriginPanel({
   onPickPoint,
   onUseLocation,
+  demo = false,
 }: NoOriginPanelProps): React.JSX.Element {
   const theme = useTheme();
 
@@ -28,7 +30,7 @@ export function NoOriginPanel({
         </Text>
       </View>
       <Text style={{ ...theme.typography.body, color: theme.colors.textMuted }}>
-        {copy.noOriginBody}
+        {demo ? passengerCopy.demo.noOriginBody : copy.noOriginBody}
       </Text>
       <Button
         label={copy.pickPoint}
@@ -38,7 +40,7 @@ export function NoOriginPanel({
       />
       <View style={{ alignItems: 'center' }}>
         <LinkButton
-          label={copy.useMyLocation}
+          label={demo ? passengerCopy.demo.useReferencePoint : copy.useMyLocation}
           onPress={onUseLocation}
           style={{ alignSelf: 'center' }}
           testID="home-use-location-link"

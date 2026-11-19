@@ -5,10 +5,12 @@ export interface LocationOffInput {
   hasOrigin: boolean;
   servicesEnabled: boolean | null;
   tripActive: boolean;
+  demo?: boolean;
 }
 
 export function isLocationOffWithManualOrigin(input: LocationOffInput): boolean {
   return (
+    !input.demo &&
     input.hasOrigin &&
     input.originSource === 'manual' &&
     input.servicesEnabled === false &&

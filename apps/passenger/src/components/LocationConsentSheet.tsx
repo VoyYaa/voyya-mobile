@@ -2,6 +2,7 @@ import React from 'react';
 import { Linking } from 'react-native';
 import { LocationConsentSheet as BaseLocationConsentSheet, uiCopy } from '@voyyaa/ui-mobile';
 import { DATA_CONTROLLER, LOCATION_NOTICES } from '@voyyaa/shared';
+import { useDemoSession } from '@voyyaa/app-runtime';
 import { passengerCopy } from '../copy/passenger-copy';
 
 export type LocationConsentSheetMode = 'consent' | 'review';
@@ -30,6 +31,7 @@ export function LocationConsentSheet({
 }: LocationConsentSheetProps): React.JSX.Element {
   const isReview = mode === 'review';
   const copy = passengerCopy.locationConsent;
+  const demo = useDemoSession();
 
   return (
     <BaseLocationConsentSheet
@@ -41,6 +43,7 @@ export function LocationConsentSheet({
       primaryLoadingLabel={uiCopy.loading}
       secondaryLabel={isReview ? undefined : copy.notNow}
       errorMessage={errorMessage}
+      demoNote={demo ? passengerCopy.demo.consentNote : undefined}
       linkRow={
         HAS_REAL_POLICY_URL
           ? {

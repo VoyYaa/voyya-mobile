@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import {
+  AccessibilityInfo,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -20,6 +28,7 @@ import {
   useTheme,
 } from '@voyyaa/ui-mobile';
 import {
+  useDemoSession,
   useGrantLocationConsent,
   useLogout,
   useNetworkStatus,
@@ -27,6 +36,7 @@ import {
 } from '@voyyaa/app-runtime';
 import { CoverageBlockedPanel } from '../src/components/CoverageBlockedPanel';
 import { ActiveTripCard } from '../src/components/ActiveTripCard';
+import { DemoTag } from '../src/components/DemoTag';
 import { InlineNotice } from '../src/components/InlineNotice';
 import { LocatingPill } from '../src/components/LocatingPill';
 import { LocationConsentSheet } from '../src/components/LocationConsentSheet';
@@ -42,6 +52,13 @@ import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { TRIP_ENDED_NOTICE, TRIP_NOT_FOUND_NOTICE } from '../src/constants/notices';
 import { activeTripRoute } from '../src/lib/active-trip-route';
+import { DEMO_MAP_ZOOM } from '../src/constants/parameters';
+import { demoAnnouncementGate } from '../src/lib/demo-announcement';
+import {
+  demoReferenceOrigin,
+  isDemoReferenceOrigin,
+  shouldSeedDemoOrigin,
+} from '../src/lib/demo-origin';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
 import { presentAddress } from '../src/lib/address-presentation';
@@ -75,11 +92,16 @@ export default function HomeScreen(): React.JSX.Element {
   const copy = passengerCopy.home;
   const networkStatus = useNetworkStatus();
   const user = useSessionStore((s) => s.user);
+  const sessionStartedAt = useSessionStore((s) => s.sessionStartedAt);
+  const demo = useDemoSession();
+  const isDemo = demo !== null;
   const origin = useTripDraftStore((s) => s.origin);
   const originSource = useTripDraftStore((s) => s.originSource);
   const destination = useTripDraftStore((s) => s.destination);
   const setOrigin = useTripDraftStore((s) => s.setOrigin);
   const clearOrigin = useTripDraftStore((s) => s.clearOrigin);
+  const demoOriginSeeded = useTripDraftStore((s) => s.demoOriginSeeded);
+  const markDemoOriginSeeded = useTripDraftStore((s) => s.markDemoOriginSeeded);
   const coverage = useCoverageGate();
   const places = usePickupPlaces();
   const resolveOrigin = useResolveOrigin();
@@ -95,12 +117,15 @@ export default function HomeScreen(): React.JSX.Element {
   const [notFoundToast, setNotFoundToast] = useState(false);
   const lastPhase = useRef<LocationConsentPhase | null>(null);
   const trip = activeTrip.data ?? null;
-  const servicesEnabled = useLocationServices(origin !== null && originSource === 'manual');
+  const servicesEnabled = useLocationServices(
+    origin !== null && originSource === 'manual' && !isDemo,
+  );
   const locationOff = isLocationOffWithManualOrigin({
     originSource,
     hasOrigin: origin !== null,
     servicesEnabled,
     tripActive: trip !== null,
+    demo: isDemo,
   });
   const banner = selectBanner([
     ...(networkStatus === 'offline' ? (['offline'] as const) : []),
@@ -113,6 +138,29 @@ export default function HomeScreen(): React.JSX.Element {
       void refetchActiveTrip({ cancelRefetch: false });
     }, [refetchActiveTrip]),
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isDemo || !demoAnnouncementGate.claim(sessionStartedAt)) return;
+      AccessibilityInfo.announceForAccessibility(passengerCopy.demo.announce);
+    }, [isDemo, sessionStartedAt]),
+  );
+
+  useEffect(() => {
+    if (
+      demo !== null &&
+      shouldSeedDemoOrigin({
+        demo,
+        origin,
+        alreadySeeded: demoOriginSeeded,
+        activeTripKnown: !activeTrip.isPending,
+        hasActiveTrip: trip !== null,
+      })
+    ) {
+      setOrigin(demoReferenceOrigin(demo), 'manual');
+      markDemoOriginSeeded();
+    }
+  }, [demo, origin, demoOriginSeeded, activeTrip.isPending, trip]);
 
   useEffect(() => {
     if (notice === TRIP_ENDED_NOTICE) {
@@ -131,13 +179,13 @@ export default function HomeScreen(): React.JSX.Element {
     if (gate.phase === 'needs_notice') setNoticeOpen(true);
     if (gate.phase === 'confirmed') {
       setNoticeOpen(false);
-      if (previous !== 'confirmed' && !origin) resolveOrigin.resolve();
+      if (previous !== 'confirmed' && !origin && !isDemo) resolveOrigin.resolve();
     }
   }, [gate.phase]);
 
   useEffect(() => {
     if (resolveOrigin.status === 'resolved' && resolveOrigin.origin) {
-      setOrigin(resolveOrigin.origin, 'gps');
+      setOrigin(resolveOrigin.origin, resolveOrigin.originSource);
     }
   }, [resolveOrigin.status, resolveOrigin.origin, setOrigin]);
 
@@ -172,6 +220,10 @@ export default function HomeScreen(): React.JSX.Element {
   };
 
   const handleUseMyLocation = (): void => {
+    if (demo !== null) {
+      setOrigin(demoReferenceOrigin(demo), 'manual');
+      return;
+    }
     if (gate.phase === 'unknown') {
       gate.retry();
       return;
@@ -196,7 +248,11 @@ export default function HomeScreen(): React.JSX.Element {
   if (coverage.status === 'outside') {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-        <CoverageBlockedPanel onAdjustLocation={handleAdjustLocation} />
+        <CoverageBlockedPanel
+          onAdjustLocation={handleAdjustLocation}
+          demo={isDemoReferenceOrigin(origin, demo)}
+          onLogout={() => logout.mutate()}
+        />
       </SafeAreaView>
     );
   }
@@ -209,7 +265,8 @@ export default function HomeScreen(): React.JSX.Element {
     ),
   );
   const showMapSkeleton = isResolving && !origin;
-  const awaitingAutoResolve = gate.phase === 'confirmed' && resolveOrigin.status === 'idle';
+  const awaitingAutoResolve =
+    gate.phase === 'confirmed' && resolveOrigin.status === 'idle' && !isDemo;
   const showNoOrigin =
     !trip &&
     !origin &&
@@ -236,6 +293,7 @@ export default function HomeScreen(): React.JSX.Element {
               },
             ]}
             interactive={false}
+            zoomLevel={isDemo ? DEMO_MAP_ZOOM : undefined}
             coveredBottom={theme.radius.sheet}
             coveredTop={insets.top + theme.spacing.sm + theme.touch.min}
             online={networkStatus !== 'offline'}
@@ -304,6 +362,7 @@ export default function HomeScreen(): React.JSX.Element {
         }}
         keyboardShouldPersistTaps="handled"
       >
+        <DemoTag />
         {trip ? (
           <ActiveTripCard
             trip={trip}
@@ -389,6 +448,7 @@ export default function HomeScreen(): React.JSX.Element {
           <NoOriginPanel
             onPickPoint={() => router.push('/destination')}
             onUseLocation={handleUseMyLocation}
+            demo={isDemo}
           />
         )}
 
@@ -444,6 +504,7 @@ export default function HomeScreen(): React.JSX.Element {
         onLogout={() => logout.mutate()}
         loggingOut={logout.isPending}
         confirmNote={trip ? passengerCopy.notifications.logout.activeTripNote : undefined}
+        demoNote={isDemo ? uiCopy.demo.accountNote : undefined}
         name={user ? `${user.first_name} ${user.last_name}`.trim() : undefined}
         onPrivacy={handleOpenPrivacy}
       />
