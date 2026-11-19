@@ -50,6 +50,7 @@ export interface PointRowProps {
   markerColor?: string;
   footer?: React.ReactNode;
   placeholder?: boolean;
+  valueLines?: number;
 }
 
 export function PointRow({
@@ -60,6 +61,7 @@ export function PointRow({
   markerColor,
   footer,
   placeholder = false,
+  valueLines,
 }: PointRowProps): React.JSX.Element {
   const theme = useTheme();
   const resolvedKind: RoutePinKind = kind ?? (marker === '▼' ? 'destination' : 'origin');
@@ -80,7 +82,7 @@ export function PointRow({
               ...(placeholder ? theme.typography.body : theme.typography.bodyStrong),
               color: placeholder ? theme.colors.textSubtle : theme.colors.text,
             }}
-            numberOfLines={placeholder ? 2 : 1}
+            numberOfLines={valueLines ?? (placeholder ? 2 : 1)}
           >
             {value}
           </Text>
@@ -97,6 +99,7 @@ export interface PointRouteStop {
   markerColor?: string;
   footer?: React.ReactNode;
   placeholder?: boolean;
+  valueLines?: number;
 }
 
 export interface PointRouteProps {
@@ -119,6 +122,7 @@ export function PointRoute({ origin, destination }: PointRouteProps): React.JSX.
         markerColor={origin.markerColor}
         footer={origin.footer}
         placeholder={origin.placeholder}
+        valueLines={origin.valueLines}
       />
       <View
         accessibilityElementsHidden
@@ -145,6 +149,7 @@ export function PointRoute({ origin, destination }: PointRouteProps): React.JSX.
         markerColor={destination.markerColor}
         footer={destination.footer}
         placeholder={destination.placeholder}
+        valueLines={destination.valueLines}
       />
     </View>
   );

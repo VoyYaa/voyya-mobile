@@ -73,6 +73,7 @@ const EYEBROW_HEIGHT_ESTIMATE = 20;
 const FARE_BLOCK_HEIGHT_ESTIMATE = 80;
 const ACTION_BAR_TOAST_OFFSET = 96;
 const NOTICE_DURATION_MS = 2200;
+const REQUEST_POINT_VALUE_LINES = 3;
 
 interface ToastSpec {
   message: string;
@@ -375,10 +376,12 @@ export default function RequestDetailScreen(): React.JSX.Element {
                   notification.origin.address,
                   notification.distance_to_origin_m,
                 ),
+                valueLines: REQUEST_POINT_VALUE_LINES,
               }}
               destination={{
                 label: driverCopy.offer.destinationLabel,
                 value: notification.dropoff_neighborhood,
+                valueLines: REQUEST_POINT_VALUE_LINES,
               }}
             />
 
