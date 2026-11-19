@@ -67,6 +67,10 @@ export interface ColorTokens {
   warningInk: string;
   focusRing: string;
   focusHalo: string;
+  mapRoute: string;
+  mapRouteCasing: string;
+  mapMarkerRing: string;
+  mapLabelSurface: string;
 }
 
 export const lightColors: ColorTokens = {
@@ -109,6 +113,10 @@ export const lightColors: ColorTokens = {
   warningInk: BRAND_COLORS.amberInk,
   focusRing: BRAND_COLORS.espresso,
   focusHalo: 'rgba(244, 162, 26, 0.45)',
+  mapRoute: BRAND_COLORS.amber,
+  mapRouteCasing: BRAND_COLORS.espresso,
+  mapMarkerRing: BRAND_COLORS.espresso,
+  mapLabelSurface: '#FFFFFF',
 };
 
 export const darkColors: ColorTokens = {
@@ -151,4 +159,8 @@ export const darkColors: ColorTokens = {
   warningInk: BRAND_COLORS.amber,
   focusRing: BRAND_COLORS.crema,
   focusHalo: 'rgba(244, 162, 26, 0.45)',
+  mapRoute: BRAND_COLORS.amber,
+  mapRouteCasing: '#1C140D',
+  mapMarkerRing: BRAND_COLORS.espresso,
+  mapLabelSurface: BRAND_COLORS.espresso,
 };

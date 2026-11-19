@@ -109,6 +109,9 @@ const LIGHT_PAIRS: readonly ContrastPair[] = [
   { foreground: 'brand', background: 'stage', minimum: GRAPHIC },
   { foreground: 'success', background: 'stage', minimum: GRAPHIC },
   { foreground: 'danger', background: 'stage', minimum: GRAPHIC },
+  { foreground: 'text', background: 'mapLabelSurface', minimum: TEXT },
+  { foreground: 'mapRouteCasing', background: 'bg', minimum: GRAPHIC },
+  { foreground: 'mapMarkerRing', background: 'mapLabelSurface', minimum: GRAPHIC },
 ];
 
 const DARK_PAIRS: readonly ContrastPair[] = [
@@ -134,6 +137,9 @@ const DARK_PAIRS: readonly ContrastPair[] = [
   { foreground: 'brand', background: 'stage', minimum: GRAPHIC },
   { foreground: 'success', background: 'stage', minimum: GRAPHIC },
   { foreground: 'danger', background: 'stage', minimum: GRAPHIC },
+  { foreground: 'text', background: 'mapLabelSurface', minimum: TEXT },
+  { foreground: 'mapRoute', background: 'surfaceSunken', minimum: GRAPHIC },
+  { foreground: 'mapRoute', background: 'bg', minimum: GRAPHIC },
 ];
 
 const EXPECTED_BRAND_HEX: Record<string, string> = {
@@ -258,5 +264,27 @@ describe('contrast AA contract', () => {
         `${foreground}/${background}: ${ratio.toFixed(2)}`,
       );
     }
+  });
+});
+
+describe('map tokens', () => {
+  const MAP_TOKENS = ['mapRoute', 'mapRouteCasing', 'mapMarkerRing', 'mapLabelSurface'] as const;
+  const LIGHT_GROUND = '#F6EFE2';
+
+  it('defines every map token in both themes', () => {
+    for (const key of MAP_TOKENS) {
+      assert.equal(typeof lightColors[key], 'string', `light.${key}`);
+      assert.equal(typeof darkColors[key], 'string', `dark.${key}`);
+    }
+  });
+
+  it('keeps the route casing readable against the light map ground', () => {
+    const ratio = contrastRatio(lightColors.mapRouteCasing, LIGHT_GROUND, lightColors.surface);
+    assert.ok(ratio >= GRAPHIC, `casing on ground is ${ratio.toFixed(2)}`);
+  });
+
+  it('keeps the route readable against the dark map ground', () => {
+    const ratio = contrastRatio(darkColors.mapRoute, darkColors.surfaceSunken, darkColors.surface);
+    assert.ok(ratio >= GRAPHIC, `route on ground is ${ratio.toFixed(2)}`);
   });
 });
