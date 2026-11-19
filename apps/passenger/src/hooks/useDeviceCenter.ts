@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { Coordinate } from '@voyyaa/shared';
-import { requestDeviceLocation } from '@voyyaa/app-runtime';
+import { requestDeviceLocation, useDemoSession } from '@voyyaa/app-runtime';
 
 export function useDeviceCenter(enabled: boolean): Coordinate | null {
+  const demo = useDemoSession();
   const [center, setCenter] = useState<Coordinate | null>(null);
 
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (!enabled || demo !== null) return undefined;
     let active = true;
     void requestDeviceLocation().then((outcome) => {
       if (active && outcome.kind === 'granted') setCenter(outcome.coordinate);
@@ -14,7 +15,7 @@ export function useDeviceCenter(enabled: boolean): Coordinate | null {
     return () => {
       active = false;
     };
-  }, [enabled]);
+  }, [enabled, demo]);
 
-  return center;
+  return demo !== null ? demo.center : center;
 }

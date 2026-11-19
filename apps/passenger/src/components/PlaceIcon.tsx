@@ -53,6 +53,17 @@ function CategoryGlyph({
           <Line x1={4} y1={20} x2={20} y2={20} {...stroke} />
         </>
       );
+    case 'general':
+      return (
+        <>
+          <Path
+            d="M12 21 C8 16 6 13 6 10 A6 6 0 0 1 18 10 C18 13 16 16 12 21 Z"
+            fill="none"
+            {...stroke}
+          />
+          <Circle cx={12} cy={10} r={2} fill={ink} />
+        </>
+      );
     case 'transporte':
       return (
         <>

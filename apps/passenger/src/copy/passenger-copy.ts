@@ -3,6 +3,7 @@ import { DATA_CONTROLLER, TRIP_COORDINATES_RETENTION_DAYS } from '@voyyaa/shared
 import { FREE_CANCELLATION_WINDOW_MIN } from '../constants/parameters';
 import { CAN_PIN_DROP } from '../constants/platform';
 import { authCopy } from './auth-copy';
+import { demoCopy } from './demo-copy';
 import { PIN_POINT_ADDRESS } from '../constants/pin-point';
 import { notificationsCopy } from './notifications-copy';
 import { placeCopy } from './place-copy';
@@ -381,4 +382,5 @@ export const passengerCopy = {
   },
   savedTrip: savedTripCopy,
   notifications: notificationsCopy,
+  demo: demoCopy,
 } as const;
