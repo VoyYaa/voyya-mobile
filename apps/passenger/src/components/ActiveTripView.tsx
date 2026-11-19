@@ -209,14 +209,6 @@ export function ActiveTripView({
           <LastUpdatedHint updatedAtMs={dataUpdatedAt} isStale={isStale} />
         )}
 
-        <StartCodeCard
-          view={codeView}
-          plate={data.driver?.plate ?? null}
-          arrived={arrived}
-          changed={codeChanged}
-          onRetry={onRefresh}
-        />
-
         <DriverTrackingCard
           tracking={data.driver_tracking}
           dataUpdatedAt={dataUpdatedAt}
@@ -225,6 +217,15 @@ export function ActiveTripView({
           arrived={arrived}
           origin={origin}
         />
+
+        <StartCodeCard
+          view={codeView}
+          plate={data.driver?.plate ?? null}
+          arrived={arrived}
+          changed={codeChanged}
+          onRetry={onRefresh}
+        />
+
 
         {data.driver ? (
           <DriverCard driver={data.driver} />

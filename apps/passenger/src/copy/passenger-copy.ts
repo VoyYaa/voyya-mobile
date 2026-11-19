@@ -273,9 +273,9 @@ export const passengerCopy = {
     searching: 'Buscando la ubicación de tu conductor…',
     updating: 'Actualizando…',
     mapUnavailable: 'El mapa no está disponible. La información de abajo se sigue actualizando.',
-    markerLabel: 'Tu conductor',
-    markerLabelStale: (ago: string): string => `Tu conductor, ubicación de ${ago}`,
-    originLabel: 'Punto de encuentro',
+    markerAgeLabel: (ago: string): string => `${ago.charAt(0).toUpperCase()}${ago.slice(1)}`,
+    expandedTitle: 'Tu viaje',
+    expandedPickup: (address: string): string => `Recogida: ${address}`,
     backOnline: 'Volvimos a ver a tu conductor.',
     mapAccessibility: 'Mapa con tu punto de encuentro y la ubicación de tu conductor',
     ago: {

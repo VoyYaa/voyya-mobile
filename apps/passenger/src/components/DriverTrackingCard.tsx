@@ -11,6 +11,7 @@ import {
 } from '@voyyaa/ui-mobile';
 import type { DriverTracking, Location } from '@voyyaa/shared';
 import { passengerCopy } from '../copy/passenger-copy';
+import { presentAddress } from '../lib/address-presentation';
 import { useElapsedSince, useResumingAfterBackground } from '../hooks/useElapsedSince';
 import {
   agoText,
@@ -33,7 +34,7 @@ export interface DriverTrackingCardProps {
 }
 
 const copy = passengerCopy.tracking;
-const MAP_HEIGHT = 180;
+const MAP_HEIGHT = 192;
 const GLYPH_SIZE = 20;
 const NO_RESPONSE_AFTER_SEC = 12;
 const ORIGIN_MARKER_ID = 'pickup';
@@ -141,12 +142,13 @@ export function DriverTrackingCard({
 
   const text = trackingText(model, arrived);
   const markers: MapMarker[] = [];
-  if (origin) {
+  const pickupAddress = origin ? presentAddress(origin.address) : null;
+  if (origin && pickupAddress !== null) {
     markers.push({
       id: ORIGIN_MARKER_ID,
       kind: 'origin',
       coord: { lat: origin.lat, lng: origin.lng },
-      label: copy.originLabel,
+      label: pickupAddress,
     });
   }
   if (model.marker) {
@@ -156,10 +158,8 @@ export function DriverTrackingCard({
       kind: 'car',
       coord: { lat: model.marker.lat, lng: model.marker.lng },
       freshness: model.marker.freshness,
-      label:
-        model.marker.freshness === 'stale' && ago !== null
-          ? copy.markerLabelStale(ago)
-          : copy.markerLabel,
+      label: text.detail ?? text.title,
+      ageLabel: ago === null ? undefined : copy.markerAgeLabel(ago),
     });
   }
   const center = markers.at(-1)?.coord ?? null;
@@ -178,7 +178,25 @@ export function DriverTrackingCard({
             zoomLevel={15}
             markers={markers}
             interactive={false}
-            fitToMarkers
+            expandable
+            expandedTitle={copy.expandedTitle}
+            expandedSummary={
+              <>
+                {pickupAddress !== null && (
+                  <Text style={{ ...theme.typography.body, color: theme.colors.text }}>
+                    {copy.expandedPickup(pickupAddress)}
+                  </Text>
+                )}
+                <Text style={{ ...theme.typography.bodyStrong, color: theme.colors.text }}>
+                  {text.title}
+                </Text>
+                {text.detail !== null && (
+                  <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
+                    {text.detail}
+                  </Text>
+                )}
+              </>
+            }
             height={MAP_HEIGHT}
             style={{ borderRadius: 0 }}
             fallback={<MapUnavailableStrip />}

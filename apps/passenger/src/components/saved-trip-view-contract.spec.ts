@@ -87,6 +87,8 @@ describe('SavedTripView draws only what the saved record knows (HU-CS-02)', () =
       'PriceTag',
       'formatEta',
       'Map,',
+      'MapExpandedModal',
+      'MapPlaceholder',
       '@rnmapbox/maps',
     ]) {
       assert.equal(savedView.includes(forbidden), false, forbidden);
