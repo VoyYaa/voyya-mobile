@@ -48,6 +48,7 @@ export interface MapProps {
   fitInsets?: MapFitInsets;
   pinKind?: MapPinKind;
   myLocation?: MapLatLng | null;
+  coveredBottom?: number;
   expandable?: boolean;
   expandedTitle?: string;
   expandedSummary?: ReactNode;

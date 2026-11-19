@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { LABEL_BAND_DP } from './marker-geometry.ts';
+import {
+  FIT_ORNAMENT_CLEARANCE_DP,
+  FIT_SIDE_CLEARANCE_DP,
+  FIT_TOP_CLEARANCE_DP,
+  LABEL_BAND_DP,
+} from './marker-geometry.ts';
 import { fitMarkersChanged, planCamera, shouldFit } from './camera-plan.ts';
 import type { MapMarker } from './types.ts';
 
@@ -42,14 +47,27 @@ describe('planCamera', () => {
     if (plan.kind === 'center') assert.deepEqual(plan.center, CENTER);
   });
 
-  it('fits two markers with the default 48 dp insets plus the label band below', () => {
+  it('fits two labeled markers clear of the pin head, the labels and the Mapbox ornaments', () => {
     const plan = planCamera({ ...BASE, markers: [ORIGIN, DESTINATION] });
     assert.equal(plan.kind, 'bounds');
     if (plan.kind === 'bounds') {
-      assert.equal(plan.insets.top, 48);
-      assert.equal(plan.insets.bottom, 48 + LABEL_BAND_DP);
+      assert.equal(plan.insets.top, FIT_TOP_CLEARANCE_DP);
+      assert.equal(plan.insets.left, FIT_SIDE_CLEARANCE_DP);
+      assert.ok(plan.insets.top >= 54);
+      assert.equal(plan.insets.bottom, FIT_ORNAMENT_CLEARANCE_DP + 24 + 2 + 24);
+      assert.ok(plan.zoom >= 12 && plan.zoom <= 16);
       assert.deepEqual(plan.zoomRange, { min: 12, max: 16 });
     }
+  });
+
+  it('adds the label band below custom insets', () => {
+    const plan = planCamera({
+      ...BASE,
+      fitInsets: { top: 10, right: 20, bottom: 30, left: 40 },
+      markers: [ORIGIN, DESTINATION],
+    });
+    assert.equal(plan.kind, 'bounds');
+    if (plan.kind === 'bounds') assert.equal(plan.insets.bottom, 30 + LABEL_BAND_DP);
   });
 
   it('does not add the label band when the map is too short for labels', () => {

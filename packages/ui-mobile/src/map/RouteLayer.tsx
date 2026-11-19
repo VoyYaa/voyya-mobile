@@ -6,8 +6,9 @@ import { mapCopy } from '../copy';
 import { MapMarkerLabel } from './MapMarkerLabel';
 import type { MapLatLng } from './types';
 
-export const ROUTE_CASING_WIDTH = 7;
-export const ROUTE_FILL_WIDTH = 4;
+export const ROUTE_CASING_WIDTH = 9;
+export const ROUTE_FILL_WIDTH = 5.5;
+const ROUTE_LABEL_ANCHOR_Y = 1.6;
 const APPROXIMATE_DASH = [1.5, 2];
 const CASING_DASH = APPROXIMATE_DASH.map((part) => (part * ROUTE_FILL_WIDTH) / ROUTE_CASING_WIDTH);
 
@@ -55,7 +56,11 @@ export function RouteLabel({ points }: RouteLabelProps): React.JSX.Element | nul
   const middle = routeMidpoint(points);
   if (!middle) return null;
   return (
-    <MarkerView coordinate={toPosition(middle)} anchor={{ x: 0.5, y: 0.5 }} allowOverlap>
+    <MarkerView
+      coordinate={toPosition(middle)}
+      anchor={{ x: 0.5, y: ROUTE_LABEL_ANCHOR_Y }}
+      allowOverlap
+    >
       <MapMarkerLabel text={mapCopy.routeApproximate} />
     </MarkerView>
   );

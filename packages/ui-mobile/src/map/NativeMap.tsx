@@ -12,7 +12,8 @@ import { MAP_LOAD_TIMEOUT_MS, INITIAL_MAP_LOAD_STATE, reduceMapLoad } from './ma
 import { resolveMapStyleUrl } from './map-style';
 import { createAccessTokenApplier } from './mapbox-access-token';
 import { getMapStyleEnv } from './mapbox-env';
-import { LABEL_MIN_MAP_HEIGHT } from './marker-geometry';
+import { LABEL_MIN_MAP_HEIGHT, routeLabelFits } from './marker-geometry';
+import { ornamentPositions } from './ornament-layout';
 import { MapControlButton } from './MapControlButton';
 import { MapExpandedModal } from './MapExpandedModal';
 import { MapMarkerLabel } from './MapMarkerLabel';
@@ -24,7 +25,6 @@ import type { MapLatLng, MapProps } from './types';
 
 const ensureAccessToken = createAccessTokenApplier(Mapbox);
 
-const ATTRIBUTION_MARGIN_DP = 16;
 const FIT_ANIMATION_MS = 600;
 const CONTROL_MARGIN_DP = 8;
 const DEFAULT_VIEWPORT_WIDTH = 360;
@@ -53,6 +53,7 @@ export function NativeMap(props: NativeMapProps): React.JSX.Element {
     fitToMarkers,
     fitInsets,
     fitZoomRange,
+    coveredBottom = 0,
     expandable = false,
     expandedTitle = mapCopy.expandedTitle,
     expandedSummary,
@@ -162,7 +163,12 @@ export function NativeMap(props: NativeMapProps): React.JSX.Element {
     light: Mapbox.StyleURL.Light,
     dark: Mapbox.StyleURL.Dark,
   });
-  const showRouteLabel = resolvedRoute?.approximate === true && height >= LABEL_MIN_MAP_HEIGHT;
+  const ornaments = ornamentPositions(coveredBottom);
+  const showRouteLabel =
+    resolvedRoute?.approximate === true &&
+    height >= LABEL_MIN_MAP_HEIGHT &&
+    plan.kind === 'bounds' &&
+    routeLabelFits(resolvedRoute.points, plan.zoom);
   const summaryLines = fallbackRows(markers);
   const showRecenter = interactive && fitting && userMoved;
   const showPinHint = pinDrop && hintVisible;
@@ -195,9 +201,9 @@ export function NativeMap(props: NativeMapProps): React.JSX.Element {
             compassEnabled={false}
             scaleBarEnabled={false}
             logoEnabled
-            logoPosition={{ left: ATTRIBUTION_MARGIN_DP, bottom: ATTRIBUTION_MARGIN_DP }}
+            logoPosition={ornaments.logo}
             attributionEnabled
-            attributionPosition={{ right: ATTRIBUTION_MARGIN_DP, bottom: ATTRIBUTION_MARGIN_DP }}
+            attributionPosition={ornaments.attribution}
             onPress={pinDrop ? handlePress : undefined}
             onCameraChanged={interactive ? handleCameraChanged : undefined}
             onMapIdle={handleMapIdle}
@@ -379,6 +385,7 @@ export function NativeMap(props: NativeMapProps): React.JSX.Element {
               <NativeMap
                 {...props}
                 expandable={false}
+                coveredBottom={0}
                 interactive
                 height={mapHeight}
                 style={undefined}

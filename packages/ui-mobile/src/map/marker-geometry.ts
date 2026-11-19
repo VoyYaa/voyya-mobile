@@ -58,6 +58,36 @@ export function uniformInsets(value: number): FitInsets {
   return { top: value, right: value, bottom: value, left: value };
 }
 
+export const FIT_TOP_CLEARANCE_DP = 60;
+export const FIT_SIDE_CLEARANCE_DP = 56;
+export const FIT_ORNAMENT_CLEARANCE_DP = 36;
+export const ROUTE_LABEL_MIN_SPAN_DP = 170;
+
+export function labeledFitInsets(markers: readonly MapMarker[]): FitInsets {
+  const below = markers.reduce(
+    (max, marker) =>
+      Math.max(
+        max,
+        MARKER_HEIGHT[marker.kind] - MARKER_ANCHOR_Y[marker.kind] + LABEL_GAP + LABEL_HEIGHT,
+      ),
+    0,
+  );
+  return {
+    top: FIT_TOP_CLEARANCE_DP,
+    right: FIT_SIDE_CLEARANCE_DP,
+    bottom: FIT_ORNAMENT_CLEARANCE_DP + below,
+    left: FIT_SIDE_CLEARANCE_DP,
+  };
+}
+
+export function routeLabelFits(points: readonly MapLatLng[], zoom: number): boolean {
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (!first || !last) return false;
+  const spanDp = distanceMeters(first, last) / metersPerDp(first.lat, zoom);
+  return spanDp >= ROUTE_LABEL_MIN_SPAN_DP;
+}
+
 export function metersPerDp(lat: number, zoom: number): number {
   return (MAP_TILE_METERS_PER_DP_AT_ZOOM_0 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
 }

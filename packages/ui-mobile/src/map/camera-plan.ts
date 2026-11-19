@@ -2,6 +2,7 @@ import { haveMarkersMoved, isCollapsedBounds, toBounds, type MapBounds } from '.
 import {
   LABEL_BAND_DP,
   estimateFitZoom,
+  labeledFitInsets,
   selectLabeledMarkerIds,
   uniformInsets,
   type FitInsets,
@@ -31,6 +32,7 @@ export type CameraPlan =
       bounds: MapBounds;
       insets: FitInsets;
       zoomRange: { min: number; max: number };
+      zoom: number;
       labeledIds: ReadonlySet<string>;
     };
 
@@ -39,6 +41,16 @@ export function shouldFit(
 ): boolean {
   if (input.markers.length < 2) return false;
   return input.fitToMarkers ?? !input.pinDrop;
+}
+
+function labeledInsets(
+  input: CameraPlanInput,
+  insets: FitInsets,
+  labeledIds: ReadonlySet<string>,
+): FitInsets {
+  if (labeledIds.size === 0) return insets;
+  if (input.fitInsets) return { ...insets, bottom: insets.bottom + LABEL_BAND_DP };
+  return labeledFitInsets(input.markers.filter((marker) => labeledIds.has(marker.id)));
 }
 
 export function planCamera(input: CameraPlanInput): CameraPlan {
@@ -61,9 +73,14 @@ export function planCamera(input: CameraPlanInput): CameraPlan {
     viewport: input.viewport,
     zoom: baseZoom,
   });
-  const withLabels =
-    labeledIds.size > 0 ? { ...insets, bottom: insets.bottom + LABEL_BAND_DP } : insets;
-  return { kind: 'bounds', bounds, insets: withLabels, zoomRange: range, labeledIds };
+  return {
+    kind: 'bounds',
+    bounds,
+    insets: labeledInsets(input, insets, labeledIds),
+    zoomRange: range,
+    zoom: baseZoom,
+    labeledIds,
+  };
 }
 
 export function fitMarkersChanged(

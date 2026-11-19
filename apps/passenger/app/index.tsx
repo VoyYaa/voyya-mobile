@@ -236,6 +236,7 @@ export default function HomeScreen(): React.JSX.Element {
               },
             ]}
             interactive={false}
+            coveredBottom={theme.radius.sheet}
             height={mapHeight}
             style={{ borderRadius: 0, borderWidth: 0 }}
           />

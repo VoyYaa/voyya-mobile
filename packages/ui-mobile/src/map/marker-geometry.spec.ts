@@ -4,6 +4,9 @@ import {
   LABEL_GAP,
   LABEL_HEIGHT,
   estimateFitZoom,
+  labeledFitInsets,
+  routeLabelFits,
+  FIT_ORNAMENT_CLEARANCE_DP,
   markerAnchorY,
   markerLabelText,
   selectLabeledMarkerIds,
@@ -139,5 +142,41 @@ describe('selectLabeledMarkerIds', () => {
       zoom: 14,
     });
     assert.deepEqual([...ids], ['d']);
+  });
+});
+
+describe('labeledFitInsets', () => {
+  it('clears the pin head above and the label plus the ornaments below', () => {
+    const insets = labeledFitInsets([ORIGIN, DESTINATION]);
+    assert.ok(insets.top >= 54);
+    assert.equal(insets.bottom, FIT_ORNAMENT_CLEARANCE_DP + 24 + LABEL_GAP + LABEL_HEIGHT);
+  });
+
+  it('needs less room below when only a destination is labeled', () => {
+    const insets = labeledFitInsets([DESTINATION]);
+    assert.equal(insets.bottom, FIT_ORNAMENT_CLEARANCE_DP + 2 + LABEL_GAP + LABEL_HEIGHT);
+  });
+});
+
+describe('routeLabelFits', () => {
+  const near = [
+    { lat: 6.96, lng: -75.41 },
+    { lat: 6.9615, lng: -75.41 },
+  ];
+  const far = [
+    { lat: 6.96, lng: -75.41 },
+    { lat: 6.97, lng: -75.41 },
+  ];
+
+  it('hides the label on a short route', () => {
+    assert.equal(routeLabelFits(near, 16), false);
+  });
+
+  it('shows the label when the ends are far apart on screen', () => {
+    assert.equal(routeLabelFits(far, 15), true);
+  });
+
+  it('is false without points', () => {
+    assert.equal(routeLabelFits([], 15), false);
   });
 });
