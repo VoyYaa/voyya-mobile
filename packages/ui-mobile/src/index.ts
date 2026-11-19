@@ -48,6 +48,8 @@ export * from './components/EmptyState';
 export * from './components/ErrorState';
 export * from './components/StatePanel';
 export * from './components/OfflineBanner';
+export * from './components/StatusBanner';
+export * from './utils/status-banner';
 export * from './components/Skeleton';
 export * from './components/Toast';
 export * from './components/TextField';
