@@ -11,7 +11,7 @@
     "ios": "expo start --dev-client --ios",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
-    "test": "node --test src/offers/offer-rail.spec.ts src/auth/pin-rules.spec.ts src/auth/pin-errors.spec.ts src/auth/route-gate.spec.ts src/privacy/privacy-status.spec.ts src/notifications/notification-target.spec.ts plugins/with-navigation-app-queries.spec.js && node --test --import ../../packages/app-runtime/test-support/resolve-ts-extension.mjs src/trip/directions-url.spec.ts src/trip/route-opener.spec.ts src/trip/start-code-flow.spec.ts src/tracking/sharing-machine.spec.ts src/home/shift-status-copy.spec.ts src/offers/request-stage-layout.spec.ts src/home/location-banner-view.spec.ts src/home/location-issue-probe.spec.ts src/copy/format-distance.spec.ts src/tracking/report-batch.spec.ts src/tracking/trip-location-transport.spec.ts src/tracking/fixed-point-transport.spec.ts src/tracking/demo-transport-binding.spec.ts src/tracking/demo-sharing-view.spec.ts src/copy/demo-copy.spec.ts",
+    "test": "node --test src/offers/offer-rail.spec.ts src/auth/pin-rules.spec.ts src/auth/pin-errors.spec.ts src/auth/route-gate.spec.ts src/privacy/privacy-status.spec.ts src/notifications/notification-target.spec.ts src/notifications/foreground-policy.spec.ts plugins/with-navigation-app-queries.spec.js && node --test --import ../../packages/app-runtime/test-support/resolve-ts-extension.mjs src/trip/directions-url.spec.ts src/trip/route-opener.spec.ts src/trip/start-code-flow.spec.ts src/tracking/sharing-machine.spec.ts src/home/shift-status-copy.spec.ts src/offers/request-stage-layout.spec.ts src/home/location-banner-view.spec.ts src/home/location-issue-probe.spec.ts src/copy/format-distance.spec.ts src/tracking/report-batch.spec.ts src/tracking/trip-location-transport.spec.ts src/tracking/fixed-point-transport.spec.ts src/tracking/demo-transport-binding.spec.ts src/tracking/demo-sharing-view.spec.ts src/copy/demo-copy.spec.ts",
     "eas-build-post-install": "cd ../.. && pnpm run build",
     "web": "expo start --web"
   },
@@ -48,7 +48,7 @@
     "@babel/core": "^7.24.0",
     "@types/node": "^20.16.10",
     "@types/react": "~19.0.10",
-    "metro-cache": "0.81.5",
+    "metro-cache": "0.82.5",
     "typescript": "~5.8.3"
   }
 }

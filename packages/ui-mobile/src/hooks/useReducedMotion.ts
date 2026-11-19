@@ -11,7 +11,7 @@ export interface ReducedMotionProviderProps {
 export function ReducedMotionProvider({
   value,
   children,
-}: ReducedMotionProviderProps): React.ReactElement<any> {
+}: ReducedMotionProviderProps): React.ReactElement {
   return React.createElement(ReducedMotionOverrideContext.Provider, { value }, children);
 }
 

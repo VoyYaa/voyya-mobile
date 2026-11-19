@@ -51,7 +51,7 @@
     "@babel/core": "^7.24.0",
     "@types/node": "^20.16.10",
     "@types/react": "~19.0.10",
-    "metro-cache": "0.81.5",
+    "metro-cache": "0.82.5",
     "typescript": "~5.8.3"
   }
 }

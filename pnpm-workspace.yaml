@@ -11,7 +11,7 @@ overrides:
   '@expo/plist>@xmldom/xmldom': ^0.8.15
 
 packageExtensions:
-  expo-router@4:
+  expo-router:
     dependencies:
       query-string: ^7.1.3
 

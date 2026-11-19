@@ -4,17 +4,14 @@ import * as Notifications from 'expo-notifications';
 import { useRouter, type Router } from 'expo-router';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { NEARBY_OFFERS_QUERY_KEY } from '../hooks/useNearbyOffers';
+import { DRIVER_FOREGROUND_PRESENTATION } from './foreground-policy';
 import { resolveDriverNotificationTarget } from './notification-target';
 
 const IS_WEB = Platform.OS === 'web';
 
 if (!IS_WEB) {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
+    handleNotification: async () => DRIVER_FOREGROUND_PRESENTATION,
   });
 }
 

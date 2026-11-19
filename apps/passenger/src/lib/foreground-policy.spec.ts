@@ -28,7 +28,8 @@ describe('foregroundPresentation', () => {
   it('shows no banner, no list entry and no sound while the trip screen is visible', () => {
     for (const path of ['/searching', '/driver-assigned']) {
       assert.deepEqual(foregroundPresentation(path), {
-        shouldShowAlert: false,
+        shouldShowBanner: false,
+        shouldShowList: false,
         shouldPlaySound: false,
         shouldSetBadge: false,
       });
@@ -38,7 +39,8 @@ describe('foregroundPresentation', () => {
   it('shows the system notification with sound on any other screen, as the owner decided', () => {
     for (const path of ['/', '/privacy', '/confirm', '/destination']) {
       assert.deepEqual(foregroundPresentation(path), {
-        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
         shouldPlaySound: true,
         shouldSetBadge: false,
       });

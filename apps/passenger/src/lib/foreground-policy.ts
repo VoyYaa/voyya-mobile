@@ -1,5 +1,6 @@
 export interface ForegroundPresentation {
-  shouldShowAlert: boolean;
+  shouldShowBanner: boolean;
+  shouldShowList: boolean;
   shouldPlaySound: boolean;
   shouldSetBadge: boolean;
 }
@@ -12,5 +13,10 @@ export function isTripScreenPath(pathname: string): boolean {
 
 export function foregroundPresentation(pathname: string): ForegroundPresentation {
   const visible = !isTripScreenPath(pathname);
-  return { shouldShowAlert: visible, shouldPlaySound: visible, shouldSetBadge: false };
+  return {
+    shouldShowBanner: visible,
+    shouldShowList: visible,
+    shouldPlaySound: visible,
+    shouldSetBadge: false,
+  };
 }
