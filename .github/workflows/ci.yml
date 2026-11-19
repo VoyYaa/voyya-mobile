@@ -29,17 +29,29 @@ jobs:
           node-version: '20'
           cache: pnpm
 
-      - name: Assert pnpm linker
+      - name: Assert pnpm linker setting
         run: |
           linker="$(pnpm config get node-linker)"
           echo "node-linker=$linker"
           test "$linker" = "hoisted" || {
-            echo "::error::.npmrc no se está aplicando (node-linker=$linker, esperado hoisted). Ver ADR-008."
+            echo "::error::pnpm-workspace.yaml is not applying nodeLinker (node-linker=$linker, expected hoisted). See ADR-008 and ADR-038."
             exit 1
           }
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Assert flat node_modules layout
+        run: |
+          test -d node_modules/react-native || {
+            echo "::error::node_modules/react-native is missing at the root: the layout is not hoisted. See ADR-008."
+            exit 1
+          }
+          isolated="$(find node_modules/.pnpm -mindepth 1 -maxdepth 1 ! -name lock.yaml 2>/dev/null | wc -l)"
+          test "$isolated" = "0" || {
+            echo "::error::node_modules/.pnpm holds $isolated entries: the layout is isolated, not hoisted. See ADR-008."
+            exit 1
+          }
 
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level high
