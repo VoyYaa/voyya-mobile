@@ -247,6 +247,7 @@ export default function DestinationScreen(): React.JSX.Element {
       {CAN_PIN_DROP && mapCenter && (
         <Map
           pinDrop
+          online={networkStatus !== 'offline'}
           pinKind={isFixingOrigin ? 'origin' : 'destination'}
           myLocation={deviceCenter}
           center={mapCenter}

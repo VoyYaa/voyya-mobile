@@ -178,6 +178,7 @@ export function DriverTrackingCard({
             zoomLevel={15}
             markers={markers}
             interactive={false}
+            online={!offline}
             expandable
             expandedTitle={copy.expandedTitle}
             expandedSummary={

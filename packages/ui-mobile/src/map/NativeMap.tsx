@@ -54,6 +54,8 @@ export function NativeMap(props: NativeMapProps): React.JSX.Element {
     fitInsets,
     fitZoomRange,
     coveredBottom = 0,
+    coveredTop = 0,
+    online = true,
     expandable = false,
     expandedTitle = mapCopy.expandedTitle,
     expandedSummary,
@@ -82,6 +84,10 @@ export function NativeMap(props: NativeMapProps): React.JSX.Element {
     const timer = setTimeout(() => dispatchLoad('timeout'), MAP_LOAD_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (online) dispatchLoad('network_back');
+  }, [online]);
 
   const cameraMarkers = useFitMarkers(markers, userMoved);
   const plan = planCamera({
@@ -268,7 +274,7 @@ export function NativeMap(props: NativeMapProps): React.JSX.Element {
           accessibilityLiveRegion="polite"
           style={{
             position: 'absolute',
-            top: CONTROL_MARGIN_DP,
+            top: CONTROL_MARGIN_DP + coveredTop,
             left: CONTROL_MARGIN_DP,
             right: CONTROL_MARGIN_DP + theme.touch.min + CONTROL_MARGIN_DP,
             alignItems: 'flex-start',
@@ -386,6 +392,7 @@ export function NativeMap(props: NativeMapProps): React.JSX.Element {
                 {...props}
                 expandable={false}
                 coveredBottom={0}
+                coveredTop={0}
                 interactive
                 height={mapHeight}
                 style={undefined}

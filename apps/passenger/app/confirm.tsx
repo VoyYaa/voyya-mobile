@@ -303,6 +303,7 @@ export default function ConfirmScreen(): React.JSX.Element {
             ]}
             route={{ points: [origin, destination] }}
             interactive={false}
+            online={networkStatus !== 'offline'}
             expandable
             height={MAP_HEIGHT}
           />

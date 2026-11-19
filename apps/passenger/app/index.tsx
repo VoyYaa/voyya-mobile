@@ -237,6 +237,8 @@ export default function HomeScreen(): React.JSX.Element {
             ]}
             interactive={false}
             coveredBottom={theme.radius.sheet}
+            coveredTop={insets.top + theme.spacing.sm + theme.touch.min}
+            online={networkStatus !== 'offline'}
             height={mapHeight}
             style={{ borderRadius: 0, borderWidth: 0 }}
           />

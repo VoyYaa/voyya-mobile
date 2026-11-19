@@ -42,4 +42,16 @@ describe('reduceMapLoad', () => {
     const failed = reduceMapLoad(INITIAL_MAP_LOAD_STATE, 'failed');
     assert.deepEqual(reduceMapLoad(failed, 'fully_rendered'), { ready: true, degraded: false });
   });
+
+  it('clears the degraded flag when the network comes back, keeping the map ready', () => {
+    const failed = reduceMapLoad(INITIAL_MAP_LOAD_STATE, 'failed');
+    assert.deepEqual(reduceMapLoad(failed, 'network_back'), { ready: true, degraded: false });
+  });
+
+  it('does not mark a loading map as ready when the network comes back', () => {
+    assert.deepEqual(reduceMapLoad(INITIAL_MAP_LOAD_STATE, 'network_back'), {
+      ready: false,
+      degraded: false,
+    });
+  });
 });
