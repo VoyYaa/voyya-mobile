@@ -530,7 +530,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
                   {driverCopy.trip.moreOptions}
                 </Text>
                 <View
-                  style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: theme.spacing.lg }}
+                  style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: theme.spacing.xl }}
                 >
                   {subState === 'en_camino' && (
                     <LinkButton
@@ -552,6 +552,7 @@ export default function ActiveTripScreen(): React.JSX.Element {
                   )}
                   <LinkButton
                     label={driverCopy.trip.cancelTrip}
+                    tone="danger"
                     onPress={() => setSheet('cancel')}
                     testID="trip-cancel"
                   />
