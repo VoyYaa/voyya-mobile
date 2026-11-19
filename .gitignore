@@ -39,3 +39,7 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Firebase client config (se entrega a EAS como archivo protegido)
+/apps/*/google-services.json
+/apps/*/GoogleService-Info.plist
