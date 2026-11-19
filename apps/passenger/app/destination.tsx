@@ -8,6 +8,7 @@ import {
   Button,
   LinkButton,
   Map,
+  MapPlaceholder,
   MarkGlyph,
   PointRoute,
   ScreenHeader,
@@ -28,9 +29,9 @@ import { useQuoteFare } from '../src/hooks/useQuoteFare';
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { usePickupServiceOptions, useVerifyPickup } from '../src/hooks/useServiceOptions';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
-import { DEFAULT_MAP_CENTER } from '../src/constants/demo-places';
 import { CAN_PIN_DROP } from '../src/constants/platform';
-import { POIS_YARUMAL, type PoiYarumal } from '../src/constants/pois-yarumal';
+import { allVerifiedPlaces } from '../src/constants/verified-places/registry';
+import type { VerifiedPlace } from '../src/constants/verified-places/types';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
 interface SelectedPlace {
@@ -99,9 +100,9 @@ export default function DestinationScreen(): React.JSX.Element {
 
   const visiblePois = useMemo(() => {
     const text = query.trim().toLowerCase();
-    if (!text) return POIS_YARUMAL;
-    return POIS_YARUMAL.filter((poi) => poi.title.toLowerCase().includes(text));
-  }, [query]);
+    if (!text) return places.places;
+    return places.places.filter((poi) => poi.title.toLowerCase().includes(text));
+  }, [query, places.places]);
 
   useEffect(() => {
     if (resolveOrigin.status === 'resolved' && resolveOrigin.origin) {
@@ -132,14 +133,14 @@ export default function DestinationScreen(): React.JSX.Element {
     );
   };
 
-  const selectPoi = (poi: PoiYarumal): void => {
+  const selectPoi = (poi: VerifiedPlace): void => {
     if (!poi.coord) return;
     selectPlace({ id: poi.id, title: poi.title, lat: poi.coord.lat, lng: poi.coord.lng });
   };
 
   useEffect(() => {
     if (appliedPoi.current || !params.poi || !origin) return;
-    const poi = POIS_YARUMAL.find((candidate) => candidate.id === params.poi);
+    const poi = allVerifiedPlaces().find((candidate) => candidate.id === params.poi);
     appliedPoi.current = true;
     if (!poi) return;
     if (poi.coord) selectPoi(poi);
@@ -178,7 +179,7 @@ export default function DestinationScreen(): React.JSX.Element {
     });
   };
 
-  const selectOriginPoi = (poi: PoiYarumal): void => {
+  const selectOriginPoi = (poi: VerifiedPlace): void => {
     if (!poi.coord) return;
     verifyOrigin({ address: poi.title, lat: poi.coord.lat, lng: poi.coord.lng });
   };
@@ -198,6 +199,7 @@ export default function DestinationScreen(): React.JSX.Element {
   const hasOptionsError = !isFixingOrigin && serviceOptions.isError && !offline;
   const originOutOfCoverage = !isFixingOrigin && serviceOptions.data?.municipality === null;
   const stickyPin = isFixingOrigin ? originPinCandidate : pinCandidate;
+  const mapCenter = isFixingOrigin ? deviceCenter : { lat: origin.lat, lng: origin.lng };
 
   const header = (
     <View style={{ gap: theme.spacing.md, paddingBottom: theme.spacing.md }}>
@@ -240,14 +242,10 @@ export default function DestinationScreen(): React.JSX.Element {
         </View>
       )}
 
-      {CAN_PIN_DROP && (
+      {CAN_PIN_DROP && mapCenter && (
         <Map
           pinDrop
-          center={
-            isFixingOrigin
-              ? (deviceCenter ?? DEFAULT_MAP_CENTER)
-              : { lat: origin.lat, lng: origin.lng }
-          }
+          center={mapCenter}
           markers={
             isFixingOrigin
               ? []
@@ -262,6 +260,13 @@ export default function DestinationScreen(): React.JSX.Element {
           }
           onPickLocation={isFixingOrigin ? setOriginPinCandidate : setPinCandidate}
           height={keyboardVisible ? MAP_HEIGHT_COLLAPSED : MAP_HEIGHT}
+        />
+      )}
+
+      {CAN_PIN_DROP && !mapCenter && (
+        <MapPlaceholder
+          height={keyboardVisible ? MAP_HEIGHT_COLLAPSED : MAP_HEIGHT}
+          testID="destination-map-placeholder"
         />
       )}
 
@@ -341,7 +346,7 @@ export default function DestinationScreen(): React.JSX.Element {
 
       {placesVerified && (
         <Text style={{ ...theme.typography.smallStrong, color: theme.colors.textMuted }}>
-          {copy.placesTitle}
+          {copy.placesTitle(places.municipalityName)}
         </Text>
       )}
 

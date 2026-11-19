@@ -6,13 +6,16 @@ import { authCopy } from './auth-copy';
 import { notificationsCopy } from './notifications-copy';
 import { savedStartCodeCopy, savedTripCopy } from './saved-trip-copy';
 
+const placesTitle = (municipalityName: string | null): string =>
+  municipalityName ? `Lugares de ${municipalityName}` : 'Lugares conocidos';
+
 export const passengerCopy = {
   auth: authCopy,
   home: {
     whereTo: '¿A dónde vas?',
     whereToHint: 'Toca para escribir tu destino',
     whereToLabel: '¿A dónde vas? Toca para escribir tu destino',
-    placesTitle: 'Lugares de Yarumal',
+    placesTitle,
     placesElsewhere: CAN_PIN_DROP
       ? 'Aún no tenemos lugares conocidos en esta zona. Marca tu destino moviendo el pin en el mapa.'
       : 'Aún no tenemos lugares conocidos en esta zona.',
@@ -45,7 +48,7 @@ export const passengerCopy = {
     destinationPlaceholder: 'Escribe tu destino…',
     searchLabel: 'Buscar destino',
     searchPlaceholder: 'Buscar dirección, sitio o referencia',
-    placesTitle: 'Lugares conocidos',
+    placesTitle,
     placesElsewhere: (municipalityName: string | null): string => {
       const area = municipalityName ? `en ${municipalityName}` : 'en esta zona';
       return CAN_PIN_DROP

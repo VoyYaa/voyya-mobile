@@ -10,6 +10,7 @@ import {
   Chip,
   LinkButton,
   Map,
+  MapPlaceholder,
   PointRow,
   Skeleton,
   Toast,
@@ -36,8 +37,6 @@ import { noticeToastVisible, type LocationConsentPhase } from '../src/lib/consen
 import { useResolveOrigin } from '../src/hooks/useResolveOrigin';
 import { useTripDraftStore } from '../src/state/useTripDraftStore';
 import { TRIP_ENDED_NOTICE, TRIP_NOT_FOUND_NOTICE } from '../src/constants/notices';
-import { DEFAULT_MAP_CENTER } from '../src/constants/demo-places';
-import { POIS_YARUMAL } from '../src/constants/pois-yarumal';
 import { activeTripRoute } from '../src/lib/active-trip-route';
 import { passengerCopy } from '../src/copy/passenger-copy';
 
@@ -201,31 +200,33 @@ export default function HomeScreen(): React.JSX.Element {
     !noticeOpen &&
     gate.phase !== 'checking' &&
     !awaitingAutoResolve;
-  const placeChips = POIS_YARUMAL.slice(0, MAX_PLACE_CHIPS);
+  const placeChips = places.places.slice(0, MAX_PLACE_CHIPS);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <View style={{ height: mapHeight }}>
         {showMapSkeleton ? (
           <Skeleton accent height={mapHeight} radius={0} testID="home-map-skeleton" />
-        ) : (
+        ) : origin ? (
           <Map
-            center={origin ? { lat: origin.lat, lng: origin.lng } : DEFAULT_MAP_CENTER}
-            markers={
-              origin
-                ? [
-                    {
-                      id: 'current-location',
-                      kind: 'origin',
-                      coord: { lat: origin.lat, lng: origin.lng },
-                      label: origin.address,
-                    },
-                  ]
-                : []
-            }
+            center={{ lat: origin.lat, lng: origin.lng }}
+            markers={[
+              {
+                id: 'current-location',
+                kind: 'origin',
+                coord: { lat: origin.lat, lng: origin.lng },
+                label: origin.address,
+              },
+            ]}
             interactive={false}
             height={mapHeight}
             style={{ borderRadius: 0, borderWidth: 0 }}
+          />
+        ) : (
+          <MapPlaceholder
+            height={mapHeight}
+            style={{ borderRadius: 0, borderWidth: 0 }}
+            testID="home-map-placeholder"
           />
         )}
         <View
@@ -370,7 +371,7 @@ export default function HomeScreen(): React.JSX.Element {
         {!trip && places.availability === 'verified' && (
           <View style={{ gap: theme.spacing.sm }}>
             <Text style={{ ...theme.typography.smallStrong, color: theme.colors.textMuted }}>
-              {copy.placesTitle}
+              {copy.placesTitle(places.municipalityName)}
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm }}>
               {placeChips.map((poi) => (

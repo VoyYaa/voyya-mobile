@@ -52,3 +52,14 @@ describe('permission sheet explains the identifier without naming processors (PP
     assert.match(notificationsCopy.sheet.note, /pueden tardar o no llegar/);
   });
 });
+
+describe('the app is not tied to one municipality (A-07)', () => {
+  it('names no municipality in the user copy', () => {
+    assert.doesNotMatch(source, /yarumal/i);
+  });
+
+  it('builds the places title from the municipality the server names', () => {
+    assert.ok(source.includes('Lugares de ${municipalityName}'));
+    assert.ok(source.includes("'Lugares conocidos'"));
+  });
+});

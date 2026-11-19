@@ -2,10 +2,10 @@ import React from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 import { useTheme } from '@voyyaa/ui-mobile';
-import type { PoiYarumalCategory } from '../constants/pois-yarumal';
+import type { PlaceCategory } from '../constants/verified-places/types';
 
 export interface PlaceIconProps {
-  category: PoiYarumalCategory;
+  category: PlaceCategory;
   size?: number;
 }
 
@@ -16,7 +16,7 @@ function CategoryGlyph({
   category,
   ink,
 }: {
-  category: PoiYarumalCategory;
+  category: PlaceCategory;
   ink: string;
 }): React.JSX.Element {
   const stroke = {

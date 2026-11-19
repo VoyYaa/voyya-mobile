@@ -1,15 +1,8 @@
-import type { Coordinate } from '@voyyaa/shared';
+import type { VerifiedPlace } from './types';
 
-export type PoiYarumalCategory = 'plaza' | 'salud' | 'gobierno' | 'transporte';
+export const YARUMAL_NAME = 'Yarumal';
 
-export interface PoiYarumal {
-  id: string;
-  title: string;
-  category: PoiYarumalCategory;
-  coord: Coordinate | null;
-}
-
-export const POIS_YARUMAL: readonly PoiYarumal[] = [
+export const YARUMAL_PLACES: readonly VerifiedPlace[] = [
   {
     id: 'parque-principal',
     title: 'Parque Principal',
@@ -24,7 +17,7 @@ export const POIS_YARUMAL: readonly PoiYarumal[] = [
   },
   {
     id: 'alcaldia',
-    title: 'Alcaldía de Yarumal',
+    title: 'Alcaldía',
     category: 'gobierno',
     coord: null,
   },
