@@ -245,6 +245,7 @@ export default function HomeScreen(): React.JSX.Element {
         onAvatarPress={() => setAccountVisible(true)}
       />
       {showRefetchRail && <ProgressRail />}
+      <OfferBanner offer={offerAlert.offer} onPress={openOffer} />
 
       <ScrollView
         contentContainerStyle={{
@@ -337,8 +338,6 @@ export default function HomeScreen(): React.JSX.Element {
           timeoutSec={ACCEPTANCE_TIMEOUT_FALLBACK_SEC}
         />
       </ScrollView>
-
-      <OfferBanner offer={offerAlert.offer} topInset={insets.top} onPress={openOffer} />
 
       <LocationConsentSheet
         visible={consentVisible}

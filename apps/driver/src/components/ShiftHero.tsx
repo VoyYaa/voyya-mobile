@@ -85,14 +85,16 @@ export function ShiftHero({
       >
         {heroText.title}
       </Text>
-      <Text
-        style={{
-          ...theme.typography.small,
-          color: onShift ? colors.onStageMuted : colors.textMuted,
-        }}
-      >
-        {heroText.body}
-      </Text>
+      {heroText.body !== null && (
+        <Text
+          style={{
+            ...theme.typography.small,
+            color: onShift ? colors.onStageMuted : colors.textMuted,
+          }}
+        >
+          {heroText.body}
+        </Text>
+      )}
     </View>
   );
 

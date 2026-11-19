@@ -7,7 +7,7 @@ export interface ShiftStatusInput {
 
 export interface ShiftHeroText {
   title: string;
-  body: string;
+  body: string | null;
 }
 
 export function shiftHeroText({ onShift, consentPending }: ShiftStatusInput): ShiftHeroText {
@@ -15,11 +15,11 @@ export function shiftHeroText({ onShift, consentPending }: ShiftStatusInput): Sh
   if (consentPending) {
     return { title: homeCopy.consentPendingTitle, body: homeCopy.consentPendingBody };
   }
-  return { title: homeCopy.waitingTitle, body: homeCopy.waitingBody };
+  return { title: homeCopy.waitingTitle, body: null };
 }
 
 export function shiftSwitchHint({
   consentPending,
-}: Pick<ShiftStatusInput, 'consentPending'>): string {
-  return consentPending ? homeCopy.consentPendingHint : homeCopy.shiftOnHint;
+}: Pick<ShiftStatusInput, 'consentPending'>): string | null {
+  return consentPending ? homeCopy.consentPendingHint : null;
 }
