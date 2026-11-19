@@ -32,3 +32,24 @@ export const uiCopy = {
   routeOrigin: 'Origen',
   routeDestination: 'Destino',
 } as const;
+
+export const mapCopy = {
+  markerOrigin: 'Recogida',
+  markerDestination: 'Destino',
+  markerDriver: 'Tu conductor',
+  routeApproximate: 'Ruta aproximada',
+  unavailable: 'Mapa no disponible',
+  webUnavailable: 'Mapa no disponible en la versión web de desarrollo',
+  loading: 'Cargando el mapa',
+  offlineStrip: 'Sin conexión: el mapa puede verse incompleto',
+  recenter: 'Centrar el mapa',
+  expand: 'Ampliar el mapa',
+  myLocation: 'Mi ubicación',
+  closeMap: 'Cerrar el mapa',
+  pinHint: 'Mueve el mapa para ajustar el punto',
+  placeholder: 'Aquí verás tu ubicación',
+  expandedTitle: 'Tu viaje',
+  fallbackOrigin: 'Recogida',
+  fallbackDestination: 'Destino',
+  fallbackDriver: 'Tu conductor',
+} as const;

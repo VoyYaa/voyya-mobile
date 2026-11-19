@@ -1,5 +1,5 @@
 import type { Feature, LineString, Position } from 'geojson';
-import type { MapLatLng } from './types';
+import type { MapLatLng, MapRoute } from './types';
 
 export function toPosition(coord: MapLatLng): Position {
   return [coord.lng, coord.lat];
@@ -130,4 +130,17 @@ export function haveMarkersMoved(
     const before = previous[index];
     return !before || distanceMeters(before, point) > thresholdMeters;
   });
+}
+
+export interface ResolvedRoute {
+  points: readonly MapLatLng[];
+  approximate: boolean;
+}
+
+export function resolveRoute(route: MapRoute): ResolvedRoute | null {
+  const [from, to] = route.points;
+  if (!from || !to) return null;
+  if (route.points.length > 2) return { points: route.points, approximate: false };
+  const approximate = route.approximate !== false;
+  return { points: approximate ? toCurvedRoute(from, to) : route.points, approximate };
 }

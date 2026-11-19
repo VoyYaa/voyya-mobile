@@ -11,6 +11,8 @@ export type {
   MapMarker,
   MapMarkerFreshness,
   MapMarkerKind,
+  MapFitInsets,
+  MapPinKind,
   MapProps,
   MapRoute,
 } from '../map/types';
@@ -32,7 +34,12 @@ export function Map(props: MapProps): React.JSX.Element {
   const token = getMapboxAccessToken();
 
   const fallback = props.fallback ?? (
-    <MapFallback height={props.height} style={props.style} testID={props.testID} />
+    <MapFallback
+      markers={props.markers}
+      height={props.height}
+      style={props.style}
+      testID={props.testID}
+    />
   );
 
   if (!token || !isNativeMapAvailable()) return <>{fallback}</>;

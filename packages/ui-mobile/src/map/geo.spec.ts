@@ -6,6 +6,7 @@ import {
   distanceMeters,
   haveMarkersMoved,
   isCollapsedBounds,
+  resolveRoute,
   routeMidpoint,
   toBounds,
   toCurvedRoute,
@@ -139,5 +140,37 @@ describe('haveMarkersMoved', () => {
 
   it('detects a different number of markers', () => {
     assert.equal(haveMarkersMoved(base, [...base, { lat: 6.97, lng: -75.41 }]), true);
+  });
+});
+
+describe('resolveRoute', () => {
+  const a = { lat: 6.96, lng: -75.41 };
+  const b = { lat: 6.97, lng: -75.43 };
+
+  it('curves and flags a two point route as approximate by default', () => {
+    const resolved = resolveRoute({ points: [a, b] });
+    assert.ok(resolved);
+    assert.equal(resolved.approximate, true);
+    assert.equal(resolved.points.length, CURVE_SEGMENTS + 1);
+  });
+
+  it('draws a two point route as given when it is not approximate', () => {
+    assert.deepEqual(resolveRoute({ points: [a, b], approximate: false }), {
+      points: [a, b],
+      approximate: false,
+    });
+  });
+
+  it('draws a route of more than two points as given, never approximate', () => {
+    const mid = { lat: 6.965, lng: -75.42 };
+    assert.deepEqual(resolveRoute({ points: [a, mid, b], approximate: true }), {
+      points: [a, mid, b],
+      approximate: false,
+    });
+  });
+
+  it('has nothing to draw with fewer than two points', () => {
+    assert.equal(resolveRoute({ points: [a] }), null);
+    assert.equal(resolveRoute({ points: [] }), null);
   });
 });

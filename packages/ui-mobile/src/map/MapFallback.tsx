@@ -1,21 +1,14 @@
 import React from 'react';
 import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { mapCopy } from '../copy';
 import { useTheme } from '../theme';
-import type { MapMarker, MapMarkerKind } from './types';
+import { fallbackRows, hasRouteSchematic } from './fallback-rows';
+import { MapSchematic } from './MapSchematic';
+import type { MapMarker } from './types';
 
-export const MAP_WEB_UNAVAILABLE_LABEL = 'Mapa no disponible en la versión web de desarrollo';
+export const MAP_WEB_UNAVAILABLE_LABEL = mapCopy.webUnavailable;
 
-const MARKER_KIND_LABELS: Record<MapMarkerKind, string> = {
-  origin: 'Origen',
-  destination: 'Destino',
-  car: 'Taxi',
-};
-
-function describeMarker(marker: MapMarker): string {
-  const kind = MARKER_KIND_LABELS[marker.kind];
-  const name = marker.label ? ` ${marker.label}` : '';
-  return `${kind}${name}: ${marker.coord.lat.toFixed(5)}, ${marker.coord.lng.toFixed(5)}`;
-}
+const COMPACT_HEIGHT = 140;
 
 export interface MapFallbackProps {
   label?: string;
@@ -33,34 +26,41 @@ export function MapFallback({
   testID,
 }: MapFallbackProps): React.JSX.Element {
   const theme = useTheme();
+  const rows = fallbackRows(markers);
+  const compact = height < COMPACT_HEIGHT;
+  const showSchematic = hasRouteSchematic(markers);
 
   return (
     <View
       testID={testID}
-      accessibilityElementsHidden={!markers?.length}
-      importantForAccessibility={markers?.length ? 'auto' : 'no-hide-descendants'}
+      accessibilityElementsHidden={!rows.length}
+      importantForAccessibility={rows.length ? 'auto' : 'no-hide-descendants'}
       style={[
         {
-          height,
+          minHeight: height,
           borderRadius: theme.radius.card,
           backgroundColor: theme.colors.surfaceAlt,
           alignItems: 'center',
           justifyContent: 'center',
+          paddingVertical: theme.spacing.sm,
+          paddingHorizontal: theme.spacing.lg,
           borderWidth: 1,
           borderColor: theme.colors.border,
         },
         style,
       ]}
     >
-      <Text style={{ ...theme.typography.small, color: theme.colors.textMuted }}>
-        {label ?? 'Mapa no disponible'}
+      {showSchematic && !compact && <MapSchematic withRoute />}
+      <Text style={{ ...theme.typography.smallStrong, color: theme.colors.textMuted }}>
+        {label ?? mapCopy.unavailable}
       </Text>
-      {markers?.map((marker) => (
+      {rows.map((row) => (
         <Text
-          key={marker.id}
-          style={{ ...theme.typography.small, color: theme.colors.text, marginTop: 4 }}
+          key={row.id}
+          numberOfLines={2}
+          style={{ ...theme.typography.small, color: theme.colors.text, marginTop: 2 }}
         >
-          {describeMarker(marker)}
+          {row.text}
         </Text>
       ))}
     </View>

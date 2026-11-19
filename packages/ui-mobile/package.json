@@ -20,7 +20,7 @@
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "test": "node --test src/palette.spec.ts src/utils/color.spec.ts src/utils/trip-status-tone.spec.ts src/motion/ref-counted-loop.spec.ts src/motion/hop-timeline.spec.ts src/map/mapbox-access-token.spec.ts src/map/geo.spec.ts src/map/map-style.spec.ts src/utils/otp-layout.spec.ts src/utils/otp-entry.spec.ts src/components/OtpInput.spec.ts",
+    "test": "node --test --import ../app-runtime/test-support/resolve-ts-extension.mjs src/palette.spec.ts src/utils/color.spec.ts src/utils/trip-status-tone.spec.ts src/motion/ref-counted-loop.spec.ts src/motion/hop-timeline.spec.ts src/map/mapbox-access-token.spec.ts src/map/geo.spec.ts src/map/map-style.spec.ts src/map/marker-geometry.spec.ts src/map/map-load-state.spec.ts src/map/camera-plan.spec.ts src/map/fallback-rows.spec.ts src/utils/otp-layout.spec.ts src/utils/otp-entry.spec.ts src/components/OtpInput.spec.ts",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "peerDependencies": {
