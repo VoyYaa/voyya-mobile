@@ -8,7 +8,8 @@ import {
   type SharingEvent,
   type SharingState,
 } from './sharing-machine';
-import { startTripLocationUpdates, stopTripLocationUpdates } from './location-service';
+import { defaultTripLocationTransport } from './default-trip-location-transport';
+import { createTransportSwitch, type TripLocationTransport } from './trip-location-transport';
 
 interface SharingStoreState {
   machine: SharingState;
@@ -28,13 +29,23 @@ export const useSharingStore = create<SharingStoreState>(() => ({
 
 let effectChain: Promise<void> = Promise.resolve();
 
+const transportSwitch = createTransportSwitch(defaultTripLocationTransport, {
+  getStatus: () => useSharingStore.getState().machine.status,
+  resetMachine: () => dispatchSharing({ type: 'report_result', sharing: null }),
+  enqueue: (task) => {
+    effectChain = effectChain.then(task);
+  },
+  whenIdle: () => effectChain,
+});
+
 async function runEffect(effect: SharingEffect): Promise<void> {
+  const transport = transportSwitch.current();
   if (effect.type === 'stop') {
-    await stopTripLocationUpdates().catch(() => undefined);
+    await transport.stop().catch(() => undefined);
     return;
   }
   try {
-    await startTripLocationUpdates(effect.intervalSec);
+    await transport.start(effect.intervalSec);
   } catch {
     dispatchSharing({ type: 'start_failed' });
   }
@@ -56,6 +67,14 @@ export function dispatchSharing(event: SharingEvent): void {
   effects.forEach(enqueue);
 }
 
+export function swapTripLocationTransport(next: TripLocationTransport): void {
+  transportSwitch.swap(next);
+}
+
+export const readTripLocationAccuracy = transportSwitch.readAccuracy;
+
+export const readTripLocationNotificationsGranted = transportSwitch.readNotificationsGranted;
+
 export function stopOrphanedTripLocation(): void {
   if (useSharingStore.getState().machine.status === 'running') return;
   enqueue({ type: 'stop', reason: 'orphan_cleanup' });
@@ -63,6 +82,7 @@ export function stopOrphanedTripLocation(): void {
 
 onSessionCleared(() => {
   dispatchSharing({ type: 'report_result', sharing: null });
+  swapTripLocationTransport(defaultTripLocationTransport);
 });
 
 export function noteGoodReading(now: number): void {

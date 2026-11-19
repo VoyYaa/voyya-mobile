@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import { isNetworkError } from '@voyyaa/app-runtime';
 import { getDriverHome } from '../api/driver.api';
 import { remainingCapMs } from '../tracking/sharing-machine';
-import { readLocationAccuracy } from '../tracking/location-service';
 import {
   dispatchSharing,
+  readTripLocationAccuracy,
+  readTripLocationNotificationsGranted,
   setSharingEnvironment,
   useSharingStore,
 } from '../tracking/sharing-runtime';
@@ -17,14 +17,11 @@ import { useIsAuthenticated } from './useIsAuthenticated';
 const CAP_GRACE_MS = 50;
 
 async function refreshEnvironment(): Promise<void> {
-  const [accuracy, permission] = await Promise.all([
-    readLocationAccuracy(),
-    Notifications.getPermissionsAsync().catch(() => null),
+  const [accuracy, notificationsGranted] = await Promise.all([
+    readTripLocationAccuracy(),
+    readTripLocationNotificationsGranted(),
   ]);
-  setSharingEnvironment({
-    accuracy,
-    notificationsGranted: permission === null ? null : permission.granted,
-  });
+  setSharingEnvironment({ accuracy, notificationsGranted });
 }
 
 export function useTripLocationSharing(): void {
@@ -39,7 +36,7 @@ export function useTripLocationSharing(): void {
   useEffect(() => {
     if (!home.isSuccess) return;
     let cancelled = false;
-    void readLocationAccuracy().then((accuracy) => {
+    void readTripLocationAccuracy().then((accuracy) => {
       if (cancelled) return;
       setSharingEnvironment({ accuracy });
       dispatchSharing({
@@ -110,7 +107,7 @@ export function useResumeSharing(): SharingResume {
           now: Date.now(),
           sharing: fresh.active_trip?.location_sharing ?? null,
           appActive: AppState.currentState === 'active',
-          accuracy: await readLocationAccuracy(),
+          accuracy: await readTripLocationAccuracy(),
         });
         setOutcome('idle');
       } catch (error) {

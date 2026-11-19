@@ -24,6 +24,7 @@ import { ensureAssignmentNotificationChannel } from '../src/notifications/notifi
 import { useNotificationRouting } from '../src/notifications/useNotificationRouting';
 import { useTripLocationSharing } from '../src/hooks/useTripLocationSharing';
 import '../src/tracking/trip-location-task';
+import '../src/tracking/demo-transport-wiring';
 
 configureApiClient({ baseUrl: API_BASE_URL, defaultErrorSchema: AssignmentError });
 configurePushNotifications({

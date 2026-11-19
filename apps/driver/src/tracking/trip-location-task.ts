@@ -1,10 +1,8 @@
 import * as TaskManager from 'expo-task-manager';
 import type { LocationObject } from 'expo-location';
-import { ApiError, LOCATION_REQUIRED_ACCURACY_M, domainErrorCode } from '@voyyaa/app-runtime';
 import { reportDriverLocation } from '../api/driver.api';
-import { useLocationIssueStore } from '../state/useLocationIssueStore';
 import { TRIP_LOCATION_TASK } from './location-service';
-import { reportBatch, type FailureInfo } from './report-batch';
+import { reportBatch } from './report-batch';
 import type { Reading } from './sharing-machine';
 import {
   dispatchSharing,
@@ -12,12 +10,11 @@ import {
   stopOrphanedTripLocation,
   useSharingStore,
 } from './sharing-runtime';
+import { MAX_READING_ACCURACY_M, describeFailure, onRejectedForGood } from './trip-location-ports';
 
 interface TripLocationTaskData {
   locations: LocationObject[];
 }
-
-const CONSENT_REQUIRED = 'LOCATION_CONSENT_REQUIRED';
 
 function toReading(location: LocationObject): Reading {
   return {
@@ -26,11 +23,6 @@ function toReading(location: LocationObject): Reading {
     accuracy: location.coords.accuracy,
     timestamp: location.timestamp,
   };
-}
-
-function describeFailure(error: unknown): FailureInfo {
-  const status = error instanceof ApiError ? error.status : undefined;
-  return { status, code: domainErrorCode(error) };
 }
 
 function handleBatch(locations: readonly LocationObject[]): Promise<void> {
@@ -42,10 +34,8 @@ function handleBatch(locations: readonly LocationObject[]): Promise<void> {
     noteGoodReading,
     report: reportDriverLocation,
     describeFailure,
-    onRejectedForGood: ({ code }) => {
-      if (code === CONSENT_REQUIRED) useLocationIssueStore.getState().setIssue('consent_required');
-    },
-    maxAccuracyM: LOCATION_REQUIRED_ACCURACY_M,
+    onRejectedForGood,
+    maxAccuracyM: MAX_READING_ACCURACY_M,
   });
 }
 
