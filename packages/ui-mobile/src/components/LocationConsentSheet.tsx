@@ -29,6 +29,7 @@ export interface LocationConsentSheetProps {
   primaryLoadingLabel?: string;
   errorMessage?: string;
   linkRow?: LocationConsentLinkRow;
+  demoNote?: string;
   maxBodyHeightRatio?: number;
   testID?: string;
 }
@@ -48,6 +49,7 @@ export function LocationConsentSheet({
   primaryLoadingLabel,
   errorMessage,
   linkRow,
+  demoNote,
   maxBodyHeightRatio = DEFAULT_MAX_BODY_HEIGHT_RATIO,
   testID,
 }: LocationConsentSheetProps): React.JSX.Element {
@@ -78,6 +80,14 @@ export function LocationConsentSheet({
             </Text>
           </View>
         ))}
+        {demoNote ? (
+          <Text
+            style={{ ...theme.typography.small, color: theme.colors.textMuted }}
+            testID={testID ? `${testID}-demo-note` : undefined}
+          >
+            {demoNote}
+          </Text>
+        ) : null}
         {linkRow && (
           <View style={{ alignItems: 'flex-start' }}>
             <LinkButton

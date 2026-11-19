@@ -108,3 +108,16 @@ describe('AccountSheet demo note', () => {
     assert.match(accountSource, /testID="account-demo-note"/);
   });
 });
+
+describe('LocationConsentSheet demo note', () => {
+  const source = readFileSync(
+    new URL('../components/LocationConsentSheet.tsx', import.meta.url),
+    'utf8',
+  );
+
+  it('adds one muted line under the notice rows without touching the legal text or the buttons', () => {
+    assert.match(source, /demoNote?: string/);
+    assert.match(source, /demoNote ? (/);
+    assert.match(source, /secondaryLabel && onSecondary/);
+  });
+});
