@@ -5,7 +5,7 @@
   "description": "VoyYa — apps móviles (Expo/EAS) del pasajero y del conductor + design system y contratos compartidos. Repo standalone: copiado del monorepo VoyYa (apps/passenger, apps/driver, packages/ui-mobile, packages/shared) para desplegar por EAS de forma independiente.",
   "packageManager": "pnpm@10.24.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13"
   },
   "scripts": {
     "dev": "turbo run dev",

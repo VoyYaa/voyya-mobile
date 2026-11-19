@@ -26,7 +26,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: pnpm
 
       - name: Assert EAS pnpm version matches packageManager
@@ -68,24 +68,12 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Test
+        run: pnpm run test
+
       - name: Format check
         run: pnpm run format:check
 
-      # No hay un paso "test": los scripts "test" de los 4 paquetes (apps/passenger,
-      # apps/driver, packages/ui-mobile, packages/shared) son stubs que solo
-      # imprimen un mensaje y salen con exit 0 — no ejecutan ningún test real.
-      # Añadir aquí un paso "pnpm run test" simularía una garantía de calidad
-      # inexistente. Este CI verifica lo que hoy sí se puede comprobar sin
-      # credenciales: typecheck, lint, build y format:check.
-      #
-      # "build" compila con tsc packages/shared y packages/ui-mobile (los únicos
-      # con script "build"); apps/passenger y apps/driver no declaran ese script
-      # y turbo los omite — el bundle nativo/Expo se genera vía EAS Build fuera
-      # de este CI, ya que requiere credenciales que no viven en este repo.
-      #
-      # Tampoco hay verificación de que el bundle de Metro construya: este CI
-      # pasa en verde con una app que no arranca (fue exactamente lo que ocurrió
-      # con el defecto de ADR-008). El paso "Assert pnpm linker" de arriba cubre
-      # una causa concreta de ese fallo, pero no sustituye un smoke test de
-      # bundle real. Ver ADR-008 §8: job "bundle-smoke" recomendado, no
-      # implementado aquí (dueños: pruebas + frontend).
+      # Build compiles shared, ui-mobile and app-runtime with tsc; the apps have no build script, so the
+      # native bundle is made by EAS outside this CI. Metro bundle smoke is the manual procedure in
+      # README.md ("Bundle smoke"); a CI job for it is recommended by ADR-008 section 8 and not blocking.
