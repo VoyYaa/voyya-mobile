@@ -4,6 +4,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { LinkButton, useTheme } from '@voyyaa/ui-mobile';
 import {
   locationBannerView,
+  type LocationBannerContext,
   type LocationBannerIcon,
   type LocationBannerKind,
   type LocationBannerTone,
@@ -13,6 +14,7 @@ export type { LocationBannerKind };
 
 export interface LocationIssueBannerProps {
   kind: LocationBannerKind;
+  context?: LocationBannerContext;
   onPress: () => void;
 }
 
@@ -69,10 +71,11 @@ function BannerGlyph({ icon, color }: BannerGlyphProps): React.JSX.Element {
 
 export function LocationIssueBanner({
   kind,
+  context = 'shift',
   onPress,
 }: LocationIssueBannerProps): React.JSX.Element {
   const theme = useTheme();
-  const view = locationBannerView(kind);
+  const view = locationBannerView(kind, context);
   const { colors } = theme;
   const toneColors: Record<LocationBannerTone, { background: string; ink: string }> = {
     info: { background: colors.infoTint, ink: colors.infoInk },

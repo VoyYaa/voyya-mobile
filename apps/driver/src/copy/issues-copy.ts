@@ -34,4 +34,9 @@ export const issuesCopy = {
       action: 'Abrir ajustes',
     },
   },
+  tripBannerBody: {
+    gps_disabled: 'Actívala para que tu pasajero te vea en el mapa.',
+    permission_denied: 'Sin él tu pasajero no te verá en el mapa.',
+    consent_required: 'Sin aceptarlo no podemos compartir tu ubicación con tu pasajero.',
+  },
 } as const;

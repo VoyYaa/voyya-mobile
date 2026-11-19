@@ -3,6 +3,7 @@ import type { LocationIssueKind } from '../state/useLocationIssueStore';
 
 export type LocationBannerKind = LocationIssueKind | 'precise_location_needed';
 export type LocationBannerTone = 'info' | 'warning' | 'danger';
+export type LocationBannerContext = 'shift' | 'trip';
 export type LocationBannerIcon = 'pin' | 'clock' | 'alert';
 
 export interface LocationBannerView {
@@ -36,6 +37,13 @@ const VIEW_BY_KIND: Record<LocationBannerKind, LocationBannerView> = {
   },
 };
 
-export function locationBannerView(kind: LocationBannerKind): LocationBannerView {
-  return VIEW_BY_KIND[kind];
+const TRIP_BODY: Partial<Record<LocationBannerKind, string>> = issuesCopy.tripBannerBody;
+
+export function locationBannerView(
+  kind: LocationBannerKind,
+  context: LocationBannerContext = 'shift',
+): LocationBannerView {
+  const view = VIEW_BY_KIND[kind];
+  const tripBody = context === 'trip' ? TRIP_BODY[kind] : undefined;
+  return tripBody ? { ...view, body: tripBody } : view;
 }

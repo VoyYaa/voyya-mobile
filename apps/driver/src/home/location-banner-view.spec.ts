@@ -62,4 +62,35 @@ describe('location banner view', () => {
     assert.equal(locationBannerView('consent_required').urgent, false);
     assert.equal(locationBannerView('precise_location_needed').urgent, false);
   });
+
+  it('never promises incoming requests while a trip is active', () => {
+    for (const kind of KINDS) {
+      const body = locationBannerView(kind, 'trip').body;
+      assert.ok(!/solicitudes/.test(body), kind);
+    }
+  });
+
+  it('explains the passenger reason in an active trip', () => {
+    assert.equal(
+      locationBannerView('gps_disabled', 'trip').body,
+      'Actívala para que tu pasajero te vea en el mapa.',
+    );
+    assert.equal(
+      locationBannerView('permission_denied', 'trip').body,
+      'Sin él tu pasajero no te verá en el mapa.',
+    );
+    assert.equal(
+      locationBannerView('consent_required', 'trip').body,
+      'Sin aceptarlo no podemos compartir tu ubicación con tu pasajero.',
+    );
+  });
+
+  it('keeps the shift copy by default and the same title, action and tone in a trip', () => {
+    assert.equal(locationBannerView('gps_disabled').body, 'Actívala para recibir solicitudes.');
+    const shift = locationBannerView('gps_disabled');
+    const trip = locationBannerView('gps_disabled', 'trip');
+    assert.equal(trip.title, shift.title);
+    assert.equal(trip.action, shift.action);
+    assert.equal(trip.tone, shift.tone);
+  });
 });

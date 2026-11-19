@@ -31,17 +31,22 @@ export function SharingStatusBadge({
   if (indicator.kind === 'none') return null;
 
   if (indicator.kind === 'consent_required') {
-    return <LocationIssueBanner kind="consent_required" onPress={onReadConsent} />;
+    return <LocationIssueBanner kind="consent_required" context="trip" onPress={onReadConsent} />;
   }
   if (indicator.kind === 'location_issue') {
     return (
-      <LocationIssueBanner kind={indicator.issue} onPress={() => void Linking.openSettings()} />
+      <LocationIssueBanner
+        kind={indicator.issue}
+        context="trip"
+        onPress={() => void Linking.openSettings()}
+      />
     );
   }
   if (indicator.kind === 'precise_needed') {
     return (
       <LocationIssueBanner
         kind="precise_location_needed"
+        context="trip"
         onPress={() => void Linking.openSettings()}
       />
     );
