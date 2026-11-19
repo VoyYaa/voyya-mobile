@@ -38,7 +38,7 @@ publicarlos en ningún registro para desarrollar localmente.
 
 ## Requisitos
 
-- Node.js ≥ 20, [pnpm](https://pnpm.io) 10.24.0 (`corepack enable` o `npm i -g pnpm@10.24.0`)
+- Node.js ≥ 22.13, [pnpm](https://pnpm.io) 10.24.0 (`corepack enable` o `npm i -g pnpm@10.24.0`). La configuración de pnpm (enlazado `hoisted`, `overrides`, `auditConfig`) vive en `pnpm-workspace.yaml`, no en `.npmrc` ni en `package.json` (ADR-008 y ADR-038 §5.1)
 - Cuenta de [Expo](https://expo.dev) + [EAS CLI](https://docs.expo.dev/eas/) (`npm i -g eas-cli`)
   para builds nativos (APK/IPA)
 - Un backend VoyYa corriendo (o accesible) para `EXPO_PUBLIC_API_URL`
@@ -513,8 +513,50 @@ pnpm install
 pnpm run build       # turbo: compila @voyya/shared y @voyya/ui-mobile (dist/) — dependencia de tipos de passenger/driver
 pnpm run typecheck   # turbo: tsc --noEmit en los 4 paquetes (respeta el orden build → typecheck)
 pnpm run lint        # turbo: eslint en los 4 paquetes
+pnpm run test        # turbo: pruebas unitarias de los 4 paquetes (ui-mobile, app-runtime, passenger, driver)
 pnpm run format:check # prettier --check sobre todo el repo
 ```
+
+### Bundle smoke (procedimiento reproducible)
+
+Un CI en verde no prueba que la app arranque: el bundle de Metro tiene que construirse de verdad
+(guardarraíl 7, ADR-008 §8). Con Metro levantado, las cuatro combinaciones app × plataforma deben
+responder HTTP 200 con un cuerpo de varios megabytes (un error de resolución devuelve 500 con un JSON
+pequeño).
+
+1. Instalar limpio y compilar los paquetes (los `dist/` de `shared`, `ui-mobile` y `app-runtime` los
+   necesita Metro):
+
+   ```bash
+   pnpm install --frozen-lockfile
+   pnpm run build
+   ```
+
+2. Levantar Metro de cada app en su puerto (dos terminales; `--clear` evita mezclar cachés):
+
+   ```bash
+   cd apps/passenger && npx expo start --dev-client --clear --port 8082 --host localhost
+   cd apps/driver    && npx expo start --dev-client --clear --port 8081 --host localhost
+   ```
+
+3. Pedir las cuatro combinaciones y leer el código y el tamaño:
+
+   ```bash
+   for spec in "8082 android" "8082 ios" "8081 android" "8081 ios"; do
+     set -- $spec
+     curl -s -m 600 -o /dev/null -w "port=$1 platform=$2 http=%{http_code} bytes=%{size_download}\n" "http://localhost:$1/.expo/.virtual-metro-entry.bundle?platform=$2&dev=true&hot=false"
+   done
+   ```
+
+   Resultado esperado: cuatro líneas con `http=200`. La primera petición de cada app con la caché vacía
+   tarda entre 10 y 30 s. Línea base en SDK 51 (`docs/specs/linea-base-migracion-expo.md`): pasajero
+   ≈ 9,8 MB, conductor ≈ 9,2 MB en dev.
+
+4. Cerrar Metro (los puertos 8081 y 8082 quedan libres). En Windows, un cierre abrupto de la terminal
+   deja procesos de Node escuchando: `netstat -ano | findstr :8081` y `taskkill /F /T /PID <pid>`.
+
+Si el bundle sale 500, el cuerpo dice qué módulo no se resolvió. El primer sospechoso es el enlazado:
+`pnpm config get node-linker` debe devolver `hoisted` y `node_modules/react-native` debe existir en la raíz.
 
 > `turbo.json` declara `"typecheck": { "dependsOn": ["^build"] }`: por eso los scripts raíz usan
 > `turbo run …` (vía `pnpm run typecheck`/`pnpm run lint`/`pnpm run build`) en vez de
