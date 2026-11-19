@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import type { SessionResponse, SessionTokens } from '@voyyaa/shared';
 import { configureAuthHandlers } from '../api/http-client';
+import { demoSessionOf } from '../demo/demo-session';
+import { expoDeviceLocationPort } from '../location/device-location-port';
+import { setDeviceLocationPort } from '../location/device-location';
+import { createDemoLocationPortSync } from '../location/demo-location-port';
 import { logout, refreshSession } from '../api/session.api';
 import {
   clearPersistedSession,
@@ -8,7 +12,8 @@ import {
   saveSession,
   updatePersistedTokens,
 } from './secure-storage';
-import { runSessionClearedHandlers } from './session-cleanup';
+import { onSessionCleared, runSessionClearedHandlers } from './session-cleanup';
+import { endSessionByRejection, useSessionEndedNoticeStore } from './session-ended-notice';
 import {
   clearSessionIdentity,
   readSessionIdentity,
@@ -27,6 +32,10 @@ interface SessionState extends SessionIdentity {
   clearSession: () => Promise<void>;
 }
 
+const demoLocationPort = createDemoLocationPortSync(setDeviceLocationPort, expoDeviceLocationPort);
+
+onSessionCleared(demoLocationPort.restore);
+
 function computeExpiresAt(expiresInSec: number): number {
   return Date.now() + expiresInSec * 1000;
 }
@@ -41,11 +50,15 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   sessionStartedAt: null,
 
   hydrate: async () => {
-    set(await readSessionIdentity({ readPersistedSession, now: Date.now }));
+    const identity = await readSessionIdentity({ readPersistedSession, now: Date.now });
+    demoLocationPort.apply(demoSessionOf(identity.user));
+    set(identity);
   },
 
   setSession: async (response) => {
     set({ sessionEpoch: get().sessionEpoch + 1 });
+    useSessionEndedNoticeStore.getState().discard();
+    demoLocationPort.apply(demoSessionOf(response.user));
     const accessTokenExpiresAt = computeExpiresAt(response.tokens.expires_in);
     await saveSession({
       accessToken: response.tokens.access_token,
@@ -91,12 +104,20 @@ const refreshSessionOnce = createSessionRefresher({
   },
   requestRefresh: (refreshToken) => refreshSession({ refresh_token: refreshToken }),
   saveTokens: (tokens) => useSessionStore.getState().setTokens(tokens),
-  clear: () => useSessionStore.getState().clearSession(),
+  clear: endSessionByRejectionNow,
   getEpoch: () => useSessionStore.getState().sessionEpoch,
   revoke: async (refreshToken) => {
     await logout({ refresh_token: refreshToken });
   },
 });
+
+function endSessionByRejectionNow(): Promise<void> {
+  return endSessionByRejection({
+    getUser: () => useSessionStore.getState().user,
+    raise: (notice) => useSessionEndedNoticeStore.getState().raise(notice),
+    clear: () => useSessionStore.getState().clearSession(),
+  });
+}
 
 export function waitForSessionRefresh(): Promise<void> {
   return refreshSessionOnce.whenIdle();
@@ -114,6 +135,6 @@ configureAuthHandlers({
   getAccessToken: () => useSessionStore.getState().accessToken,
   refreshAndRetry: refreshSessionOnce,
   onSessionExpired: () => {
-    void useSessionStore.getState().clearSession();
+    void endSessionByRejectionNow();
   },
 });
