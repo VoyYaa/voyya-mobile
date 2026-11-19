@@ -5,6 +5,8 @@ import {
   Modal,
   PanResponder,
   Pressable,
+  ScrollView,
+  StatusBar,
   Text,
   View,
   useWindowDimensions,
@@ -14,6 +16,7 @@ import { USE_NATIVE_DRIVER, motion } from '../tokens';
 import { uiCopy } from '../copy';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
+import { sheetMaxHeight } from '../utils/sheet-height';
 
 export interface BottomSheetProps {
   visible: boolean;
@@ -42,6 +45,11 @@ export function BottomSheet({
   const reduced = useReducedMotion();
   const keyboardHeight = useKeyboardHeight(avoidKeyboard && visible);
   const { height: windowHeight } = useWindowDimensions();
+  const maxHeight = sheetMaxHeight({
+    windowHeight,
+    keyboardHeight,
+    statusBarHeight: StatusBar.currentHeight,
+  });
   const announcedTitle = useRef<string | undefined>(undefined);
   const [rendered, setRendered] = useState(visible);
   const enter = useRef(new Animated.Value(0)).current;
@@ -161,6 +169,7 @@ export function BottomSheet({
             paddingBottom: theme.spacing.xxl,
             opacity: reduced ? enter : 1,
             marginBottom: keyboardHeight,
+            maxHeight: avoidKeyboard ? maxHeight : undefined,
             transform: [{ translateY: Animated.add(slide, drag) }],
             ...theme.shadow.lg,
           }}
@@ -190,7 +199,17 @@ export function BottomSheet({
               </Text>
             )}
           </View>
-          {children}
+          {avoidKeyboard ? (
+            <ScrollView
+              style={{ flexShrink: 1 }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {children}
+            </ScrollView>
+          ) : (
+            children
+          )}
         </Animated.View>
       </View>
     </Modal>
