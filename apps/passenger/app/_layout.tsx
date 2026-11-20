@@ -6,7 +6,14 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { BRAND_FONT_ASSETS, BootScreen, ThemeProvider, useTheme } from '@voyyaa/ui-mobile';
+import {
+  BOOT_GLOW,
+  BRAND_COLORS,
+  BRAND_FONT_ASSETS,
+  BootScreen,
+  ThemeProvider,
+  useTheme,
+} from '@voyyaa/ui-mobile';
 import { TripError } from '@voyyaa/shared';
 import {
   configureApiClient,
@@ -102,7 +109,11 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
       )}
       {booting && (
         <BootScreen
-          target="person"
+          target="taxi"
+          stageColor={BRAND_COLORS.espresso}
+          bodyColor={BRAND_COLORS.amber}
+          ringColor={BRAND_COLORS.amber}
+          glowColor={BOOT_GLOW.onEspresso}
           ready={fontsSettled && !hydrating}
           onFirstFrame={hideSplash}
           onDone={() => setBooting(false)}

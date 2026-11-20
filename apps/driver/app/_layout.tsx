@@ -5,7 +5,14 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { BRAND_FONT_ASSETS, BootScreen, ThemeProvider, useTheme } from '@voyyaa/ui-mobile';
+import {
+  BOOT_GLOW,
+  BRAND_COLORS,
+  BRAND_FONT_ASSETS,
+  BootScreen,
+  ThemeProvider,
+  useTheme,
+} from '@voyyaa/ui-mobile';
 import { ANDROID_ASSIGNMENT_CHANNEL_ID, AssignmentError } from '@voyyaa/shared';
 import {
   configureApiClient,
@@ -67,7 +74,7 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
 
   return (
     <>
-      <StatusBar style={bootDone && theme.mode === 'light' ? 'dark' : 'light'} />
+      <StatusBar style={!bootDone || theme.mode === 'light' ? 'dark' : 'light'} />
       {status !== 'hydrating' && (
         <>
           <ConnectivityBanner />
@@ -81,7 +88,11 @@ function RootStack({ fontsSettled }: RootStackProps): React.JSX.Element {
       )}
       {!bootDone && (
         <BootScreen
-          target="car"
+          target="wheel"
+          stageColor={BRAND_COLORS.amber}
+          bodyColor={BRAND_COLORS.espresso}
+          ringColor={BRAND_COLORS.espresso}
+          glowColor={BOOT_GLOW.onAmber}
           ready={fontsSettled && status !== 'hydrating'}
           onFirstFrame={hideSplash}
           onDone={() => setBootDone(true)}

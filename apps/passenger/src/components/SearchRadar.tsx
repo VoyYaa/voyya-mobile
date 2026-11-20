@@ -257,7 +257,7 @@ export function SearchRadar({
         <Animated.View style={{ transform: [{ scale: reduced || matched ? 1 : breathScale }] }}>
           <Animated.View style={{ transform: [{ scale: matchScale }] }}>
             <BrandMorph
-              target="car"
+              target="taxi"
               size={markSize}
               progress={morphProgress}
               ringOpacity={ringOpacity}
