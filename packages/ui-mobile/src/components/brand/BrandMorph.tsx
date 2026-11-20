@@ -4,27 +4,26 @@ import Svg, { Circle, G, Path } from 'react-native-svg';
 import { BRAND_COLORS } from '../../tokens';
 import {
   BRAND_BALL_PATH,
-  BRAND_CAR_BODY_PATH,
-  BRAND_CAR_WINDOWS_PATH,
-  BRAND_HEAD,
-  BRAND_PERSON_BODY_PATH,
+  BRAND_FIGURE_BODY,
   BRAND_RING_RADIUS,
-  BRAND_WHEELS,
-  BRAND_WHEEL_GAP,
-  BRAND_WHEEL_RADIUS,
+  type BrandFigure,
 } from './brand-geometry';
+import {
+  TaxiDetailsShapes,
+  TaxiRoofLightShapes,
+  WheelDetailsShapes,
+  WheelMarkShapes,
+} from './figure-shapes';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedG = Animated.createAnimatedComponent(G);
 
 export const MORPH_CIRCLE_PATH = BRAND_BALL_PATH;
-export const MORPH_PERSON_PATH = BRAND_PERSON_BODY_PATH;
-export const MORPH_CAR_PATH = BRAND_CAR_BODY_PATH;
 
 export const MORPH_START_SCALE = 1;
 export const MORPH_END_SCALE = 1;
 
-export type BrandMorphTarget = 'person' | 'car';
+export type BrandMorphTarget = BrandFigure;
 
 export interface BrandMorphProps {
   target: BrandMorphTarget;
@@ -32,6 +31,7 @@ export interface BrandMorphProps {
   size: number;
   ringOpacity?: Animated.Value | number;
   wheelsOpacity?: Animated.Value | number;
+  bodyColor?: string;
   ringColor?: string;
   gapColor?: string;
   testID?: string;
@@ -43,14 +43,14 @@ export function BrandMorph({
   size,
   ringOpacity = 1,
   wheelsOpacity = 1,
+  bodyColor = BRAND_COLORS.amber,
   ringColor = BRAND_COLORS.amber,
   gapColor = BRAND_COLORS.espresso,
   testID,
 }: BrandMorphProps): React.JSX.Element {
-  const targetPath = target === 'car' ? MORPH_CAR_PATH : MORPH_PERSON_PATH;
   const path = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [MORPH_CIRCLE_PATH, targetPath],
+    outputRange: [MORPH_CIRCLE_PATH, BRAND_FIGURE_BODY[target]],
   });
   const detailOpacity = progress.interpolate({
     inputRange: [0, 0.6, 1],
@@ -81,34 +81,24 @@ export function BrandMorph({
       </Animated.View>
       <View style={layer}>
         <Svg width={size} height={size} viewBox="0 0 200 200">
-          <AnimatedPath d={path} fill={BRAND_COLORS.amber} />
-          {target === 'person' && (
-            <AnimatedG opacity={detailOpacity}>
-              <Circle
-                cx={BRAND_HEAD.cx}
-                cy={BRAND_HEAD.cy}
-                r={BRAND_HEAD.r}
-                fill={BRAND_COLORS.amber}
-              />
-            </AnimatedG>
-          )}
-          {target === 'car' && (
+          <AnimatedPath d={path} fill={bodyColor} />
+          {target === 'taxi' && (
             <>
               <AnimatedG opacity={detailOpacity}>
-                <Path d={BRAND_CAR_WINDOWS_PATH} fill={gapColor} />
+                <TaxiDetailsShapes gapColor={gapColor} />
               </AnimatedG>
               <AnimatedG opacity={wheelsOpacity}>
-                {BRAND_WHEELS.map((wheel) => (
-                  <Circle
-                    key={wheel.cx}
-                    cx={wheel.cx}
-                    cy={wheel.cy}
-                    r={BRAND_WHEEL_RADIUS}
-                    fill={BRAND_COLORS.amber}
-                    stroke={gapColor}
-                    strokeWidth={BRAND_WHEEL_GAP}
-                  />
-                ))}
+                <TaxiRoofLightShapes bodyColor={bodyColor} gapColor={gapColor} />
+              </AnimatedG>
+            </>
+          )}
+          {target === 'wheel' && (
+            <>
+              <AnimatedG opacity={detailOpacity}>
+                <WheelDetailsShapes bodyColor={bodyColor} gapColor={gapColor} />
+              </AnimatedG>
+              <AnimatedG opacity={wheelsOpacity}>
+                <WheelMarkShapes />
               </AnimatedG>
             </>
           )}

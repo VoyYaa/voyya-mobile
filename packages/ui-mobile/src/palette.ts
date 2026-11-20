@@ -27,6 +27,11 @@ export const BRAND_COLORS = {
   sand: '#8F7F68',
 } as const;
 
+export const BOOT_GLOW = {
+  onEspresso: 'rgba(244, 162, 26, 0.55)',
+  onAmber: 'rgba(42, 32, 24, 0.35)',
+} as const;
+
 export interface ColorTokens {
   bg: string;
   surfaceSunken: string;

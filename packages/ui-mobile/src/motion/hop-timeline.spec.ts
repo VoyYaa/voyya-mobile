@@ -77,7 +77,7 @@ describe('buildHopKeyframes', () => {
     assert.equal(valueAt(frames.scaleY, 0), 1);
     assert.equal(valueAt(frames.translateY, 0), 0);
     assert.equal(valueAt(frames.ringOpacity, 0), 1);
-    assert.equal(valueAt(frames.headScale, 0), 0);
+    assert.equal(valueAt(frames.roofLightScale, 0), 0);
   });
 
   it('squashes on impact in the same instant the figure starts forming', () => {
@@ -92,11 +92,34 @@ describe('buildHopKeyframes', () => {
     assert.ok(valueAt(frames.translateY, HOP.apex) < -50);
   });
 
-  it('pops head and wheels only after the impact', () => {
-    assert.equal(valueAt(frames.headScale, HOP.impact), 0);
-    assert.ok(valueAt(frames.headScale, 1200) > 0.9);
-    assert.equal(valueAt(frames.wheelScaleFront, HOP.impact), 0);
-    assert.ok(valueAt(frames.wheelScaleFront, 1200) > 0.9);
+  it('pops the taxi roof light only after the impact', () => {
+    assert.equal(valueAt(frames.roofLightScale, HOP.impact), 0);
+    assert.ok(valueAt(frames.roofLightScale, 1200) > 0.9);
+    assert.ok(Math.max(...frames.roofLightScale.outputRange) > 1.1);
+    assert.equal(valueAt(frames.roofLightScale, HOP.figureCycleEnd), 0);
+  });
+
+  it('opens the wheel details as an iris after the impact and closes them on the return', () => {
+    assert.equal(valueAt(frames.detailsScale, HOP.impact), 0);
+    assert.equal(valueAt(frames.detailsScale, 960), 0);
+    assert.ok(valueAt(frames.detailsScale, 1200) > 0.9);
+    assert.ok(valueAt(frames.detailsScale, HOP.settled) > 0.99);
+    assert.equal(valueAt(frames.detailsScale, HOP.figureCycleEnd), 0);
+    assert.equal(frames.detailsScale.outputRange[0], 0);
+  });
+
+  it('pops the green mark of the wheel last, with overshoot', () => {
+    assert.equal(valueAt(frames.markScale, 1056), 0);
+    assert.ok(Math.max(...frames.markScale.outputRange) > 1.05);
+    assert.ok(valueAt(frames.markScale, HOP.settled) > 0.99);
+    assert.equal(valueAt(frames.markScale, HOP.figureCycleEnd), 0);
+    const firstVisible = (keyframes: { inputRange: number[]; outputRange: number[] }): number =>
+      keyframes.inputRange[keyframes.outputRange.findIndex((value) => value > 0.01)] ?? Number.NaN;
+    assert.ok(firstVisible(frames.markScale) > firstVisible(frames.detailsScale));
+  });
+
+  it('keeps the exact icon fade shorter than the settle hold of the boot screen', () => {
+    assert.ok(HOP.iconFadeMs >= 150 && HOP.iconFadeMs <= 220);
   });
 
   it('uses a shorter loop and no figure pieces in neutral mode', () => {

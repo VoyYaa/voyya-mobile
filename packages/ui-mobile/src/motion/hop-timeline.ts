@@ -12,13 +12,13 @@ export const HOP = {
   morphInMs: 250,
   morphOutStart: 1650,
   morphOutMs: 230,
+  iconFadeMs: 200,
 } as const;
 
 const SAMPLE_STEP_MS = 12;
 const CENTER = 100;
 const GROUND = 127;
 const JUMP_HEIGHT = 60;
-const HEAD_RISE = 24;
 const GROUNDED_BAND = 0.1;
 
 export interface Keyframes {
@@ -44,11 +44,10 @@ export interface HopKeyframes {
   rippleScale: Keyframes;
   shadowOpacity: Keyframes;
   shadowScaleX: Keyframes;
-  headScale: Keyframes;
-  headTranslateY: Keyframes;
-  wheelScaleFront: Keyframes;
-  wheelScaleRear: Keyframes;
+  roofLightScale: Keyframes;
   windowOpacity: Keyframes;
+  detailsScale: Keyframes;
+  markScale: Keyframes;
 }
 
 type Knot = readonly [number, number];
@@ -219,16 +218,12 @@ export function buildHopKeyframes(options: HopTimelineOptions): HopKeyframes {
       endMs,
       (t) => lerp(1, shadowSpread, shadowMix(t)) * (1 - 0.45 * jumpHeight(t)),
     ),
-    headScale: sample(endMs, (t) => popScale(t, 940, HOP.returnStart, 2.2)),
-    headTranslateY: sample(endMs, (t) => {
-      const scale = clamp01(popScale(t, 940, HOP.returnStart, 2.2));
-      return (1 - scale) * HEAD_RISE * unit;
-    }),
-    wheelScaleFront: sample(endMs, (t) => popScale(t, 990, HOP.returnStart + 15, 2.4)),
-    wheelScaleRear: sample(endMs, (t) => popScale(t, 1015, HOP.returnStart, 2.4)),
+    roofLightScale: sample(endMs, (t) => popScale(t, 990, HOP.returnStart + 15, 2.4)),
     windowOpacity: sample(endMs, (t) => {
       if (t < HOP.returnStart) return progressIn(t, 1060, 120);
       return 1 - progressIn(t, HOP.returnStart, 80);
     }),
+    detailsScale: sample(endMs, (t) => popScale(t, 960, HOP.returnStart, 1.6)),
+    markScale: sample(endMs, (t) => popScale(t, 1060, HOP.returnStart + 15, 2.4)),
   };
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { BRAND_COLORS, darkColors, lightColors, type ColorTokens } from './palette.ts';
+import { BOOT_GLOW, BRAND_COLORS, darkColors, lightColors, type ColorTokens } from './palette.ts';
 
 type Rgb = readonly [number, number, number];
 
@@ -286,5 +286,30 @@ describe('map tokens', () => {
   it('keeps the route readable against the dark map ground', () => {
     const ratio = contrastRatio(darkColors.mapRoute, darkColors.surfaceSunken, darkColors.surface);
     assert.ok(ratio >= GRAPHIC, `route on ground is ${ratio.toFixed(2)}`);
+  });
+});
+
+describe('boot stage colors', () => {
+  it('keeps the figure legible on the stage of each app (at least 7.6 to 1)', () => {
+    const passenger = contrastRatio(
+      BRAND_COLORS.amber,
+      BRAND_COLORS.espresso,
+      BRAND_COLORS.espresso,
+    );
+    const driver = contrastRatio(BRAND_COLORS.espresso, BRAND_COLORS.amber, BRAND_COLORS.amber);
+    assert.ok(passenger >= 7.6, `passenger figure on stage is ${passenger.toFixed(2)}`);
+    assert.ok(driver >= 7.6, `driver figure on stage is ${driver.toFixed(2)}`);
+  });
+
+  it('puts the green mark only over espresso, never next to amber', () => {
+    const onEspresso = contrastRatio(BRAND_COLORS.go, BRAND_COLORS.espresso, BRAND_COLORS.espresso);
+    const onAmber = contrastRatio(BRAND_COLORS.go, BRAND_COLORS.amber, BRAND_COLORS.amber);
+    assert.ok(onEspresso >= 3, `green on espresso is ${onEspresso.toFixed(2)}`);
+    assert.ok(onAmber < 3, `green on amber is ${onAmber.toFixed(2)}`);
+  });
+
+  it('lights the ground with amber on espresso and darkens it with espresso on amber', () => {
+    assert.ok(BOOT_GLOW.onEspresso.startsWith('rgba(244, 162, 26'));
+    assert.ok(BOOT_GLOW.onAmber.startsWith('rgba(42, 32, 24'));
   });
 });

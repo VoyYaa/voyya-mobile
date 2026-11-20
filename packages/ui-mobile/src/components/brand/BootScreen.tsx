@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet } from 'react-native';
-import { useTheme } from '../../theme';
-import { BRAND_COLORS, USE_NATIVE_DRIVER, motion } from '../../tokens';
+import { USE_NATIVE_DRIVER, motion } from '../../tokens';
 import { uiCopy } from '../../copy';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { BrandHop } from './BrandHop';
-import type { BrandMorphTarget } from './BrandMorph';
+import type { BrandFigure } from './brand-geometry';
 
 export interface BootScreenProps {
-  target: BrandMorphTarget;
+  target: BrandFigure;
+  stageColor: string;
+  bodyColor: string;
+  ringColor: string;
+  glowColor: string;
   ready: boolean;
   onDone: () => void;
   onFirstFrame?: () => void;
@@ -25,6 +28,10 @@ const REDUCED_HOLD_MS = 300;
 
 export function BootScreen({
   target,
+  stageColor,
+  bodyColor,
+  ringColor,
+  glowColor,
   ready,
   onDone,
   onFirstFrame,
@@ -32,7 +39,6 @@ export function BootScreen({
   maxWaitMs = DEFAULT_MAX_WAIT_MS,
   testID = 'boot-screen',
 }: BootScreenProps): React.JSX.Element {
-  const theme = useTheme();
   const reduced = useReducedMotion();
   const [framePainted, setFramePainted] = useState(false);
 
@@ -117,7 +123,7 @@ export function BootScreen({
       style={[
         StyleSheet.absoluteFillObject,
         {
-          backgroundColor: theme.colors.stage,
+          backgroundColor: stageColor,
           alignItems: 'center',
           justifyContent: 'center',
           opacity: rootOpacity,
@@ -132,8 +138,10 @@ export function BootScreen({
         loop={!ready}
         active={framePainted}
         onSettled={handleSettled}
-        ringColor={target === 'car' ? BRAND_COLORS.go : BRAND_COLORS.amber}
-        gapColor={theme.colors.stage}
+        bodyColor={bodyColor}
+        ringColor={ringColor}
+        gapColor={stageColor}
+        glowColor={glowColor}
       />
     </Animated.View>
   );

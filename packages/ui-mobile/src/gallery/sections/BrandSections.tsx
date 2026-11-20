@@ -6,6 +6,7 @@ import { BrandLoader } from '../../components/brand/BrandLoader';
 import { BrandHop } from '../../components/brand/BrandHop';
 import { BrandMark } from '../../components/brand/BrandMark';
 import { BrandMorph, type BrandMorphTarget } from '../../components/brand/BrandMorph';
+import { BOOT_GLOW, BRAND_COLORS } from '../../tokens';
 import { BrandSpinner, type BrandSpinnerSize } from '../../components/brand/BrandSpinner';
 import { MarkGlyph, type MarkGlyphName } from '../../components/brand/MarkGlyph';
 import { RadarPulse } from '../../components/brand/RadarPulse';
@@ -32,15 +33,38 @@ const GLYPHS: readonly MarkGlyphName[] = [
 ];
 const SPINNER_SIZES: readonly BrandSpinnerSize[] = [16, 20, 24, 32];
 const MORPH_FRAMES: readonly number[] = [0, 0.25, 0.5, 0.75, 1];
-const MORPH_TARGETS: readonly BrandMorphTarget[] = ['person', 'car'];
+const MORPH_TARGETS: readonly BrandMorphTarget[] = ['taxi', 'wheel'];
+
+interface BootLook {
+  stageColor: string;
+  bodyColor: string;
+  ringColor: string;
+  glowColor: string;
+}
+
+const BOOT_LOOKS: Record<BrandMorphTarget, BootLook> = {
+  taxi: {
+    stageColor: BRAND_COLORS.espresso,
+    bodyColor: BRAND_COLORS.amber,
+    ringColor: BRAND_COLORS.amber,
+    glowColor: BOOT_GLOW.onEspresso,
+  },
+  wheel: {
+    stageColor: BRAND_COLORS.amber,
+    bodyColor: BRAND_COLORS.espresso,
+    ringColor: BRAND_COLORS.espresso,
+    glowColor: BOOT_GLOW.onAmber,
+  },
+};
 const BOOT_BOX_SIZE = 240;
 const BOOT_READY_DELAY_MS = 1200;
 
 function MorphRow({ target }: { target: BrandMorphTarget }): React.JSX.Element {
   const frames = useMemo(() => MORPH_FRAMES.map((value) => new Animated.Value(value)), []);
+  const look = BOOT_LOOKS[target];
 
   return (
-    <Stage>
+    <Stage style={{ backgroundColor: look.stageColor }}>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', padding: 8, gap: 8 }}>
         {frames.map((progress, index) => {
           const value = MORPH_FRAMES[index] ?? 0;
@@ -50,6 +74,9 @@ function MorphRow({ target }: { target: BrandMorphTarget }): React.JSX.Element {
               target={target}
               progress={progress}
               size={88}
+              bodyColor={look.bodyColor}
+              ringColor={look.ringColor}
+              gapColor={look.stageColor}
               ringOpacity={value === 0 ? 1 : 0}
               wheelsOpacity={value >= 1 ? 1 : 0}
               testID={`gallery-morph-${target}-${Math.round(value * 100)}`}
@@ -63,7 +90,7 @@ function MorphRow({ target }: { target: BrandMorphTarget }): React.JSX.Element {
 
 function BootDemo(): React.JSX.Element {
   const theme = useTheme();
-  const [target, setTarget] = useState<BrandMorphTarget>('person');
+  const [target, setTarget] = useState<BrandMorphTarget>('taxi');
   const [runId, setRunId] = useState(0);
   const [ready, setReady] = useState(true);
   const [done, setDone] = useState(false);
@@ -88,8 +115,8 @@ function BootDemo(): React.JSX.Element {
   return (
     <>
       <GalleryRow>
-        <Button label="Pasajero" size="sm" variant="ghost" onPress={() => replay('person')} />
-        <Button label="Conductor" size="sm" variant="ghost" onPress={() => replay('car')} />
+        <Button label="Pasajero" size="sm" variant="ghost" onPress={() => replay('taxi')} />
+        <Button label="Conductor" size="sm" variant="ghost" onPress={() => replay('wheel')} />
       </GalleryRow>
       <View
         style={{
@@ -109,6 +136,7 @@ function BootDemo(): React.JSX.Element {
           <BootScreen
             key={runId}
             target={target}
+            {...BOOT_LOOKS[target]}
             ready={ready}
             size={BOOT_BOX_SIZE}
             onDone={() => setDone(true)}
@@ -214,14 +242,19 @@ export function MotionSection(): React.JSX.Element {
       <GalleryCaption label="BrandHop: ciclo salto, aterrizaje y figura (pasajero, conductor, neutro)" />
       <Stage>
         <GalleryRow>
-          <BrandHop size={144} target="person" testID="gallery-hop-person" />
+          <BrandHop size={144} target="taxi" testID="gallery-hop-taxi" />
+          <BrandHop size={96} testID="gallery-hop-neutral" />
+        </GalleryRow>
+      </Stage>
+      <Stage style={{ backgroundColor: BOOT_LOOKS.wheel.stageColor }}>
+        <GalleryRow>
           <BrandHop
             size={144}
-            target="car"
-            ringColor={theme.colors.success}
-            testID="gallery-hop-car"
+            target="wheel"
+            {...BOOT_LOOKS.wheel}
+            gapColor={BOOT_LOOKS.wheel.stageColor}
+            testID="gallery-hop-wheel"
           />
-          <BrandHop size={96} testID="gallery-hop-neutral" />
         </GalleryRow>
       </Stage>
       <GalleryCaption label="BootScreen" />

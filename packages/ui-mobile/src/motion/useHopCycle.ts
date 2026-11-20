@@ -15,6 +15,7 @@ export interface HopCycleOptions {
 export interface HopCycle {
   clock: Animated.Value;
   morph: Animated.Value;
+  icon: Animated.Value;
 }
 
 const HOLD_GUARD_MS = 30;
@@ -30,6 +31,8 @@ export function useHopCycle({
 }: HopCycleOptions): HopCycle {
   const clock = useRef(new Animated.Value(0)).current;
   const morph = useRef(new Animated.Value(0)).current;
+  const icon = useRef(new Animated.Value(0)).current;
+  const iconFade = useRef<Animated.CompositeAnimation | null>(null);
   const loopRef = useRef(loop);
   loopRef.current = loop;
   const onSettledRef = useRef(onSettled);
@@ -66,13 +69,24 @@ export function useHopCycle({
 
     const settle = (): void => {
       holdStartedAt.current = null;
+      if (figure) {
+        iconFade.current = Animated.timing(icon, {
+          toValue: 1,
+          duration: HOP.iconFadeMs,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: USE_NATIVE_DRIVER,
+        });
+        iconFade.current.start();
+      }
       notifySettled();
     };
 
     const forward = (): void => {
       settledNotified.current = false;
+      iconFade.current?.stop();
       clock.setValue(0);
       morph.setValue(0);
+      icon.setValue(0);
       const steps: Animated.CompositeAnimation[] = [runClock(0, settledMs)];
       if (figure) {
         steps.push(
@@ -132,6 +146,7 @@ export function useHopCycle({
     if (reduced) {
       clock.setValue(0);
       morph.setValue(0);
+      icon.setValue(0);
     } else {
       forward();
     }
@@ -141,9 +156,11 @@ export function useHopCycle({
       interruptHold.current = () => undefined;
       running.current?.stop();
       running.current = null;
+      iconFade.current?.stop();
+      iconFade.current = null;
       holdStartedAt.current = null;
     };
-  }, [active, reduced, figure, settledMs, clock, morph]);
+  }, [active, reduced, figure, settledMs, clock, morph, icon]);
 
   useEffect(() => {
     if (!loop) interruptHold.current();
@@ -153,8 +170,9 @@ export function useHopCycle({
     if (!active || !reduced || loop) return;
     clock.setValue(settledMs);
     morph.setValue(figure ? 1 : 0);
+    icon.setValue(figure ? 1 : 0);
     notifySettled();
-  }, [loop, active, reduced, figure, settledMs, clock, morph]);
+  }, [loop, active, reduced, figure, settledMs, clock, morph, icon]);
 
-  return { clock, morph };
+  return { clock, morph, icon };
 }

@@ -1,8 +1,8 @@
 import { Easing, Platform, type TextStyle, type ViewStyle } from 'react-native';
-import { BRAND_COLORS, darkColors, lightColors, type ColorTokens } from './palette';
+import { BOOT_GLOW, BRAND_COLORS, darkColors, lightColors, type ColorTokens } from './palette';
 import { BRAND_FONT_FAMILY, type BrandFontWeight } from './fonts/brand-font-families';
 
-export { BRAND_COLORS, type ColorTokens };
+export { BOOT_GLOW, BRAND_COLORS, type ColorTokens };
 
 export const spacing = {
   xxs: 2,

@@ -7,21 +7,26 @@ import { buildHopKeyframes, type Keyframes } from '../../motion/hop-timeline';
 import { useHopCycle } from '../../motion/useHopCycle';
 import {
   BRAND_BALL_PATH,
-  BRAND_CAR_WINDOWS_PATH,
   BRAND_CENTER,
   BRAND_FIGURE_BODY,
   BRAND_FIGURE_SHADOW_SPREAD,
-  BRAND_HEAD,
   BRAND_RING_RADIUS,
   BRAND_SHADOW_RX,
   BRAND_SHADOW_RY,
   BRAND_SHADOW_Y,
+  BRAND_TAXI_ROOF_PIVOT,
   BRAND_VIEWBOX,
-  BRAND_WHEELS,
-  BRAND_WHEEL_GAP,
-  BRAND_WHEEL_RADIUS,
+  BRAND_WHEEL_CENTER,
+  BRAND_WHEEL_MARK,
   type BrandFigure,
 } from './brand-geometry';
+import {
+  BrandFigureIcon,
+  TaxiDetailsShapes,
+  TaxiRoofLightShapes,
+  WheelDetailsShapes,
+  WheelMarkShapes,
+} from './figure-shapes';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -31,6 +36,7 @@ export interface BrandHopProps {
   loop?: boolean;
   active?: boolean;
   onSettled?: () => void;
+  bodyColor?: string;
   ringColor?: string;
   gapColor?: string;
   glowColor?: string;
@@ -39,8 +45,11 @@ export interface BrandHopProps {
 
 const DEFAULT_GLOW = 'rgba(244, 162, 26, 0.55)';
 const RIPPLE_FLATTEN = 0.28;
-const WHEEL_BOX = (BRAND_WHEEL_RADIUS + BRAND_WHEEL_GAP) * 2 + 2;
-const HEAD_BOX = BRAND_HEAD.r * 2 + 2;
+const ROOF_LIGHT_BOX = 40;
+const WHEEL_DETAILS_BOX = 124;
+const WHEEL_MARK_BOX = 30;
+const WHEEL_MARK_CENTER_Y = BRAND_WHEEL_MARK.y + BRAND_WHEEL_MARK.height / 2;
+const FIGURE_HOLD_UNTIL_ICON = 0.5;
 
 function interpolateClock(
   clock: Animated.Value,
@@ -59,6 +68,7 @@ export function BrandHop({
   loop = true,
   active = true,
   onSettled,
+  bodyColor = BRAND_COLORS.amber,
   ringColor = BRAND_COLORS.amber,
   gapColor = BRAND_COLORS.espresso,
   glowColor = DEFAULT_GLOW,
@@ -76,7 +86,7 @@ export function BrandHop({
       }),
     [size, figure, target],
   );
-  const { clock, morph } = useHopCycle({
+  const { clock, morph, icon } = useHopCycle({
     figure,
     loop,
     active,
@@ -107,13 +117,20 @@ export function BrandHop({
       rippleScale: at(frames.rippleScale),
       shadowOpacity: at(frames.shadowOpacity),
       shadowScaleX: at(frames.shadowScaleX),
-      headScale: at(frames.headScale),
-      headTranslateY: at(frames.headTranslateY),
-      wheelScaleFront: at(frames.wheelScaleFront),
-      wheelScaleRear: at(frames.wheelScaleRear),
+      roofLightScale: at(frames.roofLightScale),
       windowOpacity: at(frames.windowOpacity),
+      detailsScale: at(frames.detailsScale),
+      markScale: at(frames.markScale),
     };
   }, [clock, frames]);
+  const figureOpacity = useMemo(
+    () =>
+      icon.interpolate({
+        inputRange: [0, FIGURE_HOLD_UNTIL_ICON, 1],
+        outputRange: [1, 1, 0],
+      }),
+    [icon],
+  );
   const {
     translateY,
     scaleX,
@@ -124,11 +141,10 @@ export function BrandHop({
     rippleScale,
     shadowOpacity,
     shadowScaleX,
-    headScale,
-    headTranslateY,
-    wheelScaleFront,
-    wheelScaleRear,
+    roofLightScale,
     windowOpacity,
+    detailsScale,
+    markScale,
   } = values;
 
   const fill = { position: 'absolute', top: 0, left: 0, width: size, height: size } as const;
@@ -143,6 +159,19 @@ export function BrandHop({
     width: box * unit,
     height: box * unit,
   });
+  const piece = (
+    cx: number,
+    cy: number,
+    box: number,
+    scale: Animated.AnimatedInterpolation<number>,
+    children: React.ReactNode,
+  ): React.JSX.Element => (
+    <Animated.View style={[pieceBox(cx, cy, box), { transform: [{ scale }] }]}>
+      <Svg width="100%" height="100%" viewBox={`${cx - box / 2} ${cy - box / 2} ${box} ${box}`}>
+        {children}
+      </Svg>
+    </Animated.View>
+  );
 
   return (
     <View
@@ -201,56 +230,57 @@ export function BrandHop({
       </Animated.View>
 
       <Animated.View style={[fill, { transform: [{ translateY }, { scaleX }, { scaleY }] }]}>
-        <Svg width={size} height={size} viewBox="0 0 200 200">
-          <AnimatedPath d={bodyPath} fill={BRAND_COLORS.amber} />
-        </Svg>
+        <Animated.View style={[fill, { opacity: figureOpacity }]}>
+          <Svg width={size} height={size} viewBox="0 0 200 200">
+            <AnimatedPath d={bodyPath} fill={bodyColor} />
+          </Svg>
 
-        {target === 'person' && (
-          <Animated.View
-            style={[
-              pieceBox(BRAND_HEAD.cx, BRAND_HEAD.cy, HEAD_BOX),
-              { transform: [{ translateY: headTranslateY }, { scale: headScale }] },
-            ]}
-          >
-            <Svg width="100%" height="100%" viewBox={`0 0 ${HEAD_BOX} ${HEAD_BOX}`}>
-              <Circle
-                cx={HEAD_BOX / 2}
-                cy={HEAD_BOX / 2}
-                r={BRAND_HEAD.r}
-                fill={BRAND_COLORS.amber}
-              />
-            </Svg>
-          </Animated.View>
-        )}
-
-        {target === 'car' && (
-          <>
-            <Animated.View style={[fill, { opacity: windowOpacity }]}>
-              <Svg width={size} height={size} viewBox="0 0 200 200">
-                <Path d={BRAND_CAR_WINDOWS_PATH} fill={gapColor} />
-              </Svg>
-            </Animated.View>
-            {BRAND_WHEELS.map((wheel, index) => (
-              <Animated.View
-                key={wheel.cx}
-                style={[
-                  pieceBox(wheel.cx, wheel.cy, WHEEL_BOX),
-                  { transform: [{ scale: index === 0 ? wheelScaleRear : wheelScaleFront }] },
-                ]}
-              >
-                <Svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_BOX} ${WHEEL_BOX}`}>
-                  <Circle
-                    cx={WHEEL_BOX / 2}
-                    cy={WHEEL_BOX / 2}
-                    r={BRAND_WHEEL_RADIUS}
-                    fill={BRAND_COLORS.amber}
-                    stroke={gapColor}
-                    strokeWidth={BRAND_WHEEL_GAP}
-                  />
+          {target === 'taxi' && (
+            <>
+              <Animated.View style={[fill, { opacity: windowOpacity }]}>
+                <Svg width={size} height={size} viewBox="0 0 200 200">
+                  <TaxiDetailsShapes gapColor={gapColor} />
                 </Svg>
               </Animated.View>
-            ))}
-          </>
+              {piece(
+                BRAND_TAXI_ROOF_PIVOT.cx,
+                BRAND_TAXI_ROOF_PIVOT.cy,
+                ROOF_LIGHT_BOX,
+                roofLightScale,
+                <TaxiRoofLightShapes bodyColor={bodyColor} gapColor={gapColor} />,
+              )}
+            </>
+          )}
+
+          {target === 'wheel' && (
+            <>
+              {piece(
+                BRAND_WHEEL_CENTER.cx,
+                BRAND_WHEEL_CENTER.cy,
+                WHEEL_DETAILS_BOX,
+                detailsScale,
+                <WheelDetailsShapes bodyColor={bodyColor} gapColor={gapColor} />,
+              )}
+              {piece(
+                BRAND_WHEEL_CENTER.cx,
+                WHEEL_MARK_CENTER_Y,
+                WHEEL_MARK_BOX,
+                markScale,
+                <WheelMarkShapes />,
+              )}
+            </>
+          )}
+        </Animated.View>
+
+        {target !== undefined && (
+          <Animated.View style={[fill, { opacity: icon }]}>
+            <BrandFigureIcon
+              figure={target}
+              size={size}
+              bodyColor={bodyColor}
+              gapColor={gapColor}
+            />
+          </Animated.View>
         )}
       </Animated.View>
     </View>
